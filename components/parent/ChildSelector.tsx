@@ -1,6 +1,6 @@
 'use client';
 
-import { Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@heroui/react';
+import { Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Skeleton } from '@heroui/react';
 import { SeedIcon, ChevronDownIcon } from '@/components/design-system/HearthPrimitives';
 import type { ParentChild } from '@/state/appState';
 
@@ -9,6 +9,7 @@ type ChildSelectorProps = {
     selectedChildId: string;
     onSelect: (childId: string) => void;
     disabled?: boolean;
+    isLoading?: boolean;
 };
 
 export function ChildSelector({
@@ -16,7 +17,28 @@ export function ChildSelector({
     selectedChildId,
     onSelect,
     disabled = false,
+    isLoading = false,
 }: ChildSelectorProps) {
+    if (isLoading) {
+        return (
+            <div className="sticky top-4 z-20">
+                <div className="hearth-pill flex w-full items-center justify-between gap-3 rounded-[999px] px-3 py-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <Skeleton className="size-10 rounded-full" />
+                        <div className="grid min-w-0 gap-1.5">
+                            <Skeleton className="h-4 w-20 rounded-full" />
+                            <Skeleton className="h-3 w-28 rounded-full" />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="h-4 w-16 rounded-full" />
+                        <Skeleton className="size-4 rounded-full" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     const activeChild = items.find((child) => child.id === selectedChildId) ?? items[0];
 
     if (!activeChild) {

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 export type QuestStatus = 'suggested' | 'approved' | 'rejected' | 'completed';
 
-export type QuestCategory = 'Learning' | 'Responsibility' | 'Movement' | 'Care';
+export type QuestCategory = 'Care' | 'Exercise' | 'Habit' | 'Learning' | 'Movement' | 'Responsibility';
 
 export type ParentGoal = {
     title: string;

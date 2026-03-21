@@ -1,17 +1,17 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Card, CardBody, Chip } from '@heroui/react';
+import { Card, CardBody, Chip, Skeleton } from '@heroui/react';
 import { useParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/parent/AppShell';
 import { GoalCard } from '@/components/parent/GoalCard';
 import { QuestCard } from '@/components/parent/QuestCard';
 import { QuestSelectionDrawer } from '@/components/parent/QuestSelectionDrawer';
 import { MascotBubble } from '@/components/parent/MascotBubble';
-import { generateQuestsWithAgent } from '@/lib/agent';
+import { useGenerateQuests } from '@/hooks/useGenerateQuests';
+import { useParentDashboardData } from '@/hooks/useParentDashboardData';
 import { buildLocalizedHref } from '@/lib/locale-path';
-import { useGlobalLoadingState } from '@/state/global-loading-state';
-import { useAppState, type ParentChild, type ParentQuest } from '@/state/appState';
+import { type ParentQuest } from '@/state/appState';
 import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/design-system/HearthPrimitives';
 import { HearthActionButton } from '@/components/design-system/HearthPrimitives';
 import { ParentStateCard } from './ParentStateCard';
@@ -22,51 +22,7 @@ type ParentDashboardScreenProps = {
 };
 
 type ParentTab = 'home' | 'adventures' | 'dreams';
-
 const QUEST_DRAWER_FOCUS_AREAS = ['learning', 'exercise', 'responsibility', 'habit', 'learning'] as const;
-
-const fallbackQuestOptions: ParentQuest[] = [
-    {
-        id: 'fallback-learning-notes',
-        title: 'Collect three new story words',
-        reward: 8,
-        category: 'Learning',
-        description: 'A quiet language quest that still feels curious, warm, and easy to start.',
-        status: 'suggested',
-    },
-    {
-        id: 'fallback-movement-break',
-        title: 'Take a five-minute stretch path',
-        reward: 8,
-        category: 'Movement',
-        description: 'A gentle movement reset designed to support focus without pushing the day too hard.',
-        status: 'suggested',
-    },
-    {
-        id: 'fallback-small-reset',
-        title: 'Reset one small family space',
-        reward: 9,
-        category: 'Responsibility',
-        description: 'A calm responsibility quest that helps the room feel lighter again.',
-        status: 'suggested',
-    },
-    {
-        id: 'fallback-care-tidy',
-        title: 'Water or tend something living',
-        reward: 10,
-        category: 'Care',
-        description: 'A nurturing quest that keeps the homestead tone soft and meaningful.',
-        status: 'suggested',
-    },
-    {
-        id: 'fallback-learning-sketch',
-        title: 'Sketch one thing you noticed today',
-        reward: 9,
-        category: 'Learning',
-        description: 'A reflective creative quest that supports calm attention and small wins.',
-        status: 'suggested',
-    },
-];
 
 function getInitialTab(value?: string): ParentTab {
     if (value === 'adventures' || value === 'dreams') {
@@ -76,66 +32,31 @@ function getInitialTab(value?: string): ParentTab {
     return 'home';
 }
 
-function buildQuestDrawerOptions(child: ParentChild, apiQuests: ParentQuest[]) {
-    return buildQuestDrawerOptionsFromSource(child, apiQuests, [], []);
+function getTodayDateString() {
+    return new Date().toISOString().slice(0, 10);
 }
 
-function buildQuestDrawerOptionsFromSource(
-    child: ParentChild,
-    apiQuests: ParentQuest[],
-    lockedQuests: ParentQuest[],
-    excludedTitles: string[],
-) {
-    const uniqueQuests: ParentQuest[] = [];
-    const seenTitles = new Set<string>(excludedTitles.map((title) => title.trim().toLowerCase()));
-
-    for (const quest of lockedQuests) {
-        const titleKey = quest.title.trim().toLowerCase();
-
-        if (!titleKey || seenTitles.has(titleKey)) {
-            continue;
-        }
-
-        seenTitles.add(titleKey);
-        uniqueQuests.push({
-            ...quest,
-            status: 'suggested',
-        });
-    }
-
-    const candidateQuests = [
-        ...apiQuests,
-        ...fallbackQuestOptions.map((quest, index) => ({
-            ...quest,
-            id: `${quest.id}-${child.id}-${index}`,
-        })),
-        ...child.quests
-            .filter((quest) => quest.status === 'suggested')
-            .map((quest, index) => ({
-                ...quest,
-                id: `${quest.id}-existing-${index}`,
-            })),
-    ];
-
-    for (const quest of candidateQuests) {
-        const titleKey = quest.title.trim().toLowerCase();
-
-        if (!titleKey || seenTitles.has(titleKey)) {
-            continue;
-        }
-
-        seenTitles.add(titleKey);
-        uniqueQuests.push({
-            ...quest,
-            status: 'suggested',
-        });
-
-        if (uniqueQuests.length === 5) {
-            break;
-        }
-    }
-
-    return uniqueQuests;
+function OverviewStat({
+    label,
+    value,
+    isLoading = false,
+}: {
+    label: string;
+    value: number;
+    isLoading?: boolean;
+}) {
+    return (
+        <div className="hearth-subtle-panel rounded-[20px] p-3 sm:p-4">
+            <p className="hearth-kicker">{label}</p>
+            {isLoading ? (
+                <Skeleton className="mt-2 h-6 w-10 rounded-full" />
+            ) : (
+                <p className="hearth-number mt-1.5 text-base font-semibold text-[var(--hearth-text-primary)] sm:mt-2 sm:text-lg">
+                    {value}
+                </p>
+            )}
+        </div>
+    );
 }
 
 export function ParentDashboardScreen({
@@ -145,25 +66,43 @@ export function ParentDashboardScreen({
     const params = useParams<{ locale: string }>();
     const router = useRouter();
 
-    const parentName = useAppState((state) => state.parentName);
-    const familyId = useAppState((state) => state.familyId);
-    const familySeeds = useAppState((state) => state.familySeeds);
-    const allChildren = useAppState((state) => state.children);
-    const selectedChildId = useAppState((state) => state.selectedChildId);
-    const selectChild = useAppState((state) => state.selectChild);
-    const approveQuest = useAppState((state) => state.approveQuest);
-    const rejectQuest = useAppState((state) => state.rejectQuest);
-    const completeQuest = useAppState((state) => state.completeQuest);
-    const applyGeneratedQuests = useAppState((state) => state.applyGeneratedQuests);
-    const sendSeeds = useAppState((state) => state.sendSeeds);
-    const startGlobalLoading = useGlobalLoadingState((state) => state.startLoading);
-    const stopGlobalLoading = useGlobalLoadingState((state) => state.stopLoading);
+    const {
+        activeChild,
+        approvedQuests,
+        childItems,
+        dashboardError,
+        familyId,
+        familySummary,
+        goalsQuery,
+        hasNoChildren,
+        heroDescription,
+        isChildSelectorLoading,
+        isOverviewLoading,
+        momentsCount,
+        questActions,
+        selectedChildId,
+        selectChild,
+        suggestedQuests,
+        todayQuestsError,
+    } = useParentDashboardData({ demoState });
+
+    const generateQuests = useGenerateQuests(
+        activeChild
+            ? {
+                childAge: activeChild.age,
+                childId: activeChild.id,
+                familyId,
+                focusAreas: [...QUEST_DRAWER_FOCUS_AREAS],
+            }
+            : undefined,
+    );
 
     const [tab, setTab] = useState<ParentTab>(getInitialTab(initialTab));
     const [isSwitching, setIsSwitching] = useState(false);
     const [isQuestDrawerOpen, setIsQuestDrawerOpen] = useState(false);
     const [isQuestDrawerLoading, setIsQuestDrawerLoading] = useState(false);
     const [isQuestDrawerRefreshing, setIsQuestDrawerRefreshing] = useState(false);
+    const [isQuestDrawerConfirming, setIsQuestDrawerConfirming] = useState(false);
     const [questDrawerError, setQuestDrawerError] = useState<string | null>(null);
     const [questDrawerFeedback, setQuestDrawerFeedback] = useState<string | null>(null);
     const [questDrawerPhase, setQuestDrawerPhase] = useState<'select' | 'confirm'>('select');
@@ -171,9 +110,6 @@ export function ParentDashboardScreen({
     const [selectedQuestIds, setSelectedQuestIds] = useState<string[]>([]);
     const switchTimeoutRef = useRef<number | null>(null);
     const generateRequestRef = useRef(0);
-
-    const childItems = demoState === 'no-children' ? [] : allChildren;
-    const activeChild = childItems.find((child) => child.id === selectedChildId) ?? childItems[0];
 
     useEffect(() => {
         setTab(getInitialTab(initialTab));
@@ -228,11 +164,13 @@ export function ParentDashboardScreen({
             setIsQuestDrawerOpen(false);
             setIsQuestDrawerLoading(false);
             setIsQuestDrawerRefreshing(false);
+            setIsQuestDrawerConfirming(false);
             setQuestDrawerError(null);
             setQuestDrawerFeedback(null);
             setQuestDrawerPhase('select');
             setQuestDrawerOptions([]);
             setSelectedQuestIds([]);
+            generateQuests.reset();
             return;
         }
 
@@ -247,11 +185,14 @@ export function ParentDashboardScreen({
         const lockedQuests = preserveSelected
             ? questDrawerOptions.filter((quest) => selectedQuestIds.includes(quest.id))
             : [];
-        const excludedTitles = preserveSelected
-            ? questDrawerOptions
-                .filter((quest) => !selectedQuestIds.includes(quest.id))
-                .map((quest) => quest.title)
-            : [];
+        const excludedTitles = [
+            ...activeChild.quests.map((quest) => quest.title),
+            ...(preserveSelected
+                ? questDrawerOptions
+                    .filter((quest) => !selectedQuestIds.includes(quest.id))
+                    .map((quest) => quest.title)
+                : []),
+        ];
 
         if (!preserveSelected) {
             handleQuestDrawerOpenChange(true);
@@ -268,59 +209,22 @@ export function ParentDashboardScreen({
 
         const requestId = generateRequestRef.current + 1;
         generateRequestRef.current = requestId;
-        const loadingRequestId = startGlobalLoading({
-            duration: 1400,
-            helperText: preserveSelected
-                ? 'Selected quests stay pinned while Lena prepares different options for the remaining slots.'
-                : 'Please wait while Lena prepares a fresh set of calm quest options.',
-            loadingStates: [
-                {
-                    text: preserveSelected
-                        ? `Keeping ${activeChild.name}'s selected quests in place`
-                        : `Preparing ${activeChild.name}'s quest board`,
-                },
-                { text: 'Asking Lena for new quest ideas' },
-                {
-                    text: preserveSelected
-                        ? 'Refreshing the remaining choices'
-                        : 'Arranging a calm set of five options',
-                },
-            ],
-        });
 
         try {
-            const response = await generateQuestsWithAgent({
-                familyId,
-                childId: activeChild.agentChildId,
+            const nextOptions = await generateQuests.generate({
                 childAge: activeChild.age,
+                childId: activeChild.id,
+                excludeTitles: excludedTitles,
+                familyId,
                 focusAreas: [...QUEST_DRAWER_FOCUS_AREAS],
+                lockedOptions: lockedQuests,
             });
 
             if (generateRequestRef.current !== requestId) {
                 return;
             }
 
-            const normalizedApiQuests = Array.isArray(response.quests)
-                ? response.quests.map((quest, index) => ({
-                    id: quest.id || `generated-${activeChild.id}-${index + 1}`,
-                    title: quest.title,
-                    reward: quest.reward,
-                    category: quest.category as ParentQuest['category'],
-                    description: quest.description,
-                    status: 'suggested' as const,
-                }))
-                : [];
-
-            const drawerOptions = preserveSelected
-                ? buildQuestDrawerOptionsFromSource(activeChild, normalizedApiQuests, lockedQuests, excludedTitles)
-                : buildQuestDrawerOptions(activeChild, normalizedApiQuests);
-
-            if (!drawerOptions.length) {
-                setQuestDrawerError('The homestead could not gather quest options right now. Please try again in a moment.');
-                return;
-            }
-
-            setQuestDrawerOptions(drawerOptions);
+            setQuestDrawerOptions(nextOptions);
 
             if (preserveSelected) {
                 setSelectedQuestIds(lockedQuests.map((quest) => quest.id));
@@ -330,23 +234,13 @@ export function ParentDashboardScreen({
                         : 'Kept your selected quests and refreshed the remaining options.',
                 );
             }
-        } catch (error) {
+        } catch {
             if (generateRequestRef.current !== requestId) {
                 return;
             }
 
-            const message = error instanceof Error
-                ? error.message
-                : 'The homestead could not gather quest options right now.';
-
-            if (preserveSelected && lockedQuests.length) {
-                setQuestDrawerFeedback(message);
-            } else {
-                setQuestDrawerError(message);
-            }
+            setQuestDrawerError('Something did not come through just yet. Please try again.');
         } finally {
-            stopGlobalLoading(loadingRequestId);
-
             if (generateRequestRef.current === requestId) {
                 setIsQuestDrawerLoading(false);
                 setIsQuestDrawerRefreshing(false);
@@ -381,72 +275,36 @@ export function ParentDashboardScreen({
         setQuestDrawerPhase('confirm');
     };
 
-    const handleQuestConfirm = () => {
+    const handleQuestConfirm = async () => {
         if (!activeChild || questDrawerPhase !== 'confirm' || selectedQuestIds.length !== 3) {
             return;
         }
 
-        applyGeneratedQuests(
-            activeChild.id,
-            questDrawerOptions.filter((quest) => selectedQuestIds.includes(quest.id)),
-        );
-        handleQuestDrawerOpenChange(false);
+        setIsQuestDrawerConfirming(true);
+        setQuestDrawerFeedback(null);
+
+        try {
+            await questActions.createQuests(
+                questDrawerOptions
+                    .filter((quest) => selectedQuestIds.includes(quest.id))
+                    .map((quest) => ({
+                        assignedDate: getTodayDateString(),
+                        childId: activeChild.id,
+                        description: quest.description,
+                        reward: quest.reward,
+                        status: 'pending' as const,
+                        title: quest.title,
+                    })),
+            );
+            await questActions.refetch();
+            handleQuestDrawerOpenChange(false);
+        } catch {
+            setQuestDrawerFeedback('We could not save those quests right now. Please try again.');
+        } finally {
+            setIsQuestDrawerConfirming(false);
+        }
     };
 
-    if (!childItems.length) {
-        return (
-            <AppShell
-                childItems={[]}
-                description="No child profiles are available yet, so the family planner is waiting gently."
-                familySeeds={familySeeds}
-                navItems={[
-                    {
-                        key: 'home',
-                        label: 'Home',
-                        icon: <HomeIcon className="size-4" />,
-                        active: true,
-                        onPress: () => handleTabChange('home'),
-                    },
-                    {
-                        key: 'adventures',
-                        label: 'Adventures',
-                        icon: <CompassIcon className="size-4" />,
-                        active: false,
-                        onPress: () => handleTabChange('adventures'),
-                    },
-                    {
-                        key: 'dreams',
-                        label: 'Dreams',
-                        icon: <TargetIcon className="size-4" />,
-                        active: false,
-                        onPress: () => handleTabChange('dreams'),
-                    },
-                    {
-                        key: 'moments',
-                        label: 'Moments',
-                        icon: <CalendarIcon className="size-4" />,
-                        active: false,
-                        onPress: navigateToMoments,
-                    },
-                ]}
-                onSelectChild={handleChildSelect}
-                selectedChildId=""
-                title="Parent Dashboard"
-            >
-                <ParentStateCard
-                    title="No children added yet"
-                    description="Add your first child profile to begin tracking goals, gentle quests, and shared moments."
-                />
-            </AppShell>
-        );
-    }
-
-    if (!activeChild) {
-        return null;
-    }
-
-    const suggestedQuests = activeChild.quests.filter((quest) => quest.status === 'suggested');
-    const approvedQuests = activeChild.quests.filter((quest) => quest.status === 'approved');
     const navItems = [
         {
             key: 'home',
@@ -478,20 +336,81 @@ export function ParentDashboardScreen({
         },
     ];
 
+    const noticeMessage = dashboardError ?? todayQuestsError;
+
+    if (hasNoChildren) {
+        return (
+            <AppShell
+                childItems={[]}
+                description="No child profiles are available yet, so the family planner is waiting gently."
+                familySeeds={familySummary}
+                navItems={navItems}
+                onSelectChild={handleChildSelect}
+                selectedChildId=""
+                title="Parent Dashboard"
+            >
+                <ParentStateCard
+                    title="No children added yet"
+                    description="Add your first child profile to begin tracking goals, gentle quests, and shared moments."
+                />
+            </AppShell>
+        );
+    }
+
+    if (!activeChild && isChildSelectorLoading) {
+        return (
+            <AppShell
+                childItems={[]}
+                description="The family board is coming through now."
+                familySeeds={familySummary}
+                isChildSelectorLoading
+                navItems={navItems}
+                onSelectChild={handleChildSelect}
+                selectedChildId=""
+                title="Parent Dashboard"
+            >
+                <Card shadow="none" className="hearth-panel rounded-[24px]">
+                    <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="grid min-w-0 flex-1 gap-2">
+                                <p className="hearth-kicker">Overview</p>
+                                <Skeleton className="h-10 w-44 rounded-[18px]" />
+                            </div>
+                            <Skeleton className="h-10 w-32 rounded-full" />
+                        </div>
+                        <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+                            <OverviewStat label="Suggested" value={0} isLoading />
+                            <OverviewStat label="Approved" value={0} isLoading />
+                            <OverviewStat label="Moments" value={0} isLoading />
+                        </div>
+                    </CardBody>
+                </Card>
+                <GoalCard childName="Your child" goal={null} isLoading seeds={0} />
+                <QuestCard isLoading />
+                <QuestCard isLoading />
+            </AppShell>
+        );
+    }
+
+    if (!activeChild) {
+        return null;
+    }
+
     return (
         <AppShell
             childItems={childItems}
-            description={`Hi ${parentName}. ${activeChild.introMessage}`}
-            familySeeds={familySeeds}
+            description={heroDescription}
+            familySeeds={familySummary}
+            isChildSelectorLoading={isChildSelectorLoading}
             isSwitching={isSwitching}
             navItems={navItems}
             onSelectChild={handleChildSelect}
             selectedChildId={selectedChildId}
             title={tab === 'home' ? 'Parent Dashboard' : tab === 'adventures' ? 'Adventures' : 'Dreams'}
-            notice={activeChild.networkIssue ? (
+            notice={noticeMessage ? (
                 <Card shadow="none" className="rounded-[22px] border border-[rgba(180,106,90,0.12)] bg-[rgba(251,248,241,0.92)]">
                     <CardBody className="p-4 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                        {activeChild.networkIssue}
+                        {noticeMessage}
                     </CardBody>
                 </Card>
             ) : null}
@@ -514,24 +433,9 @@ export function ParentDashboardScreen({
                                 </HearthActionButton>
                             </div>
                             <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                                <div className="hearth-subtle-panel rounded-[20px] p-3 sm:p-4">
-                                    <p className="hearth-kicker">Suggested</p>
-                                    <p className="hearth-number mt-1.5 text-base font-semibold text-[var(--hearth-text-primary)] sm:mt-2 sm:text-lg">
-                                        {suggestedQuests.length}
-                                    </p>
-                                </div>
-                                <div className="hearth-subtle-panel rounded-[20px] p-3 sm:p-4">
-                                    <p className="hearth-kicker">Approved</p>
-                                    <p className="hearth-number mt-1.5 text-base font-semibold text-[var(--hearth-text-primary)] sm:mt-2 sm:text-lg">
-                                        {approvedQuests.length}
-                                    </p>
-                                </div>
-                                <div className="hearth-subtle-panel rounded-[20px] p-3 sm:p-4">
-                                    <p className="hearth-kicker">Moments</p>
-                                    <p className="hearth-number mt-1.5 text-base font-semibold text-[var(--hearth-text-primary)] sm:mt-2 sm:text-lg">
-                                        {activeChild.moment ? 1 : 0}
-                                    </p>
-                                </div>
+                                <OverviewStat label="Suggested" value={suggestedQuests.length} isLoading={isOverviewLoading} />
+                                <OverviewStat label="Approved" value={approvedQuests.length} isLoading={isOverviewLoading} />
+                                <OverviewStat label="Moments" value={momentsCount} isLoading={isOverviewLoading} />
                             </div>
                         </CardBody>
                     </Card>
@@ -539,25 +443,34 @@ export function ParentDashboardScreen({
                     <GoalCard
                         childName={activeChild.name}
                         goal={activeChild.goal}
-                        onPrimaryAction={() => handleTabChange('dreams')}
-                        onSecondaryAction={() => sendSeeds(activeChild.id, 5)}
+                        isLoading={goalsQuery.isLoading}
+                        onPrimaryAction={activeChild.goal ? () => handleTabChange('dreams') : undefined}
                         seeds={activeChild.seeds}
                     />
 
                     <div className="grid gap-3">
-                        {suggestedQuests.length ? (
+                        {isOverviewLoading ? (
+                            <>
+                                <QuestCard isLoading />
+                                <QuestCard isLoading />
+                            </>
+                        ) : suggestedQuests.length ? (
                             suggestedQuests.slice(0, 2).map((quest) => (
                                 <QuestCard
                                     key={quest.id}
-                                    onApprove={() => approveQuest(activeChild.id, quest.id)}
-                                    onReject={() => rejectQuest(activeChild.id, quest.id)}
+                                    onApprove={() => {
+                                        void questActions.startQuest(quest.id);
+                                    }}
+                                    onReject={() => {
+                                        void questActions.removeQuest(quest.id);
+                                    }}
                                     quest={quest}
                                 />
                             ))
                         ) : (
                             <ParentStateCard
-                                title="No suggested quests right now"
-                                description="Use Lena to gather a fresh set when the family is ready."
+                                title="No quests for today yet"
+                                description="Choose three calm quest options when the family is ready."
                                 actionLabel="Generate Quests"
                                 onAction={() => {
                                     void handleGenerateQuests();
@@ -567,7 +480,7 @@ export function ParentDashboardScreen({
                     </div>
 
                     <MascotBubble
-                        message="Welcome back to the homestead. A few gentle wins are enough to move the day forward."
+                        message={`Welcome back. ${activeChild.name}'s next gentle wins can stay simple today.`}
                     />
                 </>
             ) : null}
@@ -596,19 +509,28 @@ export function ParentDashboardScreen({
                     </Card>
 
                     <div className="grid gap-3">
-                        {suggestedQuests.length ? (
+                        {isOverviewLoading ? (
+                            <>
+                                <QuestCard isLoading />
+                                <QuestCard isLoading />
+                            </>
+                        ) : suggestedQuests.length ? (
                             suggestedQuests.map((quest) => (
                                 <QuestCard
                                     key={quest.id}
-                                    onApprove={() => approveQuest(activeChild.id, quest.id)}
-                                    onReject={() => rejectQuest(activeChild.id, quest.id)}
+                                    onApprove={() => {
+                                        void questActions.startQuest(quest.id);
+                                    }}
+                                    onReject={() => {
+                                        void questActions.removeQuest(quest.id);
+                                    }}
                                     quest={quest}
                                 />
                             ))
                         ) : (
                             <ParentStateCard
                                 title="No quests waiting for review"
-                                description="There are no fresh suggestions for this child yet. Generate another calm set when you are ready."
+                                description="There are no fresh quest cards for this child yet."
                                 actionLabel="Generate Quests"
                                 onAction={() => {
                                     void handleGenerateQuests();
@@ -624,7 +546,9 @@ export function ParentDashboardScreen({
                                 {approvedQuests.map((quest) => (
                                     <QuestCard
                                         key={quest.id}
-                                        onComplete={() => completeQuest(activeChild.id, quest.id)}
+                                        onComplete={() => {
+                                            void questActions.completeQuest(quest.id);
+                                        }}
                                         quest={quest}
                                     />
                                 ))}
@@ -639,53 +563,31 @@ export function ParentDashboardScreen({
                     <GoalCard
                         childName={activeChild.name}
                         goal={activeChild.goal}
-                        onPrimaryAction={activeChild.goal ? () => sendSeeds(activeChild.id, 5) : undefined}
-                        onSecondaryAction={() => sendSeeds(activeChild.id, 10)}
-                        primaryActionLabel="Send 5 Seeds"
-                        secondaryActionLabel="Send 10 Seeds"
+                        isLoading={goalsQuery.isLoading}
                         seeds={activeChild.seeds}
                     />
 
                     {activeChild.goal ? (
-                        <>
-                            <Card shadow="none" className="hearth-panel rounded-[24px]">
-                                <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
-                                    <p className="hearth-kicker">Seed Actions</p>
-                                    <div className="flex flex-wrap gap-3">
-                                        <HearthActionButton tone="secondary" onPress={() => sendSeeds(activeChild.id, 5)}>
-                                            +5 Seeds
-                                        </HearthActionButton>
-                                        <HearthActionButton tone="secondary" onPress={() => sendSeeds(activeChild.id, 10)}>
-                                            +10 Seeds
-                                        </HearthActionButton>
-                                        <HearthActionButton tone="ghost">
-                                            Custom Amount
-                                        </HearthActionButton>
-                                    </div>
-                                </CardBody>
-                            </Card>
-
-                            <Card shadow="none" className="hearth-panel rounded-[24px]">
-                                <CardBody className="grid gap-3 p-4 sm:p-5">
-                                    <p className="hearth-kicker">Progress Moments</p>
-                                    <div className="grid gap-2 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                                        <p>10 seeds / first sprout</p>
-                                        <p>{activeChild.goal.milestone} seeds / brighter ledger ribbon</p>
-                                        <p>{activeChild.goal.target} seeds / goal achieved</p>
-                                    </div>
-                                </CardBody>
-                            </Card>
-                        </>
+                        <Card shadow="none" className="hearth-panel rounded-[24px]">
+                            <CardBody className="grid gap-3 p-4 sm:p-5">
+                                <p className="hearth-kicker">Progress Moments</p>
+                                <div className="grid gap-2 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
+                                    <p>Rewards now come from completed quests and shared moments.</p>
+                                    <p>{activeChild.goal.milestone} seeds / brighter ledger ribbon</p>
+                                    <p>{activeChild.goal.target} seeds / goal achieved</p>
+                                </div>
+                            </CardBody>
+                        </Card>
                     ) : (
                         <ParentStateCard
-                            title="Seeds begin once a goal is chosen"
-                            description="A shared goal gives daily rewards context, so the dreams board is waiting for that first family target."
+                            title="No goal has been set for this child"
+                            description="A shared goal gives daily progress context, but the dashboard stays usable without it."
                         />
                     )}
 
                     {activeChild.goal && activeChild.seeds >= activeChild.goal.milestone ? (
                         <MascotBubble
-                            message="A milestone has been reached. Keep the next step calm and meaningful so the goal still feels shared."
+                            message="A milestone has been reached. Let the next step stay steady and shared."
                         />
                     ) : null}
                 </>
@@ -695,12 +597,14 @@ export function ParentDashboardScreen({
                 childName={activeChild.name}
                 errorMessage={questDrawerError}
                 feedbackMessage={questDrawerFeedback}
-                isConfirming={false}
+                isConfirming={isQuestDrawerConfirming}
                 isLoading={isQuestDrawerLoading}
                 isRefreshingOptions={isQuestDrawerRefreshing}
                 isOpen={isQuestDrawerOpen}
                 onBackToSelection={() => setQuestDrawerPhase('select')}
-                onConfirm={handleQuestConfirm}
+                onConfirm={() => {
+                    void handleQuestConfirm();
+                }}
                 onDone={handleQuestDone}
                 onOpenChange={handleQuestDrawerOpenChange}
                 onRegenerateOptions={() => {

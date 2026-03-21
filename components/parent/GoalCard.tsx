@@ -108,12 +108,18 @@ export function GoalCard({
                     </p>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                    <HearthActionButton onPress={onPrimaryAction}>{primaryActionLabel}</HearthActionButton>
-                    <HearthActionButton tone="secondary" onPress={onSecondaryAction}>
-                        {secondaryActionLabel}
-                    </HearthActionButton>
-                </div>
+                {onPrimaryAction || onSecondaryAction ? (
+                    <div className="flex flex-wrap gap-3">
+                        {onPrimaryAction ? (
+                            <HearthActionButton onPress={onPrimaryAction}>{primaryActionLabel}</HearthActionButton>
+                        ) : null}
+                        {onSecondaryAction ? (
+                            <HearthActionButton tone="secondary" onPress={onSecondaryAction}>
+                                {secondaryActionLabel}
+                            </HearthActionButton>
+                        ) : null}
+                    </div>
+                ) : null}
             </CardBody>
         </Card>
     );

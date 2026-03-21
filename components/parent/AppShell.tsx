@@ -9,12 +9,13 @@ import { BottomNavigation, type BottomNavigationItem } from './BottomNavigation'
 type AppShellProps = {
     title: string;
     description: string;
-    familySeeds: number;
+    familySeeds: number | string;
     children: ReactNode;
     childItems: ParentChild[];
     selectedChildId: string;
     onSelectChild: (childId: string) => void;
     childSelectorDisabled?: boolean;
+    isChildSelectorLoading?: boolean;
     navItems: BottomNavigationItem[];
     notice?: ReactNode;
     isSwitching?: boolean;
@@ -29,6 +30,7 @@ export function AppShell({
     selectedChildId,
     onSelectChild,
     childSelectorDisabled = false,
+    isChildSelectorLoading = false,
     navItems,
     notice,
     isSwitching = false,
@@ -54,15 +56,16 @@ export function AppShell({
                                 className="shrink-0 border border-[rgba(230,199,102,0.28)] bg-[rgba(230,199,102,0.18)] px-1 text-[var(--hearth-text-primary)]"
                             >
                                 <span className="hearth-number text-[13px] font-semibold sm:text-sm">
-                                    Family {familySeeds}
+                                    {typeof familySeeds === 'number' ? `Family ${familySeeds}` : familySeeds}
                                 </span>
                             </Chip>
                         </div>
                     </div>
                 </header>
 
-                {childItems.length ? (
+                {childItems.length || isChildSelectorLoading ? (
                     <ChildSelector
+                        isLoading={isChildSelectorLoading}
                         items={childItems}
                         selectedChildId={selectedChildId}
                         onSelect={onSelectChild}
