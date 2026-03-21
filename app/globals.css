@@ -192,6 +192,19 @@
     display: none;
 }
 
+.hearth-loading-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(
+        90deg,
+        rgba(238, 229, 214, 0.68) 0%,
+        rgba(251, 248, 241, 0.96) 48%,
+        rgba(238, 229, 214, 0.68) 100%
+    );
+    background-size: 200% 100%;
+    animation: hearth-shimmer 1.8s ease-in-out infinite;
+}
+
 @utility seed-glow {
   filter: drop-shadow(0 0 6px #facc15);
 }
@@ -235,4 +248,9 @@
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 4px 4px 0px #1c1917; }
   50% { box-shadow: 4px 4px 12px #facc15; }
+}
+
+@keyframes hearth-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }

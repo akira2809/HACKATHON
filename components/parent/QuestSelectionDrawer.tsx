@@ -1,5 +1,6 @@
 'use client';
 
+import { Icon } from '@iconify/react';
 import {
     Chip,
     Drawer,
@@ -7,10 +8,14 @@ import {
     DrawerContent,
     DrawerFooter,
     DrawerHeader,
-    Skeleton,
 } from '@heroui/react';
 import type { ParentQuest } from '@/state/appState';
-import { HearthActionButton, HearthRewardChip } from '@/components/design-system/HearthPrimitives';
+import {
+    HearthActionButton,
+    HearthCategoryChip,
+    HearthRewardChip,
+    getHearthCategoryMeta,
+} from '@/components/design-system/HearthPrimitives';
 
 type QuestSelectionDrawerProps = {
     childName: string;
@@ -18,11 +23,13 @@ type QuestSelectionDrawerProps = {
     feedbackMessage: string | null;
     isConfirming: boolean;
     isLoading: boolean;
+    isRefreshingOptions: boolean;
     isOpen: boolean;
     onBackToSelection: () => void;
     onConfirm: () => void;
     onDone: () => void;
     onOpenChange: (isOpen: boolean) => void;
+    onRegenerateOptions: () => void;
     onRetry: () => void;
     onToggleQuest: (questId: string) => void;
     options: ParentQuest[];
@@ -32,15 +39,20 @@ type QuestSelectionDrawerProps = {
 
 function QuestOptionSkeleton() {
     return (
-        <div className="rounded-[24px] border border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.96)] p-4">
+        <div className="rounded-[24px] border border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.96)] p-4 shadow-[0_10px_22px_rgba(79,107,82,0.05)]">
             <div className="grid gap-3">
                 <div className="flex items-center justify-between gap-3">
-                    <Skeleton className="h-4 w-28 rounded-full" />
-                    <Skeleton className="h-6 w-20 rounded-full" />
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="hearth-loading-shimmer h-8 w-28 rounded-full" />
+                        <div className="hearth-loading-shimmer h-8 w-32 rounded-full" />
+                    </div>
+                    <div className="hearth-loading-shimmer h-8 w-24 rounded-full" />
                 </div>
-                <Skeleton className="h-5 w-44 rounded-full" />
-                <Skeleton className="h-14 rounded-[18px]" />
-                <Skeleton className="h-6 w-24 rounded-full" />
+                <div className="hearth-loading-shimmer h-6 w-52 rounded-full" />
+                <div className="grid gap-2">
+                    <div className="hearth-loading-shimmer h-5 rounded-full" />
+                    <div className="hearth-loading-shimmer h-5 w-[84%] rounded-full" />
+                </div>
             </div>
         </div>
     );
@@ -52,11 +64,13 @@ export function QuestSelectionDrawer({
     feedbackMessage,
     isConfirming,
     isLoading,
+    isRefreshingOptions,
     isOpen,
     onBackToSelection,
     onConfirm,
     onDone,
     onOpenChange,
+    onRegenerateOptions,
     onRetry,
     onToggleQuest,
     options,
@@ -65,6 +79,9 @@ export function QuestSelectionDrawer({
 }: QuestSelectionDrawerProps) {
     const selectedCount = selectedQuestIds.length;
     const selectedQuests = options.filter((quest) => selectedQuestIds.includes(quest.id));
+    const unselectedQuests = options.filter((quest) => !selectedQuestIds.includes(quest.id));
+    const shouldShowRegenerate = phase === 'select' && selectedCount > 0 && selectedCount < 3 && !isLoading;
+    const refreshSkeletonCount = Math.max(1, 5 - selectedCount);
 
     return (
         <Drawer
@@ -105,19 +122,37 @@ export function QuestSelectionDrawer({
                                         ? 'Pick exactly three calm quest options. These will become the suggested set waiting for parent review.'
                                         : 'Review the three chosen quests, then confirm to place them on the dashboard.'}
                                 </p>
+                                {isLoading || isRefreshingOptions ? (
+                                    <div className="flex items-center gap-2 text-[13px] text-[var(--hearth-text-secondary)] sm:text-sm">
+                                        <span className="inline-flex size-7 items-center justify-center rounded-full bg-[rgba(230,199,102,0.18)] text-[var(--hearth-accent-wood)]">
+                                            <Icon icon="lucide:refresh-cw" className="size-4 animate-spin [animation-duration:1.8s]" />
+                                        </span>
+                                        {isRefreshingOptions
+                                            ? `Keeping ${selectedCount} selected ${selectedCount === 1 ? 'quest' : 'quests'} while Lena gathers different ideas...`
+                                            : 'Lena is gathering a fresh set of quest ideas...'}
+                                    </div>
+                                ) : null}
                             </div>
                         </DrawerHeader>
 
                         <DrawerBody className="hearth-scrollbar-hidden max-h-[62vh] gap-3 overflow-y-auto px-4 py-4 sm:px-5">
                             {isLoading ? (
                                 <>
+                                    <div className="rounded-[24px] border border-[rgba(230,199,102,0.2)] bg-[rgba(230,199,102,0.08)] p-4">
+                                        <div className="grid gap-2">
+                                            <p className="hearth-kicker">Fetching From Lena</p>
+                                            <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
+                                                We are preparing five thoughtful quest options for {childName}. This takes a quiet moment.
+                                            </p>
+                                        </div>
+                                    </div>
                                     <QuestOptionSkeleton />
                                     <QuestOptionSkeleton />
                                     <QuestOptionSkeleton />
                                     <QuestOptionSkeleton />
                                     <QuestOptionSkeleton />
                                 </>
-                            ) : errorMessage ? (
+                            ) : errorMessage && !options.length ? (
                                 <div className="grid gap-3 rounded-[24px] border border-[rgba(180,106,90,0.14)] bg-[rgba(251,248,241,0.94)] p-4">
                                     <p className="hearth-kicker">Generation Paused</p>
                                     <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
@@ -126,53 +161,102 @@ export function QuestSelectionDrawer({
                                 </div>
                             ) : phase === 'confirm' ? (
                                 <>
-                                    {selectedQuests.map((quest) => (
-                                        <div
-                                            key={quest.id}
-                                            className="rounded-[24px] border border-[rgba(79,107,82,0.16)] bg-[rgba(216,227,209,0.2)] p-4"
-                                        >
-                                            <div className="grid gap-3">
-                                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                                    <div className="grid min-w-0 flex-1 gap-2">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <Chip
-                                                                radius="full"
-                                                                variant="flat"
-                                                                className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.26)] text-[var(--hearth-text-secondary)]"
-                                                            >
-                                                                <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
-                                                                    {quest.category}
-                                                                </span>
-                                                            </Chip>
-                                                            <Chip
-                                                                radius="full"
-                                                                variant="flat"
-                                                                className="border border-[rgba(230,199,102,0.24)] bg-[rgba(230,199,102,0.18)] text-[var(--hearth-text-primary)]"
-                                                            >
-                                                                <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
-                                                                    Selected
-                                                                </span>
-                                                            </Chip>
+                                    {selectedQuests.map((quest) => {
+                                        const categoryMeta = getHearthCategoryMeta(quest.category);
+
+                                        return (
+                                            <div
+                                                key={quest.id}
+                                                className="rounded-[24px] border border-[rgba(79,107,82,0.16)] bg-[rgba(216,227,209,0.2)] p-4"
+                                            >
+                                                <div className="grid gap-3">
+                                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                                        <div className="grid min-w-0 flex-1 gap-2">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <HearthCategoryChip category={quest.category} />
+                                                                <Chip
+                                                                    radius="full"
+                                                                    variant="flat"
+                                                                    className="border border-[rgba(230,199,102,0.24)] bg-[rgba(230,199,102,0.18)] text-[var(--hearth-text-primary)]"
+                                                                >
+                                                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
+                                                                        Selected
+                                                                    </span>
+                                                                </Chip>
+                                                            </div>
+                                                            <h3 className="text-[0.98rem] font-semibold leading-6 text-[var(--hearth-text-primary)] sm:text-base">
+                                                                {quest.title}
+                                                            </h3>
                                                         </div>
-                                                        <h3 className="text-[0.98rem] font-semibold leading-6 text-[var(--hearth-text-primary)] sm:text-base">
-                                                            {quest.title}
-                                                        </h3>
+                                                        <HearthRewardChip
+                                                            className="shrink-0 whitespace-nowrap"
+                                                            startContent={<Icon icon={categoryMeta.icon} className={`size-3.5 ${categoryMeta.iconClassName}`} />}
+                                                        >
+                                                            {quest.reward} Seeds
+                                                        </HearthRewardChip>
                                                     </div>
-                                                    <HearthRewardChip className="shrink-0 whitespace-nowrap">
-                                                        {quest.reward} Seeds
-                                                    </HearthRewardChip>
+                                                    <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
+                                                        {quest.description}
+                                                    </p>
                                                 </div>
-                                                <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                                                    {quest.description}
-                                                </p>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </>
                             ) : (
                                 <>
-                                    {options.map((quest) => {
+                                    {selectedQuests.map((quest) => {
+                                        const isSelected = true;
+                                        const categoryMeta = getHearthCategoryMeta(quest.category);
+
+                                        return (
+                                            <button
+                                                key={quest.id}
+                                                className="w-full rounded-[24px] border border-[rgba(79,107,82,0.22)] bg-[rgba(216,227,209,0.24)] p-4 text-left shadow-[0_12px_24px_rgba(79,107,82,0.06)] transition-colors duration-200"
+                                                type="button"
+                                                onClick={() => onToggleQuest(quest.id)}
+                                            >
+                                                <div className="grid gap-3">
+                                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                                        <div className="grid min-w-0 flex-1 gap-2">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <HearthCategoryChip category={quest.category} />
+                                                                <Chip
+                                                                    radius="full"
+                                                                    variant="flat"
+                                                                    className="border border-[rgba(230,199,102,0.28)] bg-[rgba(230,199,102,0.18)] text-[var(--hearth-text-primary)]"
+                                                                >
+                                                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
+                                                                        {isSelected ? 'Selected' : 'Tap To Choose'}
+                                                                    </span>
+                                                                </Chip>
+                                                            </div>
+                                                            <h3 className="text-[0.98rem] font-semibold leading-6 text-[var(--hearth-text-primary)] sm:text-base">
+                                                                {quest.title}
+                                                            </h3>
+                                                        </div>
+                                                        <HearthRewardChip
+                                                            className="shrink-0 whitespace-nowrap"
+                                                            startContent={<Icon icon={categoryMeta.icon} className={`size-3.5 ${categoryMeta.iconClassName}`} />}
+                                                        >
+                                                            {quest.reward} Seeds
+                                                        </HearthRewardChip>
+                                                    </div>
+                                                    <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
+                                                        {quest.description}
+                                                    </p>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+
+                                    {isRefreshingOptions
+                                        ? Array.from({ length: refreshSkeletonCount }, (_, index) => (
+                                            <QuestOptionSkeleton key={`refresh-skeleton-${index}`} />
+                                        ))
+                                        : unselectedQuests.map((quest) => {
                                         const isSelected = selectedQuestIds.includes(quest.id);
+                                        const categoryMeta = getHearthCategoryMeta(quest.category);
 
                                         return (
                                             <button
@@ -189,15 +273,7 @@ export function QuestSelectionDrawer({
                                                     <div className="flex flex-wrap items-start justify-between gap-3">
                                                         <div className="grid min-w-0 flex-1 gap-2">
                                                             <div className="flex flex-wrap items-center gap-2">
-                                                                <Chip
-                                                                    radius="full"
-                                                                    variant="flat"
-                                                                    className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.26)] text-[var(--hearth-text-secondary)]"
-                                                                >
-                                                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
-                                                                        {quest.category}
-                                                                    </span>
-                                                                </Chip>
+                                                                <HearthCategoryChip category={quest.category} />
                                                                 <Chip
                                                                     radius="full"
                                                                     variant="flat"
@@ -214,7 +290,10 @@ export function QuestSelectionDrawer({
                                                                 {quest.title}
                                                             </h3>
                                                         </div>
-                                                        <HearthRewardChip className="shrink-0 whitespace-nowrap">
+                                                        <HearthRewardChip
+                                                            className="shrink-0 whitespace-nowrap"
+                                                            startContent={<Icon icon={categoryMeta.icon} className={`size-3.5 ${categoryMeta.iconClassName}`} />}
+                                                        >
                                                             {quest.reward} Seeds
                                                         </HearthRewardChip>
                                                     </div>
@@ -265,9 +344,20 @@ export function QuestSelectionDrawer({
                                     <div className="min-w-0 flex-1">
                                         <p className="hearth-kicker">Selection</p>
                                         <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                                            Choose exactly 3 quest options before continuing.
+                                            {shouldShowRegenerate
+                                                ? 'Keep your selected quests and ask Lena for different ideas in the remaining slots.'
+                                                : 'Choose exactly 3 quest options before continuing.'}
                                         </p>
                                     </div>
+                                    {shouldShowRegenerate ? (
+                                        <HearthActionButton
+                                            isLoading={isRefreshingOptions}
+                                            tone="ghost"
+                                            onPress={onRegenerateOptions}
+                                        >
+                                            Regenerate Others
+                                        </HearthActionButton>
+                                    ) : null}
                                     <HearthActionButton tone="secondary" onPress={onClose}>
                                         Close
                                     </HearthActionButton>

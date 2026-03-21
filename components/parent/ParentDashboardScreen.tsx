@@ -76,20 +76,44 @@ function getInitialTab(value?: string): ParentTab {
 }
 
 function buildQuestDrawerOptions(child: ParentChild, apiQuests: ParentQuest[]) {
+    return buildQuestDrawerOptionsFromSource(child, apiQuests, [], []);
+}
+
+function buildQuestDrawerOptionsFromSource(
+    child: ParentChild,
+    apiQuests: ParentQuest[],
+    lockedQuests: ParentQuest[],
+    excludedTitles: string[],
+) {
     const uniqueQuests: ParentQuest[] = [];
-    const seenTitles = new Set<string>();
+    const seenTitles = new Set<string>(excludedTitles.map((title) => title.trim().toLowerCase()));
+
+    for (const quest of lockedQuests) {
+        const titleKey = quest.title.trim().toLowerCase();
+
+        if (!titleKey || seenTitles.has(titleKey)) {
+            continue;
+        }
+
+        seenTitles.add(titleKey);
+        uniqueQuests.push({
+            ...quest,
+            status: 'suggested',
+        });
+    }
+
     const candidateQuests = [
         ...apiQuests,
+        ...fallbackQuestOptions.map((quest, index) => ({
+            ...quest,
+            id: `${quest.id}-${child.id}-${index}`,
+        })),
         ...child.quests
             .filter((quest) => quest.status === 'suggested')
             .map((quest, index) => ({
                 ...quest,
                 id: `${quest.id}-existing-${index}`,
             })),
-        ...fallbackQuestOptions.map((quest, index) => ({
-            ...quest,
-            id: `${quest.id}-${child.id}-${index}`,
-        })),
     ];
 
     for (const quest of candidateQuests) {
@@ -136,6 +160,7 @@ export function ParentDashboardScreen({
     const [isSwitching, setIsSwitching] = useState(false);
     const [isQuestDrawerOpen, setIsQuestDrawerOpen] = useState(false);
     const [isQuestDrawerLoading, setIsQuestDrawerLoading] = useState(false);
+    const [isQuestDrawerRefreshing, setIsQuestDrawerRefreshing] = useState(false);
     const [questDrawerError, setQuestDrawerError] = useState<string | null>(null);
     const [questDrawerFeedback, setQuestDrawerFeedback] = useState<string | null>(null);
     const [questDrawerPhase, setQuestDrawerPhase] = useState<'select' | 'confirm'>('select');
@@ -199,6 +224,7 @@ export function ParentDashboardScreen({
             generateRequestRef.current += 1;
             setIsQuestDrawerOpen(false);
             setIsQuestDrawerLoading(false);
+            setIsQuestDrawerRefreshing(false);
             setQuestDrawerError(null);
             setQuestDrawerFeedback(null);
             setQuestDrawerPhase('select');
@@ -210,18 +236,32 @@ export function ParentDashboardScreen({
         setIsQuestDrawerOpen(true);
     };
 
-    const handleGenerateQuests = async () => {
+    const handleGenerateQuests = async (preserveSelected = false) => {
         if (!activeChild) {
             return;
         }
 
-        handleQuestDrawerOpenChange(true);
-        setIsQuestDrawerLoading(true);
+        const lockedQuests = preserveSelected
+            ? questDrawerOptions.filter((quest) => selectedQuestIds.includes(quest.id))
+            : [];
+        const excludedTitles = preserveSelected
+            ? questDrawerOptions
+                .filter((quest) => !selectedQuestIds.includes(quest.id))
+                .map((quest) => quest.title)
+            : [];
+
+        if (!preserveSelected) {
+            handleQuestDrawerOpenChange(true);
+            setIsQuestDrawerLoading(true);
+            setQuestDrawerOptions([]);
+            setSelectedQuestIds([]);
+        } else {
+            setIsQuestDrawerRefreshing(true);
+        }
+
         setQuestDrawerError(null);
         setQuestDrawerFeedback(null);
         setQuestDrawerPhase('select');
-        setQuestDrawerOptions([]);
-        setSelectedQuestIds([]);
 
         const requestId = generateRequestRef.current + 1;
         generateRequestRef.current = requestId;
@@ -249,7 +289,9 @@ export function ParentDashboardScreen({
                 }))
                 : [];
 
-            const drawerOptions = buildQuestDrawerOptions(activeChild, normalizedApiQuests);
+            const drawerOptions = preserveSelected
+                ? buildQuestDrawerOptionsFromSource(activeChild, normalizedApiQuests, lockedQuests, excludedTitles)
+                : buildQuestDrawerOptions(activeChild, normalizedApiQuests);
 
             if (!drawerOptions.length) {
                 setQuestDrawerError('The homestead could not gather quest options right now. Please try again in a moment.');
@@ -257,19 +299,33 @@ export function ParentDashboardScreen({
             }
 
             setQuestDrawerOptions(drawerOptions);
+
+            if (preserveSelected) {
+                setSelectedQuestIds(lockedQuests.map((quest) => quest.id));
+                setQuestDrawerFeedback(
+                    lockedQuests.length === 1
+                        ? 'Kept your selected quest and refreshed the remaining options.'
+                        : 'Kept your selected quests and refreshed the remaining options.',
+                );
+            }
         } catch (error) {
             if (generateRequestRef.current !== requestId) {
                 return;
             }
 
-            setQuestDrawerError(
-                error instanceof Error
-                    ? error.message
-                    : 'The homestead could not gather quest options right now.',
-            );
+            const message = error instanceof Error
+                ? error.message
+                : 'The homestead could not gather quest options right now.';
+
+            if (preserveSelected && lockedQuests.length) {
+                setQuestDrawerFeedback(message);
+            } else {
+                setQuestDrawerError(message);
+            }
         } finally {
             if (generateRequestRef.current === requestId) {
                 setIsQuestDrawerLoading(false);
+                setIsQuestDrawerRefreshing(false);
             }
         }
     };
@@ -427,7 +483,9 @@ export function ParentDashboardScreen({
                                         A calm view of {activeChild.name}&apos;s day
                                     </h2>
                                 </div>
-                                <HearthActionButton onPress={handleGenerateQuests}>
+                                <HearthActionButton onPress={() => {
+                                    void handleGenerateQuests();
+                                }}>
                                     Generate Quests
                                 </HearthActionButton>
                             </div>
@@ -615,11 +673,15 @@ export function ParentDashboardScreen({
                 feedbackMessage={questDrawerFeedback}
                 isConfirming={false}
                 isLoading={isQuestDrawerLoading}
+                isRefreshingOptions={isQuestDrawerRefreshing}
                 isOpen={isQuestDrawerOpen}
                 onBackToSelection={() => setQuestDrawerPhase('select')}
                 onConfirm={handleQuestConfirm}
                 onDone={handleQuestDone}
                 onOpenChange={handleQuestDrawerOpenChange}
+                onRegenerateOptions={() => {
+                    void handleGenerateQuests(true);
+                }}
                 onRetry={() => {
                     void handleGenerateQuests();
                 }}
