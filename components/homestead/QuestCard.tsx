@@ -42,6 +42,7 @@ export interface QuestCardProps {
   onFail?: (id: string) => void;
   onApprove?: (id: string) => void;
   isParent?: boolean;
+  isChild?: boolean; // child users cannot change ongoing status
   className?: string;
 }
 
@@ -90,6 +91,7 @@ export function QuestCard({
   onFail,
   onApprove,
   isParent = false,
+  isChild = false,
   className = '',
 }: QuestCardProps) {
   const config = categoryConfig[category];
@@ -171,8 +173,12 @@ export function QuestCard({
           </button>
         )}
 
-        {/* Ongoing → Complete / Fail */}
-        {isOngoing && (
+        {/* Ongoing → In Progress badge (child) or Done/Fail buttons (parent) */}
+        {isOngoing && isChild ? (
+          <span className="px-3 py-1.5 bg-[#FEF9C3] comic-border-2 rounded-xl font-black text-[#CA8A04] uppercase text-xs">
+            In Progress
+          </span>
+        ) : isOngoing && !isChild ? (
           <div className="flex gap-2">
             <button
               onClick={() => onComplete?.(id)}
@@ -187,7 +193,7 @@ export function QuestCard({
               Fail
             </button>
           </div>
-        )}
+        ) : null}
 
         {/* Completed → uncomplete */}
         {isCompleted && onUncomplete && (
@@ -230,6 +236,7 @@ interface QuestListProps {
   onFail?: (id: string) => void;
   onApprove?: (id: string) => void;
   isParent?: boolean;
+  isChild?: boolean;
   className?: string;
 }
 
@@ -242,6 +249,7 @@ export function QuestList({
   onFail,
   onApprove,
   isParent = false,
+  isChild = false,
   className = '',
 }: QuestListProps) {
   return (
@@ -262,6 +270,7 @@ export function QuestList({
             onFail={onFail}
             onApprove={onApprove}
             isParent={isParent}
+            isChild={isChild}
           />
         ))}
       </div>

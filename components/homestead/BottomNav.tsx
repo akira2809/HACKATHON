@@ -8,7 +8,6 @@
 import Link from 'next/link';
 import { usePathname } from '@/i18n/routing';
 import { MaterialIcon } from './TopNav';
-import { useAppStore } from '@/stores';
 
 type NavTab = {
   label: string;
@@ -51,21 +50,17 @@ function getActiveTabLabel(pathname: string, tabs: NavTab[]): string {
 
 export function BottomNav({ variant }: BottomNavProps) {
   const pathname = usePathname();
-  const { role, setRole } = useAppStore();
 
-  // Use prop variant if provided, otherwise fall back to store role
-  const activeRole = variant ?? role;
+  const activeRole = variant ?? 'child';
   const tabs = activeRole === 'parent' ? PARENT_TABS : CHILD_TABS;
   const activeTab = getActiveTabLabel(pathname, tabs);
-
-  const isChild = activeRole === 'child';
 
   return (
     <nav
       className="
         fixed bottom-0 left-0 w-full z-50
         flex justify-around items-center
-        px-4 pb-6 pt-3
+        px-4 pb-8 pt-3
         bg-white/95 backdrop-blur-sm
         border-t-4 border-[#1C1917]
         rounded-t-3xl
@@ -101,38 +96,6 @@ export function BottomNav({ variant }: BottomNavProps) {
         );
       })}
 
-      {/* Role toggle (parent only) */}
-      {isChild && (
-        <button
-          onClick={() => setRole('parent')}
-          className="
-            flex flex-col items-center justify-center
-            px-3 py-1.5 rounded-2xl
-            text-[#1C1917] hover:bg-[#FEF08A]
-            transition-all duration-150 active:scale-90
-          "
-          title="Switch to Parent View"
-        >
-          <MaterialIcon icon="manage_accounts" className="!text-2xl" />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Parent</span>
-        </button>
-      )}
-
-      {!isChild && (
-        <button
-          onClick={() => setRole('child')}
-          className="
-            flex flex-col items-center justify-center
-            px-3 py-1.5 rounded-2xl
-            text-[#1C1917] hover:bg-[#FEF08A]
-            transition-all duration-150 active:scale-90
-          "
-          title="Switch to Child View"
-        >
-          <MaterialIcon icon="face" className="!text-2xl" />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Child</span>
-        </button>
-      )}
     </nav>
   );
 }

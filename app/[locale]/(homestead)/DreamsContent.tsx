@@ -31,7 +31,7 @@ export function DreamsContent() {
   const progressPct = Math.round((dream.current / dream.goal) * 100);
 
   return (
-    <main className="max-w-md mx-auto px-4 pt-20 space-y-8">
+    <main className="max-w-md mx-auto px-4 pt-20 space-y-8 pb-32">
 
       {/* Mascot */}
       <MascotSection
@@ -118,8 +118,6 @@ export function DreamsContent() {
         </div>
       </section>
 
-      {/* Spacer */}
-      <div className="h-12" />
     </main>
   );
 }

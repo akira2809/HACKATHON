@@ -9,5 +9,5 @@ export type { QuestCategory, QuestStatus, QuestCardProps } from './QuestCard';
 export { DreamGoalCard, StoryBadge, SeedHistoryItem } from './DreamGoal';
 export { LenaAvatar, SpeechBubble, MascotSection } from './SpeechBubble';
 export { ComicButton, LinkButton } from './Button';
-export { Modal, ConfirmationModal, RecommendationModal } from './Modal';
+export { Modal, ConfirmationModal, QuestStartModal, RecommendationModal } from './Modal';
 export { StreakBadge } from './StreakBadge';

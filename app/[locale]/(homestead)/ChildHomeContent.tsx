@@ -6,7 +6,7 @@
 // Parent: (homestead)/page.tsx (Server Component)
 // ============================================================
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ComicCard,
   BentoGrid,
@@ -15,6 +15,7 @@ import {
   MascotSection,
   DreamGoalCard,
   ConfirmationModal,
+  QuestStartModal,
   RecommendationModal,
   ProgressBar,
   StreakBadge,
@@ -42,6 +43,13 @@ export function ChildHomeContent() {
     setShowRecommendations,
   } = useQuestStore();
 
+  // Quest start modal state
+  const [showQuestModal, setShowQuestModal] = useState(false);
+  const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
+
+  // Get selected quest data for modal
+  const selectedQuest = todayQuests.find((q) => q.id === selectedQuestId);
+
   // On mount: check streak + auto-fail expired quests + interval
   useEffect(() => {
     checkAndUpdateStreak();
@@ -51,8 +59,21 @@ export function ChildHomeContent() {
   }, [checkAndUpdateStreak, checkExpiredQuests]);
 
   const handleQuestGo = (id: string) => {
-    startQuest(id);
-    setShowWelcome(true);
+    setSelectedQuestId(id);
+    setShowQuestModal(true);
+  };
+
+  const handleQuestStart = () => {
+    if (selectedQuestId) {
+      startQuest(selectedQuestId);
+      setShowQuestModal(false);
+      setSelectedQuestId(null);
+    }
+  };
+
+  const handleQuestModalClose = () => {
+    setShowQuestModal(false);
+    setSelectedQuestId(null);
   };
 
   const handleQuestComplete = (id: string) => {
@@ -82,7 +103,7 @@ export function ChildHomeContent() {
 
   return (
     <>
-      <main className="pt-24 px-4 max-w-2xl mx-auto space-y-8">
+      <main className="pt-24 px-4 max-w-2xl mx-auto space-y-8 pb-32">
 
         {/* 1. Mascot Greeting */}
         <MascotSection message={mascotMessage} />
@@ -151,6 +172,7 @@ export function ChildHomeContent() {
                 onComplete={handleQuestComplete}
                 onUncomplete={handleQuestUncomplete}
                 onFail={handleQuestFail}
+                isChild
               />
             ))}
           </div>
@@ -177,6 +199,21 @@ export function ChildHomeContent() {
         onDismiss={() => setShowWelcome(false)}
         title="Ready for an adventure?"
         description="Your garden is waiting for its first magical seeds! Shall we begin?"
+      />
+
+      {/* Quest Start Modal */}
+      <QuestStartModal
+        isOpen={showQuestModal}
+        questTitle={selectedQuest?.title ?? ''}
+        questDescription={selectedQuest?.description}
+        questIcon={selectedQuest?.icon ?? 'task'}
+        questCategory={selectedQuest?.category}
+        reward={selectedQuest?.reward ?? 0}
+        durationMinutes={selectedQuest?.expiredAt && selectedQuest?.startedAt
+          ? Math.round((selectedQuest.expiredAt - selectedQuest.startedAt) / 60000)
+          : 120}
+        onStart={handleQuestStart}
+        onClose={handleQuestModalClose}
       />
 
       {/* Recommendations Modal */}

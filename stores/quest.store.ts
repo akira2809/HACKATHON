@@ -8,8 +8,8 @@
  * - `devtools` middleware → Redux DevTools
  */
 
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { devtools, persist } from "zustand/middleware";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -26,24 +26,29 @@ import { devtools, persist } from 'zustand/middleware';
  */
 
 export type QuestStatus =
-  | 'pending'        // Not started
-  | 'ongoing'       // In progress
-  | 'pending-parent' // Waiting for parent approval
-  | 'completed'     // Done, reward auto-claimed
-  | 'failed'         // Expired or manually failed
-  | 'approved';      // Parent approved
+  | "pending" // Not started
+  | "ongoing" // In progress
+  | "pending-parent" // Waiting for parent approval
+  | "completed" // Done, reward auto-claimed
+  | "failed" // Expired or manually failed
+  | "approved"; // Parent approved
 
-export type QuestCategory = 'nature' | 'learning' | 'exercise' | 'responsibility';
+export type QuestCategory =
+  | "nature"
+  | "learning"
+  | "exercise"
+  | "responsibility";
 
 export interface Quest {
   id: string;
   title: string;
+  description?: string;
   category: QuestCategory;
   icon: string;
   reward: number;
   status: QuestStatus;
   startedAt?: number; // timestamp when "GO!" clicked
-  expiredAt?: number;  // deadline timestamp
+  expiredAt?: number; // deadline timestamp
 }
 
 export interface QuestRecommendation {
@@ -114,15 +119,57 @@ type QuestStore = QuestState & QuestActions;
 // ─── Initial Data ────────────────────────────────────────────────────────────
 
 const INITIAL_QUESTS: Quest[] = [
-  { id: 'q1', title: 'Water the Sunflowers', category: 'nature',    icon: 'water_drop',   reward: 10, status: 'pending' },
-  { id: 'q2', title: 'Feed the Bunnies',     category: 'nature',    icon: 'pets',         reward: 15, status: 'pending' },
-  { id: 'q3', title: 'Magic Dust Sorting',   category: 'learning', icon: 'auto_awesome', reward: 20, status: 'pending' },
+  {
+    id: "q1",
+    title: "Water the Sunflowers",
+    category: "nature",
+    icon: "water_drop",
+    reward: 10,
+    status: "pending",
+  },
+  {
+    id: "q2",
+    title: "Feed the Bunnies",
+    category: "nature",
+    icon: "pets",
+    reward: 15,
+    status: "pending",
+  },
+  {
+    id: "q3",
+    title: "Magic Dust Sorting",
+    category: "learning",
+    icon: "auto_awesome",
+    reward: 20,
+    status: "pending",
+  },
 ];
 
 const INITIAL_RECOMMENDATIONS: QuestRecommendation[] = [
-  { id: 'r1', title: 'Plant a Magic Seed',    category: 'Nature Interest',   icon: 'potted_plant', color: 'text-[#CA8A04]', bgColor: 'bg-[#FEF08A]' },
-  { id: 'r2', title: 'Build a Lego Fortress', category: 'Building Interest', icon: 'architecture',  color: 'text-[#E11D48]', bgColor: 'bg-[#FECDD3]' },
-  { id: 'r3', title: 'Paint a Sunset',        category: 'Art Interest',       icon: 'palette',       color: 'text-[#0284C7]', bgColor: 'bg-[#BAE6FD]' },
+  {
+    id: "r1",
+    title: "Plant a Magic Seed",
+    category: "Nature Interest",
+    icon: "potted_plant",
+    color: "text-[#CA8A04]",
+    bgColor: "bg-[#FEF08A]",
+  },
+  {
+    id: "r2",
+    title: "Build a Lego Fortress",
+    category: "Building Interest",
+    icon: "architecture",
+    color: "text-[#E11D48]",
+    bgColor: "bg-[#FECDD3]",
+  },
+  {
+    id: "r3",
+    title: "Paint a Sunset",
+    category: "Art Interest",
+    icon: "palette",
+    color: "text-[#0284C7]",
+    bgColor: "bg-[#BAE6FD]",
+  },
 ];
 
 // ─── Store ───────────────────────────────────────────────────────────────────
@@ -148,8 +195,13 @@ export const useQuestStore = create<QuestStore>()(
           set((state) => ({
             todayQuests: state.todayQuests.map((q) =>
               q.id === id
-                ? { ...q, status: 'ongoing', startedAt: Date.now(), expiredAt: Date.now() + durationMs }
-                : q
+                ? {
+                    ...q,
+                    status: "ongoing",
+                    startedAt: Date.now(),
+                    expiredAt: Date.now() + durationMs,
+                  }
+                : q,
             ),
           })),
 
@@ -172,7 +224,7 @@ export const useQuestStore = create<QuestStore>()(
 
           set({
             todayQuests: state.todayQuests.map((q) =>
-              q.id === id ? { ...q, status: 'completed' } : q
+              q.id === id ? { ...q, status: "completed" } : q,
             ),
             seeds: state.seeds + (quest?.reward ?? 0),
             lastCompletedDate: today,
@@ -184,8 +236,13 @@ export const useQuestStore = create<QuestStore>()(
           set((state) => ({
             todayQuests: state.todayQuests.map((q) =>
               q.id === id
-                ? { ...q, status: 'pending', startedAt: undefined, expiredAt: undefined }
-                : q
+                ? {
+                    ...q,
+                    status: "pending",
+                    startedAt: undefined,
+                    expiredAt: undefined,
+                  }
+                : q,
             ),
           })),
 
@@ -193,15 +250,20 @@ export const useQuestStore = create<QuestStore>()(
           set((state) => ({
             todayQuests: state.todayQuests.map((q) =>
               q.id === id
-                ? { ...q, status: 'failed', startedAt: undefined, expiredAt: undefined }
-                : q
+                ? {
+                    ...q,
+                    status: "failed",
+                    startedAt: undefined,
+                    expiredAt: undefined,
+                  }
+                : q,
             ),
           })),
 
         approveQuest: (id) =>
           set((state) => ({
             todayQuests: state.todayQuests.map((q) =>
-              q.id === id ? { ...q, status: 'approved' } : q
+              q.id === id ? { ...q, status: "approved" } : q,
             ),
           })),
 
@@ -209,11 +271,18 @@ export const useQuestStore = create<QuestStore>()(
           set((state) => {
             const now = Date.now();
             const updated = state.todayQuests.map((q) =>
-              q.status === 'ongoing' && q.expiredAt && now > q.expiredAt
-                ? { ...q, status: 'failed' as const, startedAt: undefined, expiredAt: undefined }
-                : q
+              q.status === "ongoing" && q.expiredAt && now > q.expiredAt
+                ? {
+                    ...q,
+                    status: "failed" as const,
+                    startedAt: undefined,
+                    expiredAt: undefined,
+                  }
+                : q,
             );
-            const changed = updated.some((q, i) => q.status !== state.todayQuests[i].status);
+            const changed = updated.some(
+              (q, i) => q.status !== state.todayQuests[i].status,
+            );
             return changed ? { todayQuests: updated } : state;
           }),
 
@@ -225,7 +294,8 @@ export const useQuestStore = create<QuestStore>()(
         // ── Seeds & XP ─────────────────────────────────────────────────────
 
         addSeeds: (amount) => set((state) => ({ seeds: state.seeds + amount })),
-        deductSeeds: (amount) => set((state) => ({ seeds: Math.max(0, state.seeds - amount) })),
+        deductSeeds: (amount) =>
+          set((state) => ({ seeds: Math.max(0, state.seeds - amount) })),
 
         addXp: (amount) =>
           set((state) => {
@@ -257,7 +327,7 @@ export const useQuestStore = create<QuestStore>()(
         resetTodayQuests: () => set({ todayQuests: INITIAL_QUESTS }),
       }),
       {
-        name: 'quest-storage',
+        name: "quest-storage",
         partialize: (state) => ({
           seeds: state.seeds,
           level: state.level,
@@ -267,8 +337,8 @@ export const useQuestStore = create<QuestStore>()(
           streak: state.streak,
           lastCompletedDate: state.lastCompletedDate,
         }),
-      }
+      },
     ),
-    { name: 'quest-store' }
-  )
+    { name: "quest-store" },
+  ),
 );

@@ -172,6 +172,134 @@ export function ConfirmationModal({
 }
 
 /* ============================================================
+   QuestStartModal — Confirm before starting a quest
+   ============================================================ */
+
+interface QuestStartModalProps {
+  isOpen: boolean;
+  questTitle: string;
+  questDescription?: string;
+  questIcon: string;
+  questCategory?: string;
+  reward: number;
+  durationMinutes?: number;
+  onStart: () => void;
+  onClose: () => void;
+}
+
+export function QuestStartModal({
+  isOpen,
+  questTitle,
+  questDescription,
+  questIcon,
+  questCategory,
+  reward,
+  durationMinutes = 120,
+  onStart,
+  onClose,
+}: QuestStartModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="md">
+      {/* Floating mascot */}
+      <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-40 h-40">
+        <img
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnBrgWHXMLqCU5zBLdyhyq4jSjAPA5_W_K3HEfECp5jwnZbBCvVDbuN875FOeDnN4bQQc9aBEJgPBfyGoK9XnGE95B3v9ojDUfSUwdUmnqhE1BVpD4cCk7EcQq_VHNA3jODrniR5bShdZaeZHVvC4DmulipFvv0KnjxCUcT_T60NFq2HGtaRfA8nkcLcOjfvazQmBsXxhaS0y1iiaBOsEZjHKXgIpv70ugmblSczhdZxXNKW1zoSeeBchLEGJ8ZGlUdTfSQnmlDEhC"
+          alt="Lena the flower nymph"
+          className="w-full h-full object-contain drop-shadow-[0_8px_0_rgba(28,25,23,1)]"
+        />
+      </div>
+
+      <div className="mt-16 w-full">
+        {/* Magic icon */}
+        <div className="flex justify-center mb-2">
+          <MaterialIcon icon="auto_awesome" filled className="text-[#A855F7] !text-3xl animate-sparkle" />
+        </div>
+
+        {/* Title */}
+        <h1 className="text-3xl font-black text-[#1C1917] uppercase tracking-tight leading-none mb-4">
+          Ready to Start?
+        </h1>
+
+        {/* Quest info card */}
+        <div className="bg-[#F0FDF4] comic-border-2 p-4 rounded-2xl mb-4 text-left">
+          <div className="flex items-center gap-3 mb-2">
+            <MaterialIcon icon={questIcon} className="!text-3xl text-[#059669]" />
+            <div>
+              <p className="font-black text-[#1C1917] text-sm">{questTitle}</p>
+              {questCategory && (
+                <p className="text-[10px] font-bold uppercase text-[#059669]">{questCategory}</p>
+              )}
+            </div>
+          </div>
+          {questDescription && (
+            <p className="text-xs font-bold text-[#3e484f]">{questDescription}</p>
+          )}
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#A7F3D0]">
+            <span className="text-[10px] font-black uppercase text-[#CA8A04]">
+              +{reward} Seeds
+            </span>
+            <span className="text-[10px] font-black uppercase text-[#F472B6]">
+              ⏱ {durationMinutes} min
+            </span>
+          </div>
+        </div>
+
+        {/* Description */}
+        <p className="text-[#1C1917] font-bold text-lg opacity-80 mb-6 leading-tight">
+          Are you ready? Once you start, the clock will begin ticking!
+        </p>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-3 w-full">
+          <ComicButton
+            variant="primary"
+            size="lg"
+            fullWidth
+            onClick={onStart}
+            className="bg-[#38BDF8] hover:bg-[#0EA5E9] comic-shadow"
+          >
+            LET'S GO! 🚀
+          </ComicButton>
+
+          <button
+            onClick={onClose}
+            className="w-full py-3 px-6 rounded-xl hover:bg-[#F0FDFA] transition-colors"
+          >
+            <span className="text-[#1C1917] font-bold uppercase tracking-widest text-sm opacity-60">
+              Not yet
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Floating decorations */}
+      <div
+        className="
+          absolute -bottom-6 -right-6 w-14 h-14
+          bg-[#34D399] comic-border-2 comic-shadow-sm
+          rounded-2xl flex items-center justify-center
+          rotate-12
+        "
+      >
+        <MaterialIcon icon="flag" filled className="text-white !text-2xl" />
+      </div>
+      <div
+        className="
+          absolute -top-4 -left-4 w-12 h-12
+          bg-[#FB7185] comic-border-2 comic-shadow-sm
+          rounded-full flex items-center justify-center
+          -rotate-12
+        "
+      >
+        <MaterialIcon icon="stars" filled className="text-white !text-xl" />
+      </div>
+    </Modal>
+  );
+}
+
+/* ============================================================
    RecommendationModal — Recommendations popup (Screen 7)
    ============================================================ */
 
