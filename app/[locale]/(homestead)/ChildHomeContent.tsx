@@ -7,7 +7,6 @@
 // ============================================================
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   ComicCard,
   BentoGrid,
@@ -23,9 +22,10 @@ import {
 } from "@/components/homestead";
 import { useQuestStore } from "@/stores";
 import { getChildQuestsFromStorage, getAvailableChildIds } from "@/lib/child-quests";
+import { useChildSupabaseQuests } from "@/hooks/use-child-supabase-quests";
+import { useChildSupabaseHomestead } from "@/hooks/use-child-supabase-homestead";
 
 export function ChildHomeContent() {
-  const router = useRouter();
   const {
     seeds,
     streak,
@@ -48,6 +48,13 @@ export function ChildHomeContent() {
   const [showQuestModal, setShowQuestModal] = useState(false);
   const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const {
+    error: supabaseError,
+    hasSupabase,
+    isLoading: isSupabaseLoading,
+    updateRemoteStatus,
+  } = useChildSupabaseQuests();
+  const { recordPreference } = useChildSupabaseHomestead();
 
   // Get selected quest data for modal
   const selectedQuest = todayQuests.find((q) => q.id === selectedQuestId);
@@ -56,6 +63,10 @@ export function ChildHomeContent() {
   useEffect(() => {
     // Sync approved quests from parent dashboard
     const syncQuests = () => {
+      if (hasSupabase) {
+        return;
+      }
+
       const childIds = getAvailableChildIds();
 
       if (childIds.length > 0) {
@@ -95,7 +106,7 @@ export function ChildHomeContent() {
     // Set up interval for expired check
     const interval = setInterval(checkExpiredQuests, 60_000);
     return () => clearInterval(interval);
-  }, [checkAndUpdateStreak, checkExpiredQuests, initFromData]);
+  }, [checkAndUpdateStreak, checkExpiredQuests, hasSupabase, initFromData]);
 
   const handleQuestGo = (id: string) => {
     setSelectedQuestId(id);
@@ -105,6 +116,7 @@ export function ChildHomeContent() {
   const handleQuestStart = () => {
     if (selectedQuestId) {
       startQuest(selectedQuestId);
+      void updateRemoteStatus(selectedQuestId, "ongoing");
       setShowQuestModal(false);
       setSelectedQuestId(null);
     }
@@ -116,7 +128,15 @@ export function ChildHomeContent() {
   };
 
   const handleQuestComplete = (id: string) => {
+    const quest = todayQuests.find((item) => item.id === id);
     completeQuest(id);
+    void updateRemoteStatus(id, "completed", {
+      nextCoins: seeds + (quest?.reward ?? 0),
+      reward: quest?.reward ?? 0,
+      questTitle: quest?.title ?? "Quest",
+      nextStreak: streak + 1,
+      longestStreak: streak + 1,
+    });
   };
 
   const handleQuestUncomplete = (id: string) => {
@@ -125,11 +145,17 @@ export function ChildHomeContent() {
 
   const handleQuestFail = (id: string) => {
     failQuest(id);
+    void updateRemoteStatus(id, "failed");
   };
 
-  const handleRecommendationSelect = () => {
+  const handleRecommendationSelect = (recommendationId: string) => {
     setShowRecommendations(false);
     setShowWelcome(true);
+    const picked = recommendations.find((item) => item.id === recommendationId);
+
+    if (picked) {
+      void recordPreference(picked.title, 2);
+    }
   };
 
   const handleOpenRecommendations = () => {
@@ -144,11 +170,23 @@ export function ChildHomeContent() {
         ? `${pendingCount} quests left — keep going! 💪`
         : "All done! You're a superstar! ⭐";
 
+  const syncMessage = supabaseError
+    ? `Supabase sync paused: ${supabaseError}`
+    : isSupabaseLoading || isSyncing
+      ? "Syncing today's quests..."
+      : null;
+
   return (
     <>
       <main className="pt-24 px-4 max-w-2xl mx-auto space-y-8 pb-10">
         {/* 1. Mascot Greeting */}
         <MascotSection message={mascotMessage} />
+
+        {syncMessage ? (
+          <div className="rounded-2xl border-4 border-[#1C1917] bg-white px-4 py-3 text-center text-sm font-bold text-[#7E22CE] comic-shadow">
+            {syncMessage}
+          </div>
+        ) : null}
 
         {/* 2. Stats Grid */}
         <BentoGrid cols={2} gap="md">

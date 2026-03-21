@@ -16,6 +16,7 @@ import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/de
 import { HearthActionButton } from '@/components/design-system/HearthPrimitives';
 import { ParentStateCard } from './ParentStateCard';
 import { saveApprovedQuestToStorage } from '@/lib/child-quests';
+import { useParentSupabaseFamily } from '@/hooks/use-parent-supabase-family';
 
 type ParentDashboardScreenProps = {
     initialTab?: string;
@@ -159,6 +160,16 @@ export function ParentDashboardScreen({
     const sendSeeds = useAppState((state) => state.sendSeeds);
     const startGlobalLoading = useGlobalLoadingState((state) => state.startLoading);
     const stopGlobalLoading = useGlobalLoadingState((state) => state.stopLoading);
+    const {
+        approveSuggestedQuests,
+        createDefaultGoal,
+        error: supabaseError,
+        hasSupabase,
+        isLoading: isSupabaseLoading,
+        markQuestCompleted,
+        raiseGoalTarget,
+        syncChildCoins,
+    } = useParentSupabaseFamily();
 
     const [tab, setTab] = useState<ParentTab>(getInitialTab(initialTab));
     const [isSwitching, setIsSwitching] = useState(false);
@@ -170,6 +181,7 @@ export function ParentDashboardScreen({
     const [questDrawerPhase, setQuestDrawerPhase] = useState<'select' | 'confirm'>('select');
     const [questDrawerOptions, setQuestDrawerOptions] = useState<ParentQuest[]>([]);
     const [selectedQuestIds, setSelectedQuestIds] = useState<string[]>([]);
+    const [dashboardMessage, setDashboardMessage] = useState<string | null>(null);
     const switchTimeoutRef = useRef<number | null>(null);
     const generateRequestRef = useRef(0);
 
@@ -211,6 +223,7 @@ export function ParentDashboardScreen({
         }
 
         setIsSwitching(true);
+        setDashboardMessage(null);
         handleQuestDrawerOpenChange(false);
         selectChild(childId);
 
@@ -387,10 +400,32 @@ export function ParentDashboardScreen({
             return;
         }
 
-        applyGeneratedQuests(
-            activeChild.id,
-            questDrawerOptions.filter((quest) => selectedQuestIds.includes(quest.id)),
-        );
+        const selectedQuests = questDrawerOptions.filter((quest) => selectedQuestIds.includes(quest.id));
+
+        if (hasSupabase) {
+            void (async () => {
+                const didSave = await approveSuggestedQuests(activeChild.id, selectedQuests);
+
+                if (didSave) {
+                    selectedQuests.forEach((quest) => {
+                        saveApprovedQuestToStorage(activeChild.id, {
+                            id: quest.id,
+                            title: quest.title,
+                            reward: quest.reward,
+                            category: quest.category,
+                            description: quest.description,
+                        });
+                    });
+                    handleQuestDrawerOpenChange(false);
+                } else {
+                    setQuestDrawerFeedback('Could not save the approved quests to Supabase just yet.');
+                }
+            })();
+
+            return;
+        }
+
+        applyGeneratedQuests(activeChild.id, selectedQuests);
         handleQuestDrawerOpenChange(false);
     };
 
@@ -489,10 +524,10 @@ export function ParentDashboardScreen({
             onSelectChild={handleChildSelect}
             selectedChildId={selectedChildId}
             title={tab === 'home' ? 'Parent Dashboard' : tab === 'adventures' ? 'Adventures' : 'Dreams'}
-            notice={activeChild.networkIssue ? (
+            notice={activeChild.networkIssue || supabaseError ? (
                 <Card shadow="none" className="rounded-[22px] border border-[rgba(180,106,90,0.12)] bg-[rgba(251,248,241,0.92)]">
                     <CardBody className="p-4 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                        {activeChild.networkIssue}
+                        {activeChild.networkIssue ?? supabaseError}
                     </CardBody>
                 </Card>
             ) : null}
@@ -511,7 +546,7 @@ export function ParentDashboardScreen({
                                 <HearthActionButton onPress={() => {
                                     void handleGenerateQuests();
                                 }}>
-                                    Generate Quests
+                                    {isSupabaseLoading ? 'Syncing…' : 'Generate Quests'}
                                 </HearthActionButton>
                             </div>
                             <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
@@ -537,11 +572,23 @@ export function ParentDashboardScreen({
                         </CardBody>
                     </Card>
 
+                    {dashboardMessage ? (
+                        <ParentStateCard
+                            title="Homestead Update"
+                            description={dashboardMessage}
+                        />
+                    ) : null}
+
                     <GoalCard
                         childName={activeChild.name}
                         goal={activeChild.goal}
                         onPrimaryAction={() => handleTabChange('dreams')}
-                        onSecondaryAction={() => sendSeeds(activeChild.id, 5)}
+                        onSecondaryAction={() => {
+                            sendSeeds(activeChild.id, 5);
+                            if (hasSupabase) {
+                                void syncChildCoins(activeChild.id, activeChild.seeds + 5, 'seed_sent', 5);
+                            }
+                        }}
                         seeds={activeChild.seeds}
                     />
 
@@ -552,15 +599,18 @@ export function ParentDashboardScreen({
                                     key={quest.id}
                                     onApprove={() => {
                                       // Save to localStorage for child dashboard
-                                      saveApprovedQuestToStorage(activeChild.id, {
+                                    saveApprovedQuestToStorage(activeChild.id, {
                                         id: quest.id,
                                         title: quest.title,
                                         reward: quest.reward,
                                         category: quest.category,
                                         description: quest.description,
                                       });
-                                      // Also update appState
-                                      approveQuest(activeChild.id, quest.id);
+                                      if (hasSupabase) {
+                                          void approveSuggestedQuests(activeChild.id, [quest]);
+                                      } else {
+                                          approveQuest(activeChild.id, quest.id);
+                                      }
                                     }}
                                     onReject={() => rejectQuest(activeChild.id, quest.id)}
                                     quest={quest}
@@ -621,8 +671,11 @@ export function ParentDashboardScreen({
                                         category: quest.category,
                                         description: quest.description,
                                       });
-                                      // Also update appState
-                                      approveQuest(activeChild.id, quest.id);
+                                      if (hasSupabase) {
+                                          void approveSuggestedQuests(activeChild.id, [quest]);
+                                      } else {
+                                          approveQuest(activeChild.id, quest.id);
+                                      }
                                     }}
                                     onReject={() => rejectQuest(activeChild.id, quest.id)}
                                     quest={quest}
@@ -645,14 +698,33 @@ export function ParentDashboardScreen({
                             <CardBody className="grid gap-3 p-4 sm:p-5">
                                 <p className="hearth-kicker">Approved Today</p>
                                 {approvedQuests.map((quest) => (
-                                    <QuestCard
-                                        key={quest.id}
-                                        onComplete={() => completeQuest(activeChild.id, quest.id)}
-                                        quest={quest}
-                                    />
-                                ))}
-                            </CardBody>
-                        </Card>
+                                <QuestCard
+                                    key={quest.id}
+                                    onComplete={() => {
+                                        if (hasSupabase) {
+                                            void (async () => {
+                                                const synced = await markQuestCompleted({
+                                                    questId: quest.id,
+                                                    childId: activeChild.id,
+                                                    nextCoins: activeChild.seeds + quest.reward,
+                                                    reward: quest.reward,
+                                                    questTitle: quest.title,
+                                                });
+
+                                                if (synced) {
+                                                    completeQuest(activeChild.id, quest.id);
+                                                }
+                                            })();
+                                            return;
+                                        }
+
+                                        completeQuest(activeChild.id, quest.id);
+                                    }}
+                                    quest={quest}
+                                />
+                            ))}
+                        </CardBody>
+                    </Card>
                     ) : null}
                 </>
             ) : null}
@@ -662,9 +734,35 @@ export function ParentDashboardScreen({
                     <GoalCard
                         childName={activeChild.name}
                         goal={activeChild.goal}
-                        onPrimaryAction={activeChild.goal ? () => sendSeeds(activeChild.id, 5) : undefined}
-                        onSecondaryAction={() => sendSeeds(activeChild.id, 10)}
-                        primaryActionLabel="Send 5 Seeds"
+                        onPrimaryAction={activeChild.goal
+                            ? () => {
+                                sendSeeds(activeChild.id, 5);
+                                if (hasSupabase) {
+                                    void syncChildCoins(activeChild.id, activeChild.seeds + 5, 'seed_sent', 5);
+                                }
+                              }
+                            : () => {
+                                if (hasSupabase) {
+                                    void (async () => {
+                                        const created = await createDefaultGoal(activeChild.id, activeChild.name);
+                                        setDashboardMessage(
+                                            created
+                                                ? `A first shared goal is now active for ${activeChild.name}.`
+                                                : 'Could not create the first goal yet.'
+                                        );
+                                    })();
+                                    return;
+                                }
+
+                                setDashboardMessage('Goal creation is waiting for Supabase configuration.');
+                              }}
+                        onSecondaryAction={() => {
+                            sendSeeds(activeChild.id, 10);
+                            if (hasSupabase) {
+                                void syncChildCoins(activeChild.id, activeChild.seeds + 10, 'seed_sent', 10);
+                            }
+                        }}
+                        primaryActionLabel={activeChild.goal ? 'Send 5 Seeds' : 'Create First Goal'}
                         secondaryActionLabel="Send 10 Seeds"
                         seeds={activeChild.seeds}
                     />
@@ -675,13 +773,37 @@ export function ParentDashboardScreen({
                                 <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
                                     <p className="hearth-kicker">Seed Actions</p>
                                     <div className="flex flex-wrap gap-3">
-                                        <HearthActionButton tone="secondary" onPress={() => sendSeeds(activeChild.id, 5)}>
+                                        <HearthActionButton tone="secondary" onPress={() => {
+                                            sendSeeds(activeChild.id, 5);
+                                            if (hasSupabase) {
+                                                void syncChildCoins(activeChild.id, activeChild.seeds + 5, 'seed_sent', 5);
+                                            }
+                                        }}>
                                             +5 Seeds
                                         </HearthActionButton>
-                                        <HearthActionButton tone="secondary" onPress={() => sendSeeds(activeChild.id, 10)}>
+                                        <HearthActionButton tone="secondary" onPress={() => {
+                                            sendSeeds(activeChild.id, 10);
+                                            if (hasSupabase) {
+                                                void syncChildCoins(activeChild.id, activeChild.seeds + 10, 'seed_sent', 10);
+                                            }
+                                        }}>
                                             +10 Seeds
                                         </HearthActionButton>
-                                        <HearthActionButton tone="ghost">
+                                        <HearthActionButton tone="ghost" onPress={() => {
+                                            if (hasSupabase) {
+                                                void (async () => {
+                                                    const updated = await raiseGoalTarget(activeChild.id, activeChild.goal, 20);
+                                                    setDashboardMessage(
+                                                        updated
+                                                            ? `${activeChild.name}'s goal target was gently raised by 20 seeds.`
+                                                            : 'Could not adjust the goal target yet.'
+                                                    );
+                                                })();
+                                                return;
+                                            }
+
+                                            setDashboardMessage('Goal target updates are waiting for Supabase configuration.');
+                                        }}>
                                             Custom Amount
                                         </HearthActionButton>
                                     </div>

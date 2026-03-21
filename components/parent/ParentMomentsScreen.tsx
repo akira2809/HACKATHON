@@ -10,6 +10,7 @@ import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/de
 import { buildLocalizedHref } from '@/lib/locale-path';
 import { useAppState } from '@/state/appState';
 import { ParentStateCard } from './ParentStateCard';
+import { useParentSupabaseFamily } from '@/hooks/use-parent-supabase-family';
 
 export function ParentMomentsScreen() {
     const params = useParams<{ locale: string }>();
@@ -21,6 +22,16 @@ export function ParentMomentsScreen() {
     const lockedChildId = useAppState((state) => state.lockedChildId);
     const selectChild = useAppState((state) => state.selectChild);
     const startMomentFlow = useAppState((state) => state.startMomentFlow);
+    const attachMomentId = useAppState((state) => state.attachMomentId);
+    const setMomentForChild = useAppState((state) => state.setMomentForChild);
+    const {
+        ensureMomentActivity,
+        error: supabaseError,
+        generateMomentSuggestion,
+        hasSupabase,
+        isMutating: isSupabaseMutating,
+        refetch,
+    } = useParentSupabaseFamily();
 
     const [isSwitching, setIsSwitching] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -69,6 +80,30 @@ export function ParentMomentsScreen() {
             return;
         }
 
+        if (hasSupabase) {
+            void (async () => {
+                setIsRefreshing(true);
+                setSupportMessage(null);
+                const suggestion = await generateMomentSuggestion({
+                    childId: activeChild.id,
+                    childName: activeChild.name,
+                    age: activeChild.age,
+                });
+
+                if (suggestion?.encouragement) {
+                    setSupportMessage(suggestion.encouragement);
+                } else {
+                    const synced = await refetch();
+                    if (!synced) {
+                        setSupportMessage('Supabase could not refresh the current moments data right now.');
+                    }
+                }
+
+                setIsRefreshing(false);
+            })();
+            return;
+        }
+
         setIsRefreshing(true);
         setSupportMessage(null);
 
@@ -100,8 +135,28 @@ export function ParentMomentsScreen() {
             return;
         }
 
-        startMomentFlow(activeChild.id);
-        goTo('/parent/moments/proximity');
+        const moment = activeChild.moment;
+
+        void (async () => {
+            if (hasSupabase) {
+                const syncResult = await ensureMomentActivity(activeChild.id, moment);
+
+                if (!syncResult?.activityId) {
+                    setSupportMessage('The shared activity could not be saved to Supabase yet.');
+                    return;
+                }
+
+                attachMomentId(activeChild.id, syncResult.activityId);
+                setMomentForChild(activeChild.id, {
+                    ...moment,
+                    id: syncResult.activityId,
+                    calendarEventId: syncResult.calendarEventId ?? moment.calendarEventId,
+                });
+            }
+
+            startMomentFlow(activeChild.id);
+            goTo('/parent/moments/proximity');
+        })();
     };
 
     const navItems = [
@@ -171,10 +226,10 @@ export function ParentMomentsScreen() {
             onSelectChild={handleChildSelect}
             selectedChildId={selectedChildId}
             title="Moments Planner"
-            notice={activeChild.networkIssue ? (
+            notice={activeChild.networkIssue || supabaseError ? (
                 <Card shadow="none" className="rounded-[22px] border border-[rgba(180,106,90,0.12)] bg-[rgba(251,248,241,0.92)]">
                     <CardBody className="p-4 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                        {activeChild.networkIssue}
+                        {activeChild.networkIssue ?? supabaseError}
                     </CardBody>
                 </Card>
             ) : null}
@@ -207,7 +262,7 @@ export function ParentMomentsScreen() {
             <MomentCard
                 childName={activeChild.name}
                 errorMessage={activeChild.momentError}
-                isLoading={isRefreshing}
+                isLoading={isRefreshing || isSupabaseMutating}
                 moment={activeChild.moment}
                 onPrimaryAction={handleStartMoment}
                 onSecondaryAction={handleRefreshMoment}

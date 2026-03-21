@@ -7,15 +7,16 @@
 
 import {
   ComicCard,
-  BentoGrid,
   MascotSection,
   DreamGoalCard,
   SeedHistoryItem,
   MaterialIcon,
 } from '@/components/homestead';
 import { useQuestStore, useDreamStore } from '@/stores';
+import { useChildSupabaseHomestead } from '@/hooks/use-child-supabase-homestead';
 
 export function DreamsContent() {
+  const { error: supabaseError, isLoading } = useChildSupabaseHomestead();
   // Get seeds from quest store
   const seeds = useQuestStore((state) => state.seeds);
 
@@ -52,11 +53,17 @@ export function DreamsContent() {
   if (!activeDream) {
     return (
       <main className="max-w-md mx-auto px-4 pt-20 space-y-8 pb-32">
-        {/* Mascot */}
-        <MascotSection message={getMascotMessage()} />
+      {/* Mascot */}
+      <MascotSection message={getMascotMessage()} />
 
-        {/* Empty State */}
-        <div className="bg-[#FBF8F1] border-4 border-[#D8E3D1] rounded-3xl p-8 text-center">
+      {supabaseError ? (
+        <div className="bg-white border-4 border-[#1C1917] rounded-2xl p-4 text-center text-sm font-bold text-[#7E22CE]">
+          {supabaseError}
+        </div>
+      ) : null}
+
+      {/* Empty State */}
+      <div className="bg-[#FBF8F1] border-4 border-[#D8E3D1] rounded-3xl p-8 text-center">
           <MaterialIcon icon="favorite" className="!text-5xl text-[#8E7BAF] mx-auto mb-4" />
           <h2 className="font-bold text-xl text-[#2F342C] mb-2">No Dream Yet</h2>
           <p className="text-sm text-[#7C8E76] leading-relaxed">
@@ -102,6 +109,12 @@ export function DreamsContent() {
     <main className="max-w-md mx-auto px-4 pt-20 space-y-8 pb-32">
       {/* Mascot */}
       <MascotSection message={getMascotMessage()} />
+
+      {isLoading ? (
+        <div className="bg-white border-4 border-[#1C1917] rounded-2xl p-4 text-center text-sm font-bold text-[#7E22CE]">
+          Syncing dream shelf...
+        </div>
+      ) : null}
 
       {/* Dream Goal Card */}
       <DreamGoalCard

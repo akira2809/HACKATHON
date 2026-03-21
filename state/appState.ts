@@ -5,6 +5,7 @@ export type QuestStatus = 'suggested' | 'approved' | 'rejected' | 'completed';
 export type QuestCategory = 'Learning' | 'Responsibility' | 'Movement' | 'Care';
 
 export type ParentGoal = {
+    id?: string;
     title: string;
     target: number;
     milestone: number;
@@ -21,6 +22,10 @@ export type ParentQuest = {
 };
 
 export type ParentMoment = {
+    id?: string;
+    advisorMessageId?: string;
+    calendarEventId?: string;
+    mapsLink?: string;
     title: string;
     duration: string;
     description: string;
@@ -47,6 +52,7 @@ export type ParentChild = {
 };
 
 type ParentAppState = {
+    parentId: string | null;
     parentName: string;
     familyId: string;
     familySeeds: number;
@@ -55,12 +61,21 @@ type ParentAppState = {
     lockedChildId: string | null;
     activeMomentChildId: string | null;
     selectChild: (childId: string) => void;
+    hydrateRemoteFamily: (payload: {
+        parentId?: string | null;
+        parentName?: string | null;
+        familyName?: string | null;
+        children: ParentChild[];
+    }) => void;
     approveQuest: (childId: string, questId: string) => void;
     rejectQuest: (childId: string, questId: string) => void;
     completeQuest: (childId: string, questId: string) => void;
     regenerateSuggestedQuests: (childId: string) => boolean;
     applyGeneratedQuests: (childId: string, quests: ParentQuest[]) => void;
     sendSeeds: (childId: string, amount: number) => void;
+    attachMomentId: (childId: string, momentId: string) => void;
+    setGoalForChild: (childId: string, goal: ParentGoal | null) => void;
+    setMomentForChild: (childId: string, moment: ParentMoment | null) => void;
     startMomentFlow: (childId: string) => void;
     cancelMomentFlow: () => void;
     completeMomentFlow: () => void;
@@ -261,6 +276,7 @@ function updateChild(
 }
 
 export const useAppState = create<ParentAppState>((set, get) => ({
+    parentId: null,
     parentName: 'Eric',
     familyId: 'a1000000-0000-0000-0000-000000000001',
     familySeeds: 30,
@@ -276,6 +292,44 @@ export const useAppState = create<ParentAppState>((set, get) => ({
         }
 
         set({ selectedChildId: childId });
+    },
+    hydrateRemoteFamily: (payload) => {
+        if (!payload.children.length) {
+            return;
+        }
+
+        set((state) => {
+            const mergedChildren = payload.children.map((remoteChild) => {
+                const existingChild = state.children.find((child) => child.id === remoteChild.id);
+                const suggestedQuests = existingChild?.quests.filter((quest) => quest.status === 'suggested') ?? [];
+                const syncedQuests = remoteChild.quests.filter((quest) => quest.status !== 'suggested');
+
+                return {
+                    ...existingChild,
+                    ...remoteChild,
+                    aiTokens: remoteChild.aiTokens || existingChild?.aiTokens || 0,
+                    goal: remoteChild.goal ?? existingChild?.goal ?? null,
+                    introMessage: remoteChild.introMessage || existingChild?.introMessage || 'A quiet family rhythm is ready for today.',
+                    moment: remoteChild.moment ?? existingChild?.moment ?? null,
+                    networkIssue: existingChild?.networkIssue,
+                    generationError: existingChild?.generationError,
+                    momentError: existingChild?.momentError,
+                    proximityDistance: remoteChild.proximityDistance || existingChild?.proximityDistance || 35,
+                    quests: [...suggestedQuests, ...syncedQuests],
+                };
+            });
+
+            const selectedChildId = mergedChildren.some((child) => child.id === state.selectedChildId)
+                ? state.selectedChildId
+                : mergedChildren[0]?.id ?? state.selectedChildId;
+
+            return {
+                children: mergedChildren,
+                parentId: payload.parentId ?? state.parentId,
+                parentName: payload.parentName ?? state.parentName,
+                selectedChildId,
+            };
+        });
     },
     approveQuest: (childId, questId) => {
         set((state) => ({
@@ -367,6 +421,31 @@ export const useAppState = create<ParentAppState>((set, get) => ({
             })),
         }));
     },
+    attachMomentId: (childId, momentId) => {
+        set((state) => ({
+            children: updateChild(state.children, childId, (child) => ({
+                ...child,
+                moment: child.moment ? { ...child.moment, id: momentId } : child.moment,
+            })),
+        }));
+    },
+    setGoalForChild: (childId, goal) => {
+        set((state) => ({
+            children: updateChild(state.children, childId, (child) => ({
+                ...child,
+                goal,
+            })),
+        }));
+    },
+    setMomentForChild: (childId, moment) => {
+        set((state) => ({
+            children: updateChild(state.children, childId, (child) => ({
+                ...child,
+                moment,
+                momentError: moment ? undefined : child.momentError,
+            })),
+        }));
+    },
     startMomentFlow: (childId) => {
         set({
             lockedChildId: childId,
@@ -392,8 +471,8 @@ export const useAppState = create<ParentAppState>((set, get) => ({
             activeMomentChildId: null,
             children: updateChild(state.children, activeMomentChildId, (child) => ({
                 ...child,
-                seeds: child.seeds + 5,
-                aiTokens: child.aiTokens + 3,
+                seeds: child.seeds + (child.moment?.rewardSeeds ?? 5),
+                aiTokens: child.aiTokens + (child.moment?.rewardTokens ?? 3),
             })),
         }));
     },

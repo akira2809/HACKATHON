@@ -7,10 +7,12 @@
 
 import { useRouter } from 'next/navigation';
 import { ComicCard, ComicButton } from '@/components/homestead';
-import { useMomentStore, useQuestStore } from '@/stores';
+import { useMomentStore } from '@/stores';
+import { useChildSupabaseHomestead } from '@/hooks/use-child-supabase-homestead';
 
 export function MomentsContent() {
   const router = useRouter();
+  const { error: supabaseError, hasSupabase, isLoading, recordPreference } = useChildSupabaseHomestead();
   const {
     activeMoment,
     upcomingActivities,
@@ -19,8 +21,6 @@ export function MomentsContent() {
     momentLevel,
     xpToNext,
   } = useMomentStore();
-
-  const { seeds } = useQuestStore();
 
   if (!activeMoment) {
     return (
@@ -39,6 +39,18 @@ export function MomentsContent() {
 
   return (
     <main className="max-w-4xl mx-auto px-6 pt-24 pb-28">
+
+      {supabaseError ? (
+        <div className="mb-6 bg-white border-4 border-[#1C1917] rounded-2xl p-4 text-center text-sm font-bold text-[#7E22CE]">
+          {supabaseError}
+        </div>
+      ) : null}
+
+      {isLoading ? (
+        <div className="mb-6 bg-white border-4 border-[#1C1917] rounded-2xl p-4 text-center text-sm font-bold text-[#7E22CE]">
+          Syncing shared moments...
+        </div>
+      ) : null}
 
       {/* ── Hero Section ─────────────────────────────── */}
       <div className="relative mb-12">
@@ -156,7 +168,13 @@ export function MomentsContent() {
             size="xl"
             icon="play_arrow"
             fullWidth
-            onClick={() => router.push('/moments/proximity')}
+            onClick={() => {
+              if (hasSupabase) {
+                void recordPreference(activeMoment.title, 3);
+              }
+
+              router.push('/moments/proximity');
+            }}
             className="comic-shadow-pink mt-4"
           >
             START MOMENT! 🚀

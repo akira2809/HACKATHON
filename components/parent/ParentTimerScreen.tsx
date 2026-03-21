@@ -11,6 +11,7 @@ import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/de
 import { buildLocalizedHref } from '@/lib/locale-path';
 import { useAppState, type ParentMoment } from '@/state/appState';
 import { ParentStateCard } from './ParentStateCard';
+import { useParentSupabaseFamily } from '@/hooks/use-parent-supabase-family';
 
 function parseMinutes(duration: string) {
     const match = duration.match(/\d+/);
@@ -263,6 +264,10 @@ export function ParentTimerScreen() {
     const startMomentFlow = useAppState((state) => state.startMomentFlow);
     const cancelMomentFlow = useAppState((state) => state.cancelMomentFlow);
     const completeMomentFlow = useAppState((state) => state.completeMomentFlow);
+    const {
+        error: supabaseError,
+        markMomentCompleted,
+    } = useParentSupabaseFamily();
 
     const activeChildId = activeMomentChildId ?? selectedChildId;
     const activeChild = children.find((child) => child.id === activeChildId) ?? children[0];
@@ -281,6 +286,20 @@ export function ParentTimerScreen() {
     const handleCancel = () => {
         cancelMomentFlow();
         goTo('/parent/moments');
+    };
+
+    const handleCompleteMoment = () => {
+        void (async () => {
+            await markMomentCompleted({
+                momentId: moment?.id,
+                childId: activeChild.id,
+                nextCoins: activeChild.seeds + (moment?.rewardSeeds ?? 0),
+                rewardSeeds: moment?.rewardSeeds ?? 0,
+                title: moment?.title ?? 'Family Moment',
+            });
+
+            completeMomentFlow();
+        })();
     };
 
     const navItems = [
@@ -367,22 +386,29 @@ export function ParentTimerScreen() {
             childItems={children}
             childSelectorDisabled
             description={`Stay present with ${activeChild.name}. The rest of the interface should fade into the background now.`}
-            familySeeds={familySeeds}
-            navItems={navItems}
-            onSelectChild={() => undefined}
-            selectedChildId={activeChild.id}
-            title="Moment Timer"
-        >
-            <TimerSession
-                key={`${activeChild.id}-${moment.duration}`}
-                childAiTokens={activeChild.aiTokens}
-                childName={activeChild.name}
-                childSeeds={activeChild.seeds}
-                moment={moment}
-                onCancel={handleCancel}
-                onCompleteMoment={completeMomentFlow}
-                onReturn={() => goTo('/parent/moments')}
-            />
-        </AppShell>
+                familySeeds={familySeeds}
+                navItems={navItems}
+                onSelectChild={() => undefined}
+                selectedChildId={activeChild.id}
+                title="Moment Timer"
+                notice={supabaseError ? (
+                    <Card shadow="none" className="rounded-[22px] border border-[rgba(180,106,90,0.12)] bg-[rgba(251,248,241,0.92)]">
+                        <CardBody className="p-4 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
+                            {supabaseError}
+                        </CardBody>
+                    </Card>
+                ) : null}
+            >
+                <TimerSession
+                    key={`${activeChild.id}-${moment.duration}`}
+                    childAiTokens={activeChild.aiTokens}
+                    childName={activeChild.name}
+                    childSeeds={activeChild.seeds}
+                    moment={moment}
+                    onCancel={handleCancel}
+                    onCompleteMoment={handleCompleteMoment}
+                    onReturn={() => goTo('/parent/moments')}
+                />
+            </AppShell>
     );
 }

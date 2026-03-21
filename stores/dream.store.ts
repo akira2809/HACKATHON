@@ -40,6 +40,7 @@ interface DreamActions {
   setActiveDream: (dream: DreamGoal | null) => void;
   addSeedToDream: (dreamId: string, amount: number) => void;
   addSeedHistory: (item: Omit<SeedHistoryItem, 'id'>) => void;
+  setSeedHistory: (items: SeedHistoryItem[]) => void;
 }
 
 type DreamStore = DreamState & DreamActions;
@@ -90,6 +91,13 @@ export const useDreamStore = create<DreamStore>()(
           }),
           false,
           'addSeedHistory'
+        ),
+
+      setSeedHistory: (items) =>
+        set(
+          { seedHistory: items },
+          false,
+          'setSeedHistory'
         ),
     }),
     { name: 'dream-store' }
