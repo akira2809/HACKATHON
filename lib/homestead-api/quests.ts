@@ -4,7 +4,7 @@ import {
     supabaseInsertOne,
     supabaseList,
     supabaseRemove,
-    supabaseSingle,
+    supabaseSingleStrict,
     supabaseUpdateOne,
 } from '@/lib/supabase';
 import type {
@@ -25,8 +25,12 @@ function getTodayDateString() {
 }
 
 export const questsApi = {
-    complete: (questId: string, input: UpdateQuestInput) =>
-        supabaseUpdateOne<QuestRecord>('quests', input, { id: eq(questId) }),
+    complete: (questId: string) =>
+        supabaseUpdateOne<QuestRecord>(
+            'quests',
+            { status: 'completed', completedAt: new Date().toISOString() },
+            { id: eq(questId) }
+        ),
     create: (input: CreateQuestInput[]) => supabaseInsertMany<QuestRecord>('quests', input),
     listByChildAndDate: (childId: string, assignedDate: string) =>
         supabaseList<QuestRecord>('quests', {
@@ -39,12 +43,12 @@ export const questsApi = {
             childId: eq(childId),
         }),
     remove: (questId: string) => supabaseRemove('quests', { id: eq(questId) }),
-    start: (questId: string, input: UpdateQuestInput) =>
-        supabaseUpdateOne<QuestRecord>('quests', input, { id: eq(questId) }),
+    start: (questId: string) =>
+        supabaseUpdateOne<QuestRecord>('quests', { status: 'ongoing' }, { id: eq(questId) }),
 };
 
 export const questStreaksApi = {
-    getByChild: (childId: string) => supabaseSingle<QuestStreakRecord>('quest_streaks', { childId: eq(childId) }),
+    getByChild: (childId: string) => supabaseSingleStrict<QuestStreakRecord>('quest_streaks', { childId: eq(childId) }),
     updateByChild: (childId: string, input: UpdateQuestStreakInput) =>
         supabaseUpdateOne<QuestStreakRecord>('quest_streaks', input, { childId: eq(childId) }),
 };

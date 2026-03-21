@@ -146,11 +146,15 @@ export function supabaseList<T>(path: string, query: SupabaseRestQuery = {}) {
     });
 }
 
-export async function supabaseSingle<T>(path: string, query: SupabaseRestQuery = {}) {
+export async function supabaseSingleStrict<T>(path: string, query: SupabaseRestQuery = {}) {
     const rows = await supabaseList<T>(path, query);
-
+  
+    if (rows.length > 1) {
+      throw new Error(`Expected one row for ${path}, got ${rows.length}`);
+    }
+  
     return rows[0] ?? null;
-}
+  }
 
 export async function supabaseInsertOne<T>(
     path: string,
