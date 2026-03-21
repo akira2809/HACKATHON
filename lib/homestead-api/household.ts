@@ -3,7 +3,7 @@ import {
     supabaseInsertOne,
     supabaseList,
     supabaseRemove,
-    supabaseSingle,
+    supabaseSingleStrict,
     supabaseUpdateOne,
 } from '@/lib/supabase';
 import type {
@@ -20,7 +20,7 @@ import type {
 
 export const familiesApi = {
     create: (input: CreateFamilyInput) => supabaseInsertOne<FamilyRecord>('families', input),
-    getById: (familyId: string) => supabaseSingle<FamilyRecord>('families', { id: eq(familyId) }),
+    getById: (familyId: string) => supabaseSingleStrict<FamilyRecord>('families', { id: eq(familyId) }),
     list: () => supabaseList<FamilyRecord>('families'),
     remove: (familyId: string) => supabaseRemove('families', { id: eq(familyId) }),
     update: (familyId: string, input: UpdateFamilyInput) =>
