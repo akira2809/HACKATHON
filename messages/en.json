@@ -1,0 +1,593 @@
+{
+    "nav": {
+        "brand": "CULINARY",
+        "subtitle": "Consultancy",
+        "programs": "Programs",
+        "locations": "Locations",
+        "admissions": "Admissions",
+        "studentLife": "Student Life",
+        "blog": "Blog",
+        "aboutUs": "About Us",
+        "booking": "Booking",
+        "applyNow": "Apply Now",
+        "culinaryArts": "Culinary Arts",
+        "pastryBaking": "Pastry & Baking",
+        "hospitalityManagement": "Hospitality Management"
+    },
+    "hero": {
+        "badge": "Admissions Open for 2024",
+        "title": "LAUNCH YOUR",
+        "titleHighlight": "GLOBAL CULINARY",
+        "titleEnd": "CAREER.",
+        "description": "Exclusive pathways to the world's top hospitality schools. Experience Swiss precision, French technique, and global opportunity.",
+        "startJourney": "Start Your Journey",
+        "watchShowreel": "Watch Showreel",
+        "scroll": "Scroll"
+    },
+    "partners": {
+        "title": "Trusted by Global Industry Leaders"
+    },
+    "homePrograms": {
+        "title": "DISCOVER YOUR",
+        "titleHighlight": "CULINARY CALLING",
+        "description": "A comprehensive curriculum designed for future industry leaders. Immerse yourself in excellence with our specialized degrees.",
+        "culinaryArts": {
+            "title": "Culinary Arts",
+            "subtitle": "Avant-Garde Techniques",
+            "duration": "3 Years Full-Time"
+        },
+        "pastryArts": {
+            "title": "Baking & Pastry Arts",
+            "subtitle": "Gourmet Patisserie",
+            "duration": "2 Years Diploma"
+        },
+        "foodBusiness": {
+            "title": "Food Business",
+            "subtitle": "Concept & Design",
+            "duration": "BBA in Management"
+        },
+        "culinaryScience": {
+            "title": "Culinary Science",
+            "subtitle": "Molecular Gastronomy",
+            "duration": "MSc Degree"
+        },
+        "hospitality": {
+            "title": "Hospitality Management",
+            "subtitle": "Luxury Service",
+            "duration": "Bachelor's Degree"
+        }
+    },
+    "successStory": {
+        "badge": "Success Story",
+        "title": "FROM THE CLASSROOM TO",
+        "titleHighlight": "THE GLOBAL KITCHEN",
+        "quote": "\"I WENT FROM A HOME COOK TO A MICHELIN KITCHEN IN 18 MONTHS.\"",
+        "description": "Start your own success story today. Our admissions team is ready to guide your first steps toward a global culinary career.",
+        "getConsultation": "Get Free Consultation",
+        "viewPrograms": "View Programs"
+    },
+    "videoGallery": {
+        "title": "A GLIMPSE INTO",
+        "titleHighlight": "YOUR FUTURE",
+        "viewMore": "View More Stories",
+        "studentLife": "Student Life",
+        "internship": "Internship",
+        "masterclass": "Masterclass",
+        "dayInCampus": "A Day in Lucerne Campus",
+        "workingAtRitz": "Working at The Ritz Paris",
+        "chocolateArtistry": "Chocolate Artistry Final"
+    },
+    "testimonials": {
+        "title": "WORDS FROM OUR",
+        "titleHighlight": "ASPIRING CHEFS",
+        "description": "Join a community of passionate individuals who have transformed their culinary dreams into reality.",
+        "stats": {
+            "placementRate": "Placement Rate",
+            "globalPartners": "Global Partners",
+            "yearsExperience": "Years Experience",
+            "alumniNetwork": "Alumni Network"
+        },
+        "quote1": "\"The personalized career coaching was invaluable. I landed my dream internship at the Four Seasons thanks to their direct connections.\"",
+        "student1": "Elena Rodriguez",
+        "program1": "Culinary Arts '23",
+        "quote2": "\"Moving to Switzerland was daunting, but the visa assistance team made it seamless. I could focus entirely on my studies from day one.\"",
+        "student2": "Marcus Chen",
+        "program2": "Hospitality Management '22",
+        "quote3": "\"The facilities are world-class. Learning molecular gastronomy with state-of-the-art equipment gave me a huge advantage in the job market.\"",
+        "student3": "Sophie Dubois",
+        "program3": "Pastry Arts '24"
+    },
+    "process": {
+        "title": "YOUR PROVEN PATH TO",
+        "titleHighlight": "PROFESSIONAL MASTERY",
+        "step1": {
+            "label": "Step 01",
+            "title": "Profile Evaluation",
+            "description": "Comprehensive assessment of academic background and career goals to match with top-tier culinary institutes."
+        },
+        "step2": {
+            "label": "Step 02",
+            "title": "University Selection",
+            "description": "Curating a list of best-fit global universities tailored to your budget and specialization preferences."
+        },
+        "step3": {
+            "label": "Step 03",
+            "title": "Visa & Departure",
+            "description": "Full assistance with visa documentation, mock interviews, and pre-departure briefings for a smooth transition."
+        },
+        "step4": {
+            "label": "Step 04",
+            "title": "Global Graduation",
+            "description": "Alumni support network and career placement services upon completion of your culinary degree."
+        },
+        "expertise": {
+            "title": "Our Expertise",
+            "viewAll": "View All Services",
+            "visa": {
+                "title": "Visa Assistance",
+                "description": "With a 99% success rate, we navigate complex immigration policies so you can focus on your craft.",
+                "learnMore": "Learn more"
+            },
+            "university": {
+                "title": "University Placement",
+                "description": "Direct partnerships with top 10 hospitality schools globally ensure your application stands out.",
+                "learnMore": "Learn more"
+            },
+            "career": {
+                "title": "Career Coaching",
+                "description": "Beyond admission, we prepare you for the industry with resume building, mock interviews, and internship placement strategies at luxury hotels and Michelin-star restaurants.",
+                "learnMore": "Learn more"
+            }
+        }
+    },
+    "news": {
+        "title": "STAY AHEAD IN THE",
+        "titleHighlight": "CULINARY WORLD",
+        "viewAll": "View All Articles",
+        "pressRelease": "Press Release",
+        "campusLife": "Campus Life",
+        "featured": {
+            "date": "October 15, 2024",
+            "title": "BHMS Student Team Wins Gold at the International Culinary Olympics",
+            "description": "Our elite team of student chefs demonstrated exceptional skill and creativity, securing the top spot against 40 other international schools."
+        },
+        "article1": {
+            "category": "Campus Life",
+            "title": "New Partnership with Michelin Guide"
+        },
+        "article2": {
+            "month": "NOV 2024",
+            "title": "Upcoming Open Day: Paris Campus",
+            "cta": "Register Now"
+        }
+    },
+    "contact": {
+        "title": "Book Your Consultation",
+        "description": "Take the first step toward your international culinary career with a professional 1-on-1 discovery call.",
+        "inquiry": {
+            "title": "Send an Inquiry",
+            "subtitle": "Have specific questions? Leave us a message and our advisors will get back to you within 24 hours.",
+            "fullName": "Full Name",
+            "fullNamePlaceholder": "Enter your name",
+            "email": "Email Address",
+            "emailPlaceholder": "email@university.edu",
+            "city": "City of Residence",
+            "cityPlaceholder": "e.g. Paris, Bangkok, New York",
+            "phone": "Phone Number",
+            "phonePlaceholder": "+1 (555) 000-0000",
+            "interest": "Culinary Interest",
+            "message": "Your Message",
+            "messagePlaceholder": "Tell us about your career goals...",
+            "send": "Send Message",
+            "offices": "Our Offices",
+            "parisCampus": "Paris Campus",
+            "parisAddress": "8 Rue de la Paix, 75002 Paris, France",
+            "bangkokOffice": "Bangkok Regional Office",
+            "bangkokAddress": "Sukhumvit Rd, Khlong Toei, Bangkok 10110"
+        },
+        "booking": {
+            "title": "Book 1-on-1 Discovery Call",
+            "badge": "Available Now",
+            "subtitle": "30-minute session via Zoom with a career advisor.",
+            "month": "October 2024",
+            "selectedDate": "Monday, Oct 16",
+            "timezone": "Timezone",
+            "timezoneValue": "Central European Time (GMT+1)",
+            "change": "Change",
+            "privacy": "Your data is protected and never shared with 3rd parties.",
+            "testimonial": "\"The discovery call was the best decision I made. It helped me choose the right program in Switzerland that fit my budget and career goals.\"",
+            "testimonialAuthor": "— Marco Rossi, Pastry Student"
+        },
+        "interests": {
+            "culinaryArts": "Culinary Arts & Gastronomy",
+            "pastry": "Pastry & Chocolate Arts",
+            "hospitality": "Hospitality Management",
+            "wine": "Wine & Sommelier"
+        }
+    },
+    "cta": {
+        "title": "YOUR GLOBAL CULINARY CAREER STARTS TODAY",
+        "description": "Join thousands of students who have transformed their passion into a professional reality.",
+        "applyNow": "Apply Now",
+        "downloadProspectus": "Download Prospectus"
+    },
+    "footer": {
+        "description": "Empowering the next generation of culinary leaders with world-class education pathways and career support.",
+        "programs": "Programs",
+        "culinaryDiploma": "Culinary Arts Diploma",
+        "hospitalityBachelor": "Bachelor in Hospitality",
+        "pastryArts": "Pastry & Chocolate Arts",
+        "wine": "Wine & Sommelier",
+        "contact": "Contact Us",
+        "address": "123 Culinary Ave, Suite 400",
+        "city": "New York, NY 10012",
+        "phone": "+1 (555) 123-4567",
+        "email": "admissions@culinary.edu",
+        "newsletter": "Stay Updated",
+        "newsletterDescription": "Subscribe to our newsletter for scholarship updates.",
+        "emailPlaceholder": "Enter your email",
+        "subscribe": "Subscribe",
+        "copyright": "© 2024 Culinary Consultancy. All rights reserved.",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service",
+        "cookies": "Cookie Policy"
+    },
+    "floatingAdvisor": {
+        "title": "Talk to an Advisor",
+        "name": "Sarah Jenkins",
+        "role": "Senior Course Advisor",
+        "bookCall": "Book a Call",
+        "whatsapp": "WhatsApp Us",
+        "email": "Email Support",
+        "availability": "Available Mon-Fri • 9am-6pm"
+    },
+    "processTimeline": {
+        "title": "YOUR PROVEN PATH TO",
+        "titleHighlight": "PROFESSIONAL MASTERY",
+        "step1": {
+            "label": "Step 01",
+            "title": "Profile Evaluation",
+            "description": "Comprehensive assessment of academic background and career goals to match with top-tier culinary institutes."
+        },
+        "step2": {
+            "label": "Step 02",
+            "title": "University Selection",
+            "description": "Curating a list of best-fit global universities tailored to your budget and specialization preferences."
+        },
+        "step3": {
+            "label": "Step 03",
+            "title": "Visa & Departure",
+            "description": "Full assistance with visa documentation, mock interviews, and pre-departure briefings for a smooth transition."
+        },
+        "step4": {
+            "label": "Step 04",
+            "title": "Global Graduation",
+            "description": "Alumni support network and career placement services upon completion of your culinary degree."
+        },
+        "servicesTitle": "Our Expertise",
+        "viewAll": "View All Services",
+        "services": {
+            "visa": {
+                "title": "Visa Assistance",
+                "description": "With a 99% success rate, we navigate complex immigration policies so you can focus on your craft."
+            },
+            "university": {
+                "title": "University Placement",
+                "description": "Direct partnerships with top 10 hospitality schools globally ensure your application stands out."
+            },
+            "career": {
+                "title": "Career Coaching",
+                "description": "Beyond admission, we prepare you for the industry with resume building, mock interviews, and internship placement strategies at luxury hotels and Michelin-star restaurants."
+            }
+        },
+        "learnMore": "Learn more"
+    },
+    "news": {
+        "title": "STAY AHEAD IN THE",
+        "titleHighlight": "CULINARY WORLD",
+        "viewAll": "View All Articles",
+        "featured": {
+            "badge": "Press Release",
+            "date": "October 15, 2024",
+            "title": "BHMS Student Team Wins Gold at the International Culinary Olympics",
+            "description": "Our elite team of student chefs demonstrated exceptional skill and creativity, securing the top spot against 40 other international schools."
+        },
+        "article1": {
+            "badge": "Campus Life",
+            "title": "New Partnership with Michelin Guide"
+        },
+        "article2": {
+            "date": "NOV 2024",
+            "title": "Upcoming Open Day: Paris Campus",
+            "cta": "Register Now"
+        }
+    },
+    "contact": {
+        "title": "Book Your",
+        "titleLine2": "Consultation",
+        "description": "Take the first step toward your international culinary career with a professional 1-on-1 discovery call.",
+        "form": {
+            "title": "Send an Inquiry",
+            "subtitle": "Have specific questions? Leave us a message and our advisors will get back to you within 24 hours.",
+            "fullName": "Full Name",
+            "fullNamePlaceholder": "Enter your name",
+            "email": "Email Address",
+            "emailPlaceholder": "email@university.edu",
+            "city": "City of Residence",
+            "cityPlaceholder": "e.g. Paris, Bangkok, New York",
+            "phone": "Phone Number",
+            "phonePlaceholder": "+1 (555) 000-0000",
+            "interest": "Culinary Interest",
+            "culinaryArts": "Culinary Arts & Gastronomy",
+            "pastryArts": "Pastry & Chocolate Arts",
+            "hospitality": "Hospitality Management",
+            "wine": "Wine & Sommelier",
+            "message": "Your Message",
+            "messagePlaceholder": "Tell us about your career goals...",
+            "submit": "Send Message"
+        },
+        "offices": {
+            "title": "Our Offices",
+            "paris": {
+                "name": "Paris Campus",
+                "address": "8 Rue de la Paix, 75002 Paris, France"
+            },
+            "bangkok": {
+                "name": "Bangkok Regional Office",
+                "address": "Sukhumvit Rd, Khlong Toei, Bangkok 10110"
+            }
+        },
+        "booking": {
+            "title": "Book 1-on-1 Discovery Call",
+            "badge": "Available Now",
+            "subtitle": "30-minute session via Zoom with a career advisor.",
+            "month": "October 2024",
+            "selectedDate": "Monday, Oct 16"
+        }
+    },
+    "programs": {
+        "hero": {
+            "title": "FIND YOUR PERFECT",
+            "titleHighlight": "CULINARY PATHWAY",
+            "description": "Browse our curated selection of world-class programs from top culinary institutes across Switzerland, France, and beyond.",
+            "filters": {
+                "region": "Region",
+                "allRegions": "All Regions",
+                "switzerland": "Switzerland",
+                "france": "France",
+                "uk": "United Kingdom",
+                "australia": "Australia",
+                "specialization": "Specialization",
+                "anySpecialization": "Any Specialization",
+                "culinaryArts": "Culinary Arts",
+                "pastry": "Pastry & Baking",
+                "hospitality": "Hospitality Management",
+                "wine": "Wine & Beverage",
+                "degreeType": "Degree Type",
+                "allDegrees": "All Degrees",
+                "diploma": "Diploma",
+                "bachelor": "Bachelor's",
+                "master": "Master's / MBA",
+                "shortCourse": "Short Courses"
+            },
+            "searchButton": "Search Programs"
+        },
+        "card": {
+            "duration": "Duration",
+            "tuition": "Tuition Range"
+        },
+        "featured": {
+            "title": "Featured Programs",
+            "showing": "Showing",
+            "of": "of",
+            "results": "results",
+            "loadMore": "Load More Programs"
+        },
+        "whyStudy": {
+            "badge": "Why Study Abroad?",
+            "title": "GLOBAL EXPOSURE FOR A",
+            "titleHighlight": "WORLD-CLASS CAREER",
+            "description": "Culinary arts is a universal language. Studying abroad not only enhances your technical skills but immerses you in the cultural context of the cuisine you are mastering.",
+            "stat": "International students secure placement before graduation",
+            "cultural": {
+                "title": "Cross-Cultural Competence",
+                "description": "Gain adaptability and cultural sensitivity highly valued in multinational hospitality groups."
+            },
+            "network": {
+                "title": "Global Network",
+                "description": "Build connections with peers, chefs, and industry leaders from over 50 different countries."
+            },
+            "internships": {
+                "title": "Prestigious Internships",
+                "description": "Access exclusive internship opportunities in Michelin-starred restaurants and 5-star hotels globally."
+            }
+        },
+        "cta": {
+            "title": "NOT SURE WHICH PROGRAM FITS YOU?",
+            "description": "Use our smart comparison tool to evaluate curriculum, costs, and career outcomes side-by-side.",
+            "button": "Start Comparing"
+        }
+    },
+    "blog": {
+        "hero": {
+            "title": "Culinary Insights Blog",
+            "subtitle": "Expert perspective on the future of international gastronomy.",
+            "sortButton": "Sort by Latest"
+        },
+        "search": {
+            "placeholder": "Search articles, chefs, or cities...",
+            "categories": {
+                "all": "All",
+                "cooking": "Cooking",
+                "business": "Business",
+                "studentLife": "Student Life",
+                "careerAdvice": "Career Advice",
+                "scholarships": "Scholarships"
+            }
+        },
+        "featured": {
+            "badge": "Featured Story",
+            "readButton": "Read Full Article"
+        },
+        "card": {
+            "readMore": "Read"
+        },
+        "latestInsights": "Latest Insights",
+        "newsletter": {
+            "title": "Start your culinary journey today",
+            "description": "Get exclusive scholarship alerts, study abroad guides, and industry news delivered directly to your inbox weekly.",
+            "placeholder": "Your email address",
+            "button": "Subscribe"
+        }
+    },
+    "programDetail": {
+        "hero": {
+            "downloadBrochure": "Download Brochure",
+            "bookVisit": "Book a Visit"
+        },
+        "quickInfo": {
+            "duration": "Duration",
+            "intakes": "Intakes",
+            "location": "Location"
+        },
+        "courseProgression": {
+            "title": "COURSE PROGRESSION",
+            "subtitle": "Our unique \"Study & Work\" system allows you to gain 1.5 years of work experience during your 3-year bachelor degree.",
+            "year": "Year",
+            "semester": "Semester",
+            "study": "Academic Study",
+            "work": "Paid Internship"
+        },
+        "learningObjectives": {
+            "title": "Key Learning Objectives",
+            "description": "Our program goes beyond recipes. We cultivate the discipline, creativity, and business acumen required to lead modern kitchens. Students master classical French techniques while embracing contemporary global trends in sustainability and farm-to-table concepts.",
+            "focusBadge": "Focus",
+            "focusTitle": "Technique & Precision"
+        },
+        "careerOpportunities": {
+            "title": "Career Opportunities",
+            "description": "Graduates of our Bachelor in Culinary Arts are highly sought after by luxury hotels, fine dining restaurants, and catering companies worldwide. The integrated internships provide a significant advantage in the job market, often leading to direct employment offers upon graduation.",
+            "successBadge": "Success",
+            "successTitle": "Global Placement"
+        },
+        "entryRequirements": {
+            "title": "Entry Requirements",
+            "subtitle": "Standard criteria for admission into the Bachelor program.",
+            "contactQuestion": "Do you need a preliminary assessment?",
+            "contactButton": "Contact Admissions Team"
+        },
+        "cta": {
+            "title": "YOUR GLOBAL CULINARY CAREER STARTS TODAY",
+            "description": "Join thousands of students who have transformed their passion into a professional reality.",
+            "applyButton": "Apply for Oct 2024",
+            "downloadButton": "Download Prospectus"
+        }
+    },
+    "blogDetail": {
+        "share": "Share this article",
+        "recommended": {
+            "title": "You Might Also Like",
+            "subtitle": "Continue exploring our latest insights and guides"
+        }
+    },
+    "about": {
+        "hero": {
+            "badge": "Our Story & Expertise",
+            "title": "OUR MISSION:",
+            "titleHighlight": "SHAPING THE NEXT",
+            "titleEnd": "GENERATION OF CHEFS.",
+            "description": "For over a decade, we have bridged the gap between ambitious culinary talents and the world's most prestigious kitchens. We believe in precision, passion, and the transformative power of education."
+        },
+        "timeline": {
+            "title": "A LEGACY OF",
+            "titleHighlight": "CULINARY EXCELLENCE",
+            "description": "From a small consultancy in Zurich to a global network spanning 3 continents, our journey mirrors the careers of the chefs we mentor: built on discipline, creativity, and an unwavering commitment to quality.",
+            "stats": {
+                "years": "12+",
+                "yearsLabel": "Years of Service",
+                "careers": "2,500+",
+                "careersLabel": "Careers Launched"
+            },
+            "downloadButton": "Download Corporate Profile",
+            "event1": {
+                "title": "The Foundation",
+                "description": "Founded in Zurich by Chef Marco Pierre and educational consultant Sarah Jenkins, with a vision to provide honest, expert guidance to students aspiring to study in Switzerland."
+            },
+            "event2": {
+                "title": "Asian Expansion",
+                "description": "Opened our first regional office in Singapore to support the growing demand from Southeast Asia, partnering with top hospitality groups like Raffles and Marina Bay Sands for internships."
+            },
+            "event3": {
+                "title": "Michelin Partnerships",
+                "description": "Formalized exclusive internship agreements with 15 Michelin-starred restaurants across France and Switzerland, ensuring our students train with the absolute best."
+            },
+            "event4": {
+                "title": "Digital Innovation",
+                "description": "Launched our virtual mentorship platform, connecting students with alumni chefs worldwide for real-time career advice and masterclasses."
+            }
+        },
+        "team": {
+            "title": "MEET THE",
+            "titleHighlight": "MASTERS",
+            "description": "Guided by veterans of the industry who have walked the path you aspire to take.",
+            "member1": {
+                "name": "Chef Marco Pierre",
+                "role": "Culinary Director",
+                "badge": "Founder",
+                "description": "Former Executive Chef at The Dorchester with 25 years of experience in fine dining. Marco oversees curriculum alignment and industry relations."
+            },
+            "member2": {
+                "name": "Sarah Jenkins",
+                "role": "Head of Admissions",
+                "badge": "Senior Partner",
+                "description": "An education strategist who has placed over 1,000 students in top hospitality schools. Sarah specializes in career pathing and scholarship negotiation."
+            },
+            "member3": {
+                "name": "Jean-Luc Dubois",
+                "role": "Pastry & Arts Specialist",
+                "badge": "Mentor",
+                "description": "Award-winning chocolatier and former Head of Pastry at Ritz Paris. Jean-Luc guides students interested in the specialized world of patisserie."
+            }
+        },
+        "values": {
+            "title": "VISION &",
+            "titleHighlight": "VALUES",
+            "description": "The principles that drive our consultancy and the success of our students.",
+            "value1": {
+                "title": "Uncompromising Quality",
+                "description": "We only partner with accredited institutions that meet the highest international standards. We believe that a strong foundation is non-negotiable for a lasting career."
+            },
+            "value2": {
+                "title": "Global Perspective",
+                "description": "Culinary arts is a universal language. We encourage our students to explore diverse cultures, techniques, and cuisines to become truly global citizens of the kitchen."
+            },
+            "value3": {
+                "title": "Student-Centricity",
+                "description": "Every student's journey is unique. We provide personalized mentorship that goes beyond admission, focusing on long-term career fulfillment and personal growth."
+            }
+        },
+        "global": {
+            "title": "GLOBAL REACH,",
+            "titleHighlight": "LOCAL EXPERTISE",
+            "description": "Our network connects you to the culinary capitals of the world. From the classic kitchens of Paris to the innovative food scenes of Tokyo.",
+            "stats": {
+                "schools": "50+ Partner Schools",
+                "countries": "25 Countries"
+            },
+            "regions": {
+                "europe": {
+                    "name": "Europe"
+                },
+                "americas": {
+                    "name": "Americas"
+                },
+                "asiaPacific": {
+                    "name": "Asia-Pacific"
+                },
+                "middleEast": {
+                    "name": "Middle East"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@plugin '../hero.ts';
+/* Note: You may need to change the path to fit your project structure */
+@source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+
+/* Custom Theme Colors for Culinary Consultation */
+:root {
+    /* Màu chủ đạo (Logo) */
+    --color-primary: #F2994A;
+    --color-primary-dark: #e8873a;
+    --color-secondary: #F7E14F;
+
+    /* Màu phụ trợ loại 1 */
+    --color-dark: #2D3436;
+    --color-accent-red: #EB5757;
+    --color-accent-green: #6FCF97;
+
+    /* Màu phụ trợ loại 2 */
+    --color-background-light: #FDFCF0;
+    --color-background-gray: #F2F2F2;
+    --color-surface-light: #ffffff;
+    --color-surface-dark: #2d3436;
+}
+
+/* Tailwind Custom Classes - Force Override */
+.bg-primary {
+    background-color: #F2994A !important;
+}
+
+.bg-primary-dark {
+    background-color: #e8873a !important;
+}
+
+.text-primary {
+    color: #F2994A !important;
+}
+
+.border-primary {
+    border-color: #F2994A !important;
+}
+
+.shadow-primary\/20 {
+    box-shadow: 0 10px 15px -3px rgba(242, 153, 74, 0.2) !important;
+}
+
+.shadow-primary\/30 {
+    box-shadow: 0 10px 15px -3px rgba(242, 153, 74, 0.3) !important;
+}
+
+.shadow-primary\/40 {
+    box-shadow: 0 10px 15px -3px rgba(242, 153, 74, 0.4) !important;
+}
+
+.hover\:bg-primary-dark:hover {
+    background-color: #e8873a !important;
+}
+
+.bg-background-light {
+    background-color: #FDFCF0 !important;
+}
+
+/* Gradient text fix */
+.bg-gradient-to-r.from-primary {
+    background-image: linear-gradient(to right, #F2994A, #F7E14F) !important;
+}
+
+.from-primary.to-orange-500 {
+    background-image: linear-gradient(to right, #F2994A, #F7E14F) !important;
+}
+
+/* Custom Animations */
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+.animate-scroll {
+    animation: scroll 40s linear infinite;
+}

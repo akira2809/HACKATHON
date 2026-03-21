@@ -1,0 +1,528 @@
+{
+    "nav": {
+        "brand": "CULINARY",
+        "subtitle": "Tư Vấn",
+        "programs": "Chương Trình",
+        "locations": "Địa Điểm",
+        "admissions": "Tuyển Sinh",
+        "studentLife": "Đời Sống Sinh Viên",
+        "blog": "Tin Tức",
+        "aboutUs": "Về Chúng Tôi",
+        "booking": "Đặt Lịch",
+        "applyNow": "Đăng Ký Ngay",
+        "culinaryArts": "Nghệ Thuật Ẩm Thực",
+        "pastryBaking": "Bánh Ngọt & Nướng",
+        "hospitalityManagement": "Quản Lý Khách Sạn"
+    },
+    "hero": {
+        "badge": "Tuyển Sinh Năm 2024",
+        "title": "KHỞI ĐẦU SỰ NGHIỆP",
+        "titleHighlight": "ẨM THỰC TOÀN CẦU",
+        "titleEnd": "CỦA BẠN.",
+        "description": "Con đường độc quyền đến các trường khách sạn hàng đầu thế giới. Trải nghiệm sự chính xác của Thụy Sĩ, kỹ thuật Pháp và cơ hội toàn cầu.",
+        "startJourney": "Bắt Đầu Hành Trình",
+        "watchShowreel": "Xem Video",
+        "scroll": "Cuộn"
+    },
+    "partners": {
+        "title": "Được Tin Tưởng Bởi Các Tập Đoàn Hàng Đầu"
+    },
+    "homePrograms": {
+        "title": "KHÁM PHÁ",
+        "titleHighlight": "SỨ MỆNH ẨM THỰC",
+        "description": "Chương trình giảng dạy toàn diện được thiết kế cho các nhà lãnh đạo tương lai. Đắm mình trong sự xuất sắc với các bằng cấp chuyên môn.",
+        "culinaryArts": {
+            "title": "Nghệ Thuật Ẩm Thực",
+            "subtitle": "Kỹ Thuật Tiên Phong",
+            "duration": "3 Năm Toàn Thời Gian"
+        },
+        "pastryArts": {
+            "title": "Nghệ Thuật Bánh Ngọt",
+            "subtitle": "Bánh Ngọt Cao Cấp",
+            "duration": "Văn Bằng 2 Năm"
+        },
+        "foodBusiness": {
+            "title": "Kinh Doanh Ẩm Thực",
+            "subtitle": "Ý Tưởng & Thiết Kế",
+            "duration": "Cử Nhân Quản Trị"
+        },
+        "culinaryScience": {
+            "title": "Khoa Học Ẩm Thực",
+            "subtitle": "Ẩm Thực Phân Tử",
+            "duration": "Thạc Sĩ"
+        },
+        "hospitality": {
+            "title": "Quản Lý Khách Sạn",
+            "subtitle": "Dịch Vụ Cao Cấp",
+            "duration": "Cử Nhân"
+        }
+    },
+    "successStory": {
+        "badge": "Câu Chuyện Thành Công",
+        "title": "TỪ LỚP HỌC ĐẾN",
+        "titleHighlight": "BẾP TOÀN CẦU",
+        "quote": "\"TÔI ĐÃ ĐI TỪ ĐẦU BẾP GIA ĐÌNH ĐẾN BẾP MICHELIN TRONG 18 THÁNG.\"",
+        "description": "Bắt đầu câu chuyện thành công của riêng bạn ngay hôm nay. Đội ngũ tuyển sinh của chúng tôi sẵn sàng hướng dẫn những bước đầu tiên của bạn.",
+        "getConsultation": "Tư Vấn Miễn Phí",
+        "viewPrograms": "Xem Chương Trình"
+    },
+    "videoGallery": {
+        "title": "NHÌN VÀO",
+        "titleHighlight": "TƯƠNG LAI CỦA BẠN",
+        "viewMore": "Xem Thêm Câu Chuyện",
+        "studentLife": "Đời Sống Sinh Viên",
+        "internship": "Thực Tập",
+        "masterclass": "Lớp Học Chuyên Sâu",
+        "dayInCampus": "Một Ngày Tại Lucerne",
+        "workingAtRitz": "Làm Việc Tại Ritz Paris",
+        "chocolateArtistry": "Nghệ Thuật Sô-cô-la"
+    },
+    "testimonials": {
+        "title": "LỜI NÓI TỪ",
+        "titleHighlight": "CÁC ĐẦU BẾP TRẺ",
+        "description": "Tham gia cộng đồng những người đam mê đã biến ước mơ ẩm thực thành hiện thực.",
+        "stats": {
+            "placementRate": "Tỷ Lệ Việc Làm",
+            "globalPartners": "Đối Tác Toàn Cầu",
+            "yearsExperience": "Năm Kinh Nghiệm",
+            "alumniNetwork": "Mạng Lưới Cựu Sinh Viên"
+        },
+        "quote1": "\"Huấn luyện nghề nghiệp cá nhân hóa vô cùng quý giá. Tôi đã có được thực tập mơ ước tại Four Seasons nhờ kết nối trực tiếp của họ.\"",
+        "student1": "Elena Rodriguez",
+        "program1": "Nghệ Thuật Ẩm Thực '23",
+        "quote2": "\"Chuyển đến Thụy Sĩ thật khó khăn, nhưng đội ngũ hỗ trợ visa đã làm mọi thứ trở nên dễ dàng. Tôi có thể tập trung hoàn toàn vào việc học.\"",
+        "student2": "Marcus Chen",
+        "program2": "Quản Lý Khách Sạn '22",
+        "quote3": "\"Cơ sở vật chất đẳng cấp thế giới. Học ẩm thực phân tử với thiết bị hiện đại đã mang lại lợi thế lớn cho tôi trên thị trường việc làm.\"",
+        "student3": "Sophie Dubois",
+        "program3": "Nghệ Thuật Bánh Ngọt '24"
+    },
+    "process": {
+        "title": "CON ĐƯỜNG ĐÃ ĐƯỢC CHỨNG MINH ĐẾN",
+        "titleHighlight": "SỰ THÀNH THẠO CHUYÊN NGHIỆP",
+        "step1": {
+            "label": "Bước 01",
+            "title": "Đánh Giá Hồ Sơ",
+            "description": "Đánh giá toàn diện về nền tảng học thuật và mục tiêu nghề nghiệp để kết nối với các viện ẩm thực hàng đầu."
+        },
+        "step2": {
+            "label": "Bước 02",
+            "title": "Lựa Chọn Trường",
+            "description": "Tuyển chọn danh sách các trường đại học toàn cầu phù hợp nhất với ngân sách và sở thích chuyên môn của bạn."
+        },
+        "step3": {
+            "label": "Bước 03",
+            "title": "Visa & Khởi Hành",
+            "description": "Hỗ trợ đầy đủ về hồ sơ visa, phỏng vấn thử và hướng dẫn trước khi khởi hành để chuyển đổi suôn sẻ."
+        },
+        "step4": {
+            "label": "Bước 04",
+            "title": "Tốt Nghiệp Toàn Cầu",
+            "description": "Mạng lưới hỗ trợ cựu sinh viên và dịch vụ tìm việc sau khi hoàn thành bằng cấp ẩm thực."
+        },
+        "expertise": {
+            "title": "Chuyên Môn Của Chúng Tôi",
+            "viewAll": "Xem Tất Cả Dịch Vụ",
+            "visa": {
+                "title": "Hỗ Trợ Visa",
+                "description": "Với tỷ lệ thành công 99%, chúng tôi điều hướng các chính sách nhập cư phức tạp để bạn có thể tập trung vào nghề nghiệp.",
+                "learnMore": "Tìm hiểu thêm"
+            },
+            "university": {
+                "title": "Tuyển Sinh Trường",
+                "description": "Quan hệ đối tác trực tiếp với 10 trường khách sạn hàng đầu toàn cầu đảm bảo hồ sơ của bạn nổi bật.",
+                "learnMore": "Tìm hiểu thêm"
+            },
+            "career": {
+                "title": "Huấn Luyện Nghề Nghiệp",
+                "description": "Ngoài tuyển sinh, chúng tôi chuẩn bị bạn cho ngành với xây dựng CV, phỏng vấn thử và chiến lược thực tập tại khách sạn cao cấp và nhà hàng Michelin.",
+                "learnMore": "Tìm hiểu thêm"
+            }
+        }
+    },
+    "contact": {
+        "title": "Đặt Lịch",
+        "titleLine2": "Tư Vấn",
+        "description": "Bước đầu tiên hướng tới sự nghiệp ẩm thực quốc tế với buổi tư vấn 1-1 chuyên nghiệp.",
+        "form": {
+            "title": "Gửi Câu Hỏi",
+            "subtitle": "Có câu hỏi cụ thể? Để lại tin nhắn và cố vấn của chúng tôi sẽ phản hồi trong vòng 24 giờ.",
+            "fullName": "Họ Và Tên",
+            "fullNamePlaceholder": "Nhập tên của bạn",
+            "email": "Địa Chỉ Email",
+            "emailPlaceholder": "email@university.edu",
+            "city": "Thành Phố Cư Trú",
+            "cityPlaceholder": "vd. Paris, Bangkok, New York",
+            "phone": "Số Điện Thoại",
+            "phonePlaceholder": "+84 (555) 000-0000",
+            "interest": "Sở Thích Ẩm Thực",
+            "culinaryArts": "Nghệ Thuật Ẩm Thực & Ẩm Thực Học",
+            "pastryArts": "Nghệ Thuật Bánh Ngọt & Sô-cô-la",
+            "hospitality": "Quản Lý Khách Sạn",
+            "wine": "Rượu Vang & Sommelier",
+            "message": "Tin Nhắn Của Bạn",
+            "messagePlaceholder": "Chia sẻ về mục tiêu nghề nghiệp của bạn...",
+            "submit": "Gửi Tin Nhắn"
+        },
+        "offices": {
+            "title": "Văn Phòng Của Chúng Tôi",
+            "paris": {
+                "name": "Campus Paris",
+                "address": "8 Rue de la Paix, 75002 Paris, France"
+            },
+            "bangkok": {
+                "name": "Văn Phòng Khu Vực Bangkok",
+                "address": "Sukhumvit Rd, Khlong Toei, Bangkok 10110"
+            }
+        },
+        "booking": {
+            "title": "Đặt Lịch Tư Vấn 1-1",
+            "badge": "Có Sẵn Ngay",
+            "subtitle": "Buổi 30 phút qua Zoom với cố vấn nghề nghiệp.",
+            "month": "Tháng 10 2024",
+            "selectedDate": "Thứ Hai, 16 Tháng 10"
+        }
+    },
+    "processTimeline": {
+        "title": "CON ĐƯỜNG ĐÃ ĐƯỢC CHỨNG MINH ĐẾN",
+        "titleHighlight": "SỰ THÀNH THẠO CHUYÊN NGHIỆP",
+        "step1": {
+            "label": "Bước 01",
+            "title": "Đánh Giá Hồ Sơ",
+            "description": "Đánh giá toàn diện về nền tảng học thuật và mục tiêu nghề nghiệp để kết nối với các viện ẩm thực hàng đầu."
+        },
+        "step2": {
+            "label": "Bước 02",
+            "title": "Lựa Chọn Trường",
+            "description": "Tuyển chọn danh sách các trường đại học toàn cầu phù hợp nhất với ngân sách và sở thích chuyên môn của bạn."
+        },
+        "step3": {
+            "label": "Bước 03",
+            "title": "Visa & Khởi Hành",
+            "description": "Hỗ trợ đầy đủ về hồ sơ visa, phỏng vấn thử và hướng dẫn trước khi khởi hành để chuyển đổi suôn sẻ."
+        },
+        "step4": {
+            "label": "Bước 04",
+            "title": "Tốt Nghiệp Toàn Cầu",
+            "description": "Mạng lưới hỗ trợ cựu sinh viên và dịch vụ tìm việc sau khi hoàn thành bằng cấp ẩm thực."
+        },
+        "servicesTitle": "Chuyên Môn Của Chúng Tôi",
+        "viewAll": "Xem Tất Cả Dịch Vụ",
+        "services": {
+            "visa": {
+                "title": "Hỗ Trợ Visa",
+                "description": "Với tỷ lệ thành công 99%, chúng tôi điều hướng các chính sách nhập cư phức tạp để bạn có thể tập trung vào nghề nghiệp."
+            },
+            "university": {
+                "title": "Tuyển Sinh Trường",
+                "description": "Quan hệ đối tác trực tiếp với 10 trường khách sạn hàng đầu toàn cầu đảm bảo hồ sơ của bạn nổi bật."
+            },
+            "career": {
+                "title": "Huấn Luyện Nghề Nghiệp",
+                "description": "Ngoài tuyển sinh, chúng tôi chuẩn bị bạn cho ngành với xây dựng CV, phỏng vấn thử và chiến lược thực tập tại khách sạn cao cấp và nhà hàng Michelin."
+            }
+        },
+        "learnMore": "Tìm hiểu thêm"
+    },
+    "news": {
+        "title": "DẪN ĐẦU TRONG",
+        "titleHighlight": "THẾ GIỚI ẨM THỰC",
+        "viewAll": "Xem Tất Cả Bài Viết",
+        "featured": {
+            "badge": "Thông Cáo Báo Chí",
+            "date": "15 Tháng 10, 2024",
+            "title": "Đội Sinh Viên BHMS Giành Huy Chương Vàng Tại Olympic Ẩm Thực Quốc Tế",
+            "description": "Đội ngũ đầu bếp sinh viên ưu tú của chúng tôi đã thể hiện kỹ năng và sáng tạo xuất sắc, giành vị trí đầu tiên trước 40 trường quốc tế khác."
+        },
+        "article1": {
+            "badge": "Đời Sống Campus",
+            "title": "Hợp Tác Mới Với Michelin Guide"
+        },
+        "article2": {
+            "date": "THÁNG 11 2024",
+            "title": "Ngày Mở Cửa Sắp Tới: Campus Paris",
+            "cta": "Đăng Ký Ngay"
+        }
+    },
+    "cta": {
+        "title": "SỰ NGHIỆP ẨM THỰC TOÀN CẦU CỦA BẠN BẮT ĐẦU HÔM NAY",
+        "description": "Tham gia hàng nghìn sinh viên đã biến đam mê thành hiện thực chuyên nghiệp.",
+        "applyNow": "Đăng Ký Ngay",
+        "downloadProspectus": "Tải Tài Liệu"
+    },
+    "footer": {
+        "description": "Trao quyền cho thế hệ lãnh đạo ẩm thực tiếp theo với con đường giáo dục đẳng cấp thế giới và hỗ trợ nghề nghiệp.",
+        "programs": "Chương Trình",
+        "culinaryDiploma": "Văn Bằng Nghệ Thuật Ẩm Thực",
+        "hospitalityBachelor": "Cử Nhân Quản Lý Khách Sạn",
+        "pastryArts": "Nghệ Thuật Bánh Ngọt & Sô-cô-la",
+        "wine": "Rượu Vang & Sommelier",
+        "contact": "Liên Hệ",
+        "address": "123 Culinary Ave, Suite 400",
+        "city": "New York, NY 10012",
+        "phone": "+1 (555) 123-4567",
+        "email": "admissions@culinary.edu",
+        "newsletter": "Cập Nhật Tin Tức",
+        "newsletterDescription": "Đăng ký nhận bản tin về học bổng.",
+        "emailPlaceholder": "Nhập email của bạn",
+        "subscribe": "Đăng Ký",
+        "copyright": "© 2024 Culinary Consultancy. Bảo lưu mọi quyền.",
+        "privacy": "Chính Sách Bảo Mật",
+        "terms": "Điều Khoản Dịch Vụ",
+        "cookies": "Chính Sách Cookie"
+    },
+    "floatingAdvisor": {
+        "title": "Nói Chuyện Với Cố Vấn",
+        "name": "Sarah Jenkins",
+        "role": "Cố Vấn Khóa Học Cao Cấp",
+        "bookCall": "Đặt Lịch Gọi",
+        "whatsapp": "WhatsApp",
+        "email": "Hỗ Trợ Email",
+        "availability": "Có Sẵn T2-T6 • 9am-6pm"
+    },
+    "programs": {
+        "hero": {
+            "title": "TÌM CON ĐƯỜNG",
+            "titleHighlight": "ẨM THỰC HOÀN HẢO",
+            "description": "Khám phá các chương trình đẳng cấp thế giới từ các viện ẩm thực hàng đầu tại Thụy Sĩ, Pháp và nhiều nơi khác.",
+            "filters": {
+                "region": "Khu Vực",
+                "allRegions": "Tất Cả Khu Vực",
+                "switzerland": "Thụy Sĩ",
+                "france": "Pháp",
+                "uk": "Vương Quốc Anh",
+                "australia": "Úc",
+                "specialization": "Chuyên Môn",
+                "anySpecialization": "Bất Kỳ Chuyên Môn",
+                "culinaryArts": "Nghệ Thuật Ẩm Thực",
+                "pastry": "Bánh Ngọt & Nướng",
+                "hospitality": "Quản Lý Khách Sạn",
+                "wine": "Rượu Vang & Đồ Uống",
+                "degreeType": "Loại Bằng",
+                "allDegrees": "Tất Cả Bằng Cấp",
+                "diploma": "Văn Bằng",
+                "bachelor": "Cử Nhân",
+                "master": "Thạc Sĩ / MBA",
+                "shortCourse": "Khóa Ngắn Hạn"
+            },
+            "searchButton": "Tìm Kiếm"
+        },
+        "card": {
+            "duration": "Thời Gian",
+            "tuition": "Học Phí"
+        },
+        "featured": {
+            "title": "Chương Trình Nổi Bật",
+            "showing": "Hiển thị",
+            "of": "trong số",
+            "results": "kết quả",
+            "loadMore": "Xem Thêm Chương Trình"
+        },
+        "whyStudy": {
+            "badge": "Tại Sao Du Học?",
+            "title": "TRẢI NGHIỆM TOÀN CẦU CHO",
+            "titleHighlight": "SỰ NGHIỆP ĐẲNG CẤP THẾ GIỚI",
+            "description": "Nghệ thuật ẩm thực là ngôn ngữ chung của thế giới. Du học không chỉ nâng cao kỹ năng kỹ thuật mà còn đắm mình vào bối cảnh văn hóa của ẩm thực bạn đang theo đuổi.",
+            "stat": "Sinh viên quốc tế có việc làm trước khi tốt nghiệp",
+            "cultural": {
+                "title": "Năng Lực Đa Văn Hóa",
+                "description": "Đạt được khả năng thích ứng và nhạy cảm văn hóa được đánh giá cao trong các tập đoàn khách sạn đa quốc gia."
+            },
+            "network": {
+                "title": "Mạng Lưới Toàn Cầu",
+                "description": "Xây dựng kết nối với bạn bè, đầu bếp và lãnh đạo ngành từ hơn 50 quốc gia khác nhau."
+            },
+            "internships": {
+                "title": "Thực Tập Danh Giá",
+                "description": "Tiếp cận cơ hội thực tập độc quyền tại nhà hàng Michelin và khách sạn 5 sao toàn cầu."
+            }
+        },
+        "cta": {
+            "title": "CHƯA CHẮC CHƯƠNG TRÌNH NÀO PHÙ HỢP VỚI BẠN?",
+            "description": "Sử dụng công cụ so sánh thông minh để đánh giá chương trình giảng dạy, chi phí và kết quả nghề nghiệp.",
+            "button": "Bắt Đầu So Sánh"
+        }
+    },
+    "blog": {
+        "hero": {
+            "title": "Blog Ẩm Thực",
+            "subtitle": "Góc nhìn chuyên gia về tương lai ẩm thực quốc tế.",
+            "sortButton": "Sắp Xếp Mới Nhất"
+        },
+        "search": {
+            "placeholder": "Tìm kiếm bài viết, đầu bếp, hoặc thành phố...",
+            "categories": {
+                "all": "Tất Cả",
+                "cooking": "Nấu Ăn",
+                "business": "Kinh Doanh",
+                "studentLife": "Đời Sống Sinh Viên",
+                "careerAdvice": "Tư Vấn Nghề Nghiệp",
+                "scholarships": "Học Bổng"
+            }
+        },
+        "featured": {
+            "badge": "Bài Viết Nổi Bật",
+            "readButton": "Đọc Toàn Bộ Bài Viết"
+        },
+        "card": {
+            "readMore": "Đọc"
+        },
+        "latestInsights": "Tin Tức Mới Nhất",
+        "newsletter": {
+            "title": "Bắt đầu hành trình ẩm thực của bạn ngay hôm nay",
+            "description": "Nhận thông báo học bổng độc quyền, hướng dẫn du học và tin tức ngành được gửi trực tiếp đến hộp thư của bạn hàng tuần.",
+            "placeholder": "Địa chỉ email của bạn",
+            "button": "Đăng Ký"
+        }
+    },
+    "programDetail": {
+        "hero": {
+            "downloadBrochure": "Tải Tài Liệu",
+            "bookVisit": "Đặt Lịch Tham Quan"
+        },
+        "quickInfo": {
+            "duration": "Thời Gian",
+            "intakes": "Kỳ Nhập Học",
+            "location": "Địa Điểm"
+        },
+        "courseProgression": {
+            "title": "TIẾN TRÌNH KHÓA HỌC",
+            "subtitle": "Hệ thống \"Học & Làm\" độc đáo của chúng tôi cho phép bạn tích lũy 1.5 năm kinh nghiệm làm việc trong suốt chương trình cử nhân 3 năm.",
+            "year": "Năm",
+            "semester": "Học Kỳ",
+            "study": "Học Tập Lý Thuyết",
+            "work": "Thực Tập Có Lương"
+        },
+        "learningObjectives": {
+            "title": "Mục Tiêu Học Tập Chính",
+            "description": "Chương trình của chúng tôi vượt xa công thức nấu ăn. Chúng tôi nuôi dưỡng kỷ luật, sáng tạo và năng lực kinh doanh cần thiết để lãnh đạo các bếp hiện đại. Sinh viên thành thạo kỹ thuật Pháp cổ điển đồng thời nắm bắt xu hướng toàn cầu đương đại về tính bền vững và khái niệm từ trang trại đến bàn ăn.",
+            "focusBadge": "Trọng Tâm",
+            "focusTitle": "Kỹ Thuật & Độ Chính Xác"
+        },
+        "careerOpportunities": {
+            "title": "Cơ Hội Nghề Nghiệp",
+            "description": "Sinh viên tốt nghiệp Cử Nhân Nghệ Thuật Ẩm Thực của chúng tôi được các khách sạn sang trọng, nhà hàng cao cấp và công ty phục vụ tiệc trên toàn thế giới săn đón. Các đợt thực tập tích hợp mang lại lợi thế đáng kể trên thị trường việc làm, thường dẫn đến các đề nghị tuyển dụng trực tiếp sau khi tốt nghiệp.",
+            "successBadge": "Thành Công",
+            "successTitle": "Việc Làm Toàn Cầu"
+        },
+        "entryRequirements": {
+            "title": "Yêu Cầu Đầu Vào",
+            "subtitle": "Tiêu chí tiêu chuẩn để nhập học vào chương trình Cử Nhân.",
+            "contactQuestion": "Bạn cần đánh giá sơ bộ?",
+            "contactButton": "Liên Hệ Phòng Tuyển Sinh"
+        },
+        "cta": {
+            "title": "SỰ NGHIỆP ẨM THỰC TOÀN CẦU CỦA BẠN BẮT ĐẦU HÔM NAY",
+            "description": "Tham gia cùng hàng nghìn sinh viên đã biến đam mê của họ thành hiện thực nghề nghiệp.",
+            "applyButton": "Đăng Ký Kỳ Tháng 10 2024",
+            "downloadButton": "Tải Tài Liệu Giới Thiệu"
+        }
+    },
+    "blogDetail": {
+        "share": "Chia sẻ bài viết này",
+        "recommended": {
+            "title": "Bạn Có Thể Quan Tâm",
+            "subtitle": "Tiếp tục khám phá các bài viết và hướng dẫn mới nhất của chúng tôi"
+        }
+    },
+    "about": {
+        "hero": {
+            "badge": "Câu Chuyện & Chuyên Môn",
+            "title": "SỨ MỆNH CỦA CHÚNG TÔI:",
+            "titleHighlight": "ĐỊNH HÌNH THẾ HỆ",
+            "titleEnd": "ĐẦU BẾP TƯƠNG LAI.",
+            "description": "Hơn một thập kỷ qua, chúng tôi đã kết nối những tài năng ẩm thực đầy tham vọng với những nhà bếp danh tiếng nhất thế giới. Chúng tôi tin vào sự chính xác, đam mê và sức mạnh biến đổi của giáo dục."
+        },
+        "timeline": {
+            "title": "DI SẢN CỦA",
+            "titleHighlight": "SỰ XUẤT SẮC ẨM THỰC",
+            "description": "Từ một công ty tư vấn nhỏ ở Zurich đến mạng lưới toàn cầu trải dài 3 châu lục, hành trình của chúng tôi phản ánh sự nghiệp của những đầu bếp chúng tôi hướng dẫn: được xây dựng trên kỷ luật, sáng tạo và cam kết không ngừng với chất lượng.",
+            "stats": {
+                "years": "12+",
+                "yearsLabel": "Năm Phục Vụ",
+                "careers": "2,500+",
+                "careersLabel": "Sự Nghiệp Được Khởi Đầu"
+            },
+            "downloadButton": "Tải Hồ Sơ Doanh Nghiệp",
+            "event1": {
+                "title": "Khởi Đầu",
+                "description": "Được thành lập tại Zurich bởi Chef Marco Pierre và chuyên gia tư vấn giáo dục Sarah Jenkins, với tầm nhìn cung cấp hướng dẫn chuyên nghiệp, trung thực cho sinh viên mong muốn học tập tại Thụy Sĩ."
+            },
+            "event2": {
+                "title": "Mở Rộng Châu Á",
+                "description": "Mở văn phòng khu vực đầu tiên tại Singapore để hỗ trợ nhu cầu ngày càng tăng từ Đông Nam Á, hợp tác với các tập đoàn khách sạn hàng đầu như Raffles và Marina Bay Sands cho các chương trình thực tập."
+            },
+            "event3": {
+                "title": "Hợp Tác Michelin",
+                "description": "Chính thức hóa các thỏa thuận thực tập độc quyền với 15 nhà hàng được gắn sao Michelin trên khắp Pháp và Thụy Sĩ, đảm bảo sinh viên của chúng tôi được đào tạo với những người giỏi nhất."
+            },
+            "event4": {
+                "title": "Đổi Mới Số",
+                "description": "Ra mắt nền tảng cố vấn ảo, kết nối sinh viên với các đầu bếp cựu sinh viên trên toàn thế giới để nhận tư vấn nghề nghiệp và lớp học chuyên sâu theo thời gian thực."
+            }
+        },
+        "team": {
+            "title": "GẶP GỠ",
+            "titleHighlight": "BẬC THẦY",
+            "description": "Được hướng dẫn bởi những người kỳ cựu trong ngành đã đi qua con đường bạn mong muốn theo đuổi.",
+            "member1": {
+                "name": "Chef Marco Pierre",
+                "role": "Giám Đốc Ẩm Thực",
+                "badge": "Nhà Sáng Lập",
+                "description": "Cựu Bếp Trưởng Điều Hành tại The Dorchester với 25 năm kinh nghiệm trong ẩm thực cao cấp. Marco giám sát việc điều chỉnh chương trình giảng dạy và quan hệ ngành."
+            },
+            "member2": {
+                "name": "Sarah Jenkins",
+                "role": "Trưởng Phòng Tuyển Sinh",
+                "badge": "Đối Tác Cao Cấp",
+                "description": "Một chiến lược gia giáo dục đã đưa hơn 1.000 sinh viên vào các trường khách sạn hàng đầu. Sarah chuyên về lập kế hoạch nghề nghiệp và đàm phán học bổng."
+            },
+            "member3": {
+                "name": "Jean-Luc Dubois",
+                "role": "Chuyên Gia Bánh Ngọt & Nghệ Thuật",
+                "badge": "Cố Vấn",
+                "description": "Nhà làm sô-cô-la đoạt giải thưởng và cựu Trưởng Bộ Phận Bánh Ngọt tại Ritz Paris. Jean-Luc hướng dẫn sinh viên quan tâm đến thế giới chuyên môn của bánh ngọt."
+            }
+        },
+        "values": {
+            "title": "TẦM NHÌN &",
+            "titleHighlight": "GIÁ TRỊ",
+            "description": "Những nguyên tắc thúc đẩy công ty tư vấn của chúng tôi và sự thành công của sinh viên.",
+            "value1": {
+                "title": "Chất Lượng Không Thỏa Hiệp",
+                "description": "Chúng tôi chỉ hợp tác với các tổ chức được công nhận đáp ứng các tiêu chuẩn quốc tế cao nhất. Chúng tôi tin rằng một nền tảng vững chắc là điều không thể thương lượng cho một sự nghiệp bền vững."
+            },
+            "value2": {
+                "title": "Tầm Nhìn Toàn Cầu",
+                "description": "Nghệ thuật ẩm thực là ngôn ngữ chung của thế giới. Chúng tôi khuyến khích sinh viên khám phá các nền văn hóa, kỹ thuật và ẩm thực đa dạng để trở thành công dân toàn cầu thực sự của nhà bếp."
+            },
+            "value3": {
+                "title": "Lấy Sinh Viên Làm Trung Tâm",
+                "description": "Hành trình của mỗi sinh viên là duy nhất. Chúng tôi cung cấp sự cố vấn cá nhân hóa vượt xa việc tuyển sinh, tập trung vào sự hoàn thành nghề nghiệp lâu dài và phát triển cá nhân."
+            }
+        },
+        "global": {
+            "title": "TẦM ẢNH HƯỞNG TOÀN CẦU,",
+            "titleHighlight": "CHUYÊN MÔN ĐỊA PHƯƠNG",
+            "description": "Mạng lưới của chúng tôi kết nối bạn với các thủ đô ẩm thực của thế giới. Từ những nhà bếp cổ điển của Paris đến những nền ẩm thực sáng tạo của Tokyo.",
+            "stats": {
+                "schools": "50+ Trường Đối Tác",
+                "countries": "25 Quốc Gia"
+            },
+            "regions": {
+                "europe": {
+                    "name": "Châu Âu"
+                },
+                "americas": {
+                    "name": "Châu Mỹ"
+                },
+                "asiaPacific": {
+                    "name": "Châu Á-Thái Bình Dương"
+                },
+                "middleEast": {
+                    "name": "Trung Đông"
+                }
+            }
+        }
+    }
+}
