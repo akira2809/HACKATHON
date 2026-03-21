@@ -22,6 +22,7 @@ import {
   MaterialIcon,
 } from "@/components/homestead";
 import { useQuestStore } from "@/stores";
+import { getChildQuestsFromStorage, getAvailableChildIds } from "@/lib/child-quests";
 
 export function ChildHomeContent() {
   const router = useRouter();
@@ -40,22 +41,61 @@ export function ChildHomeContent() {
     failQuest,
     setShowWelcome,
     setShowRecommendations,
+    initFromData,
   } = useQuestStore();
 
   // Quest start modal state
   const [showQuestModal, setShowQuestModal] = useState(false);
   const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Get selected quest data for modal
   const selectedQuest = todayQuests.find((q) => q.id === selectedQuestId);
 
-  // On mount: check streak + auto-fail expired quests + interval
+  // On mount: load approved quests from localStorage + check streak
   useEffect(() => {
+    // Sync approved quests from parent dashboard
+    const syncQuests = () => {
+      const childIds = getAvailableChildIds();
+
+      if (childIds.length > 0) {
+        setIsSyncing(true);
+        try {
+          // Get quests from the first available child's approved quests
+          const childId = childIds[0];
+          const approvedQuests = getChildQuestsFromStorage(childId);
+
+          if (approvedQuests.length > 0) {
+            // Get current quests from store
+            const currentQuests = useQuestStore.getState().todayQuests;
+
+            // Merge with existing quests (keep unique by id)
+            const existingIds = new Set(currentQuests.map(q => q.id));
+            const newQuests = approvedQuests.filter(q => !existingIds.has(q.id));
+
+            if (newQuests.length > 0) {
+              initFromData({
+                todayQuests: [...currentQuests, ...newQuests],
+              });
+            }
+          }
+        } finally {
+          setIsSyncing(false);
+        }
+      }
+    };
+
+    // Run sync
+    syncQuests();
+
+    // Check streak
     checkAndUpdateStreak();
     checkExpiredQuests();
+
+    // Set up interval for expired check
     const interval = setInterval(checkExpiredQuests, 60_000);
     return () => clearInterval(interval);
-  }, [checkAndUpdateStreak, checkExpiredQuests]);
+  }, [checkAndUpdateStreak, checkExpiredQuests, initFromData]);
 
   const handleQuestGo = (id: string) => {
     setSelectedQuestId(id);

@@ -14,6 +14,7 @@ import { useAppState, type ParentChild, type ParentQuest } from '@/state/appStat
 import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/design-system/HearthPrimitives';
 import { HearthActionButton } from '@/components/design-system/HearthPrimitives';
 import { ParentStateCard } from './ParentStateCard';
+import { saveApprovedQuestToStorage } from '@/lib/child-quests';
 
 type ParentDashboardScreenProps = {
     initialTab?: string;
@@ -525,7 +526,18 @@ export function ParentDashboardScreen({
                             suggestedQuests.slice(0, 2).map((quest) => (
                                 <QuestCard
                                     key={quest.id}
-                                    onApprove={() => approveQuest(activeChild.id, quest.id)}
+                                    onApprove={() => {
+                                      // Save to localStorage for child dashboard
+                                      saveApprovedQuestToStorage(activeChild.id, {
+                                        id: quest.id,
+                                        title: quest.title,
+                                        reward: quest.reward,
+                                        category: quest.category,
+                                        description: quest.description,
+                                      });
+                                      // Also update appState
+                                      approveQuest(activeChild.id, quest.id);
+                                    }}
                                     onReject={() => rejectQuest(activeChild.id, quest.id)}
                                     quest={quest}
                                 />
@@ -576,7 +588,18 @@ export function ParentDashboardScreen({
                             suggestedQuests.map((quest) => (
                                 <QuestCard
                                     key={quest.id}
-                                    onApprove={() => approveQuest(activeChild.id, quest.id)}
+                                    onApprove={() => {
+                                      // Save to localStorage for child dashboard
+                                      saveApprovedQuestToStorage(activeChild.id, {
+                                        id: quest.id,
+                                        title: quest.title,
+                                        reward: quest.reward,
+                                        category: quest.category,
+                                        description: quest.description,
+                                      });
+                                      // Also update appState
+                                      approveQuest(activeChild.id, quest.id);
+                                    }}
                                     onReject={() => rejectQuest(activeChild.id, quest.id)}
                                     quest={quest}
                                 />
