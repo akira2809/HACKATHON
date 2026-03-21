@@ -1,46 +1,33 @@
-'use client';
+"use client";
 
 // ============================================================
 // AdventuresContent — Quest Board
+// Gamified quest cards with cozy hearth aesthetic
 // Uses: quest store
 // ============================================================
 
-import { useEffect } from 'react';
-import { MascotSection } from '@/components/homestead';
-import { ComicButton } from '@/components/homestead';
-import { useQuestStore } from '@/stores';
+import { useEffect } from "react";
+import { MascotSection, ComicButton, MaterialIcon } from "@/components/homestead";
+import { useQuestStore } from "@/stores";
 
-const CATEGORY_COLORS: Record<string, string> = {
-  learning:     'bg-[#F472B6]',
-  exercise:     'bg-[#38BDF8]',
-  responsibility: 'bg-[#FACC15]',
-  nature:       'bg-[#34D399]',
+// Category icons (Material Symbols)
+const CATEGORY_ICONS: Record<string, string> = {
+  learning: "menu_book",
+  exercise: "directions_run",
+  responsibility: "cleaning_services",
+  nature: "eco",
 };
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  learning:     '📚',
-  exercise:     '🏃‍♀️',
-  responsibility: '🧼',
-  nature:       '🌿',
-};
-
-const CATEGORY_TITLES: Record<string, string> = {
-  learning:     'The Ancient Story',
-  exercise:     'Sonic Sprint',
-  responsibility: 'Dish Destroyer',
-};
-
-const CATEGORY_DESCS: Record<string, string> = {
-  learning:     'Read 10 pages of your favorite book to unlock the Wisdom Totem.',
-  exercise:     'Run in place for 2 minutes to charge the Homestead batteries!',
-  responsibility: 'Clear your plate after dinner to keep the kitchen monsters away.',
+// Softer, warmer category colors (pastel + cozy)
+const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string; light: string }> = {
+  learning: { bg: "bg-[#E9D5FF]", border: "border-[#7E22CE]", text: "text-[#5B21B6]", light: "bg-violet-100 text-violet-700" },
+  exercise: { bg: "bg-[#BAE6FD]", border: "border-[#0284C7]", text: "text-[#0369A1]", light: "bg-sky-100 text-sky-700" },
+  responsibility: { bg: "bg-[#FEF08A]", border: "border-[#CA8A04]", text: "text-[#92400E]", light: "bg-amber-100 text-amber-700" },
+  nature: { bg: "bg-[#A7F3D0]", border: "border-[#059669]", text: "text-[#047857]", light: "bg-emerald-100 text-emerald-700" },
 };
 
 export function AdventuresContent() {
   const {
-    level,
-    xp,
-    xpToNext,
     todayQuests,
     checkExpiredQuests,
     startQuest,
@@ -49,188 +36,280 @@ export function AdventuresContent() {
     uncompleteQuest,
   } = useQuestStore();
 
-  // Auto-fail expired
+  // Auto-fail expired quests
   useEffect(() => {
     checkExpiredQuests();
     const interval = setInterval(checkExpiredQuests, 60_000);
     return () => clearInterval(interval);
   }, [checkExpiredQuests]);
 
-  const handleDidIt = (category: string) => {
-    // Find a pending quest of this category and start it
-    const quest = todayQuests.find(
-      (q) => q.category === category && q.status === 'pending'
-    );
-    if (quest) startQuest(quest.id);
+  // Handle quest start
+  const handleStartQuest = (questId: string) => {
+    startQuest(questId);
   };
 
-  const totalXp = (level - 1) * xpToNext + xp;
-  const progressPct = Math.round((xp / xpToNext) * 100);
+  // Handle quest completion
+  const handleCompleteQuest = (questId: string) => {
+    completeQuest(questId);
+  };
 
-  // Calculate today's completed quests across all categories
-  const completedCount = todayQuests.filter((q) => q.status === 'completed').length;
+  // Handle quest fail
+  const handleFailQuest = (questId: string) => {
+    failQuest(questId);
+  };
+
+  // Handle redo
+  const handleRedoQuest = (questId: string) => {
+    uncompleteQuest(questId);
+  };
+
+  // Calculate stats
+  const completedCount = todayQuests.filter((q) => q.status === "completed").length;
+  const ongoingCount = todayQuests.filter((q) => q.status === "ongoing").length;
   const totalCount = todayQuests.length;
+  const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  // Mascot message
+  const mascotMessage =
+    completedCount === totalCount && totalCount > 0
+      ? "You've conquered all quests today! What a champion!"
+      : ongoingCount > 0
+      ? "You're on a roll! Keep going, champion!"
+      : `${totalCount - completedCount > 0 ? `${totalCount - completedCount} more adventures await! Let's do this!` : "Welcome to your Quest Board! Ready for an adventure?"}`;
 
   return (
     <>
-      <main className="relative min-h-screen pb-28 overflow-hidden">
+      <main className="relative min-h-screen pb-24 overflow-hidden">
 
-        {/* Halftone texture */}
+        {/* Background texture */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: 'radial-gradient(#1C1917 1px, transparent 1px)',
-            backgroundSize: '12px 12px',
-            opacity: 0.04,
+            backgroundImage: "radial-gradient(#1C1917 1px, transparent 1px)",
+            backgroundSize: "14px 14px",
+            opacity: 0.03,
           }}
         />
 
-        <div className="container mx-auto px-6 pt-20 relative z-10">
+        <div className="container mx-auto px-4 pt-20 relative z-10 max-w-4xl">
 
           {/* Mascot */}
           <MascotSection
-            message={
-              completedCount === totalCount
-                ? "You've conquered all quests today! 🏆"
-                : `${totalCount - completedCount} more adventures await! ⚡`
-            }
-            avatarSize={100}
-            emoji="⚡"
+            message={mascotMessage}
+            avatarSize={90}
             className="mb-6"
           />
 
-          {/* Page Title */}
-          <div className="mb-8 text-center md:text-left">
-            <h1 className="font-black text-5xl md:text-7xl text-[#1C1917] uppercase tracking-tighter transform -rotate-1">
-              Quest <span className="text-[#F472B6] italic">Board</span>
-            </h1>
-            <div className="h-3 w-48 bg-[#38BDF8] mt-2 mx-auto md:mx-0 -skew-x-12 border-2 border-[#1C1917]" />
-          </div>
+          {/* Page Title + Progress */}
+          <div className="mb-6">
+            <div className="flex items-end justify-between mb-4">
+              <div>
+                <h1 className="font-black text-3xl md:text-4xl text-[#2F342C] uppercase tracking-tight leading-none">
+                  Quest <span className="text-[#7E22CE] italic">Board</span>
+                </h1>
+                <div className="h-2 w-32 bg-[#BAE6FD] mt-2 -skew-x-12 border-2 border-[#0284C7] rounded-full" />
+              </div>
 
-          {/* Quest Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            {(['learning', 'exercise', 'responsibility'] as const).map((cat) => {
-              const catQuests = todayQuests.filter((q) => q.category === cat);
-              const pending = catQuests.find((q) => q.status === 'pending');
-              const ongoing = catQuests.find((q) => q.status === 'ongoing');
-              const completed = catQuests.filter((q) => q.status === 'completed');
-
-              return (
-                <article
-                  key={cat}
-                  className={`
-                    bg-white border-4 border-[#1C1917] p-6
-                    skew-panel comic-shadow
-                    flex flex-col
-                    ${completed.length > 0 ? 'opacity-80' : ''}
-                  `}
-                >
-                  {/* Category badge */}
-                  <div className="flex justify-between items-start mb-4">
-                    <span className={`
-                      ${CATEGORY_COLORS[cat]} text-white px-3 py-1
-                      font-black text-xs uppercase rounded border-2 border-[#1C1917]
-                    `}>
-                      {cat}
+              {/* Progress ring */}
+              {totalCount > 0 && (
+                <div className="flex flex-col items-center">
+                  <div className="relative w-14 h-14">
+                    <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+                      <circle cx="28" cy="28" r="24" fill="none" stroke="#E5E7EB" strokeWidth="5" />
+                      <circle
+                        cx="28"
+                        cy="28"
+                        r="24"
+                        fill="none"
+                        stroke="#6E8B63"
+                        strokeWidth="5"
+                        strokeLinecap="round"
+                        strokeDasharray={`${(progressPct / 100) * 150.8} 150.8`}
+                        className="transition-all duration-500"
+                      />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center font-bold text-sm text-[#2F342C]">
+                      {progressPct}%
                     </span>
-                    <span className="text-3xl">{CATEGORY_EMOJI[cat]}</span>
                   </div>
-
-                  {/* Title */}
-                  <h3 className="font-black text-2xl mb-3 text-[#1C1917] leading-none uppercase">
-                    {CATEGORY_TITLES[cat]}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="font-bold text-base text-slate-600 mb-4 flex-1">
-                    {CATEGORY_DESCS[cat]}
-                  </p>
-
-                  {/* Status pills */}
-                  <div className="flex gap-2 mb-4 flex-wrap">
-                    {pending && (
-                      <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase">
-                        {pending.reward} Seeds
-                      </span>
-                    )}
-                    {ongoing && (
-                      <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase">
-                        In Progress
-                      </span>
-                    )}
-                    {completed.length > 0 && (
-                      <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase">
-                        Done {completed.length}×
-                      </span>
-                    )}
-                  </div>
-
-                  {/* CTA */}
-                  <ComicButton
-                    variant="primary"
-                    size="lg"
-                    fullWidth
-                    onClick={() => handleDidIt(cat)}
-                    className="comic-shadow"
-                  >
-                    {completed.length > 0 ? 'DO AGAIN! 🔄' : 'I DID IT! 💪'}
-                  </ComicButton>
-                </article>
-              );
-            })}
-          </div>
-
-          {/* Level Progress Banner */}
-          <div
-            className="bg-[#FACC15] border-4 border-[#1C1917] p-6 skew-panel relative overflow-hidden comic-shadow"
-          >
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <span className="material-symbols-outlined text-8xl text-[#1C1917]">
-                auto_awesome
-              </span>
+                  <span className="text-[11px] font-medium text-[#7C8E76] mt-1 uppercase tracking-wide">
+                    Done
+                  </span>
+                </div>
+              )}
             </div>
 
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-
-              {/* XP progress */}
-              <div className="flex-1">
-                <h4 className="font-black text-3xl text-[#1C1917] uppercase italic tracking-tighter">
-                  Level {level} Explorer
-                </h4>
-
-                {/* Bar */}
-                <div className="w-full max-w-md bg-white border-4 border-[#1C1917] h-8 mt-2 relative overflow-hidden rounded-full">
-                  <div
-                    className="h-full bg-[#F472B6] transition-all duration-500"
-                    style={{ width: `${progressPct}%` }}
-                  />
-                  <div
-                    className="absolute inset-0 opacity-30"
-                    style={{
-                      backgroundImage: 'radial-gradient(#1C1917 1px, transparent 1px)',
-                      backgroundSize: '6px 6px',
-                    }}
-                  />
+            {/* Stats pills */}
+            {totalCount > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 bg-white border-2 border-[#D8E3D1] rounded-full px-3 py-1.5 shadow-sm">
+                  <MaterialIcon icon="check_circle" className="!text-sm text-[#6E8B63]" />
+                  <span className="text-sm font-semibold text-[#2F342C]">{completedCount} Done</span>
                 </div>
-                <p className="font-black text-xs mt-1.5 uppercase text-[#1C1917]">
-                  {xp.toLocaleString()} / {xpToNext.toLocaleString()} XP to next level
-                </p>
-                <p className="text-[10px] font-bold text-slate-600 mt-0.5">
-                  Total: {totalXp.toLocaleString()} XP earned
+                <div className="flex items-center gap-1.5 bg-white border-2 border-[#D8E3D1] rounded-full px-3 py-1.5 shadow-sm">
+                  <MaterialIcon icon="pending" className="!text-sm text-[#CA8A04]" />
+                  <span className="text-sm font-semibold text-[#2F342C]">{totalCount - completedCount} Left</span>
+                </div>
+                {ongoingCount > 0 && (
+                  <div className="flex items-center gap-1.5 bg-white border-2 border-[#D8E3D1] rounded-full px-3 py-1.5 shadow-sm">
+                    <MaterialIcon icon="play_circle" className="!text-sm text-[#0284C7]" />
+                    <span className="text-sm font-semibold text-[#2F342C]">{ongoingCount} Active</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Quest Cards */}
+          <div className="space-y-3">
+            {todayQuests.length === 0 ? (
+              /* Empty state */
+              <div className="bg-[#FBF8F1] border-4 border-[#D8E3D1] rounded-3xl p-10 text-center shadow-md">
+                <MaterialIcon icon="explore" className="!text-5xl text-[#7C8E76] mx-auto mb-4" />
+                <h3 className="font-bold text-xl text-[#2F342C] mb-2">No Quests Yet!</h3>
+                <p className="text-[#7C8E76] text-sm leading-relaxed">
+                  Check back soon for new adventures!
                 </p>
               </div>
+            ) : (
+              todayQuests.map((quest) => {
+                const colors = CATEGORY_COLORS[quest.category] || CATEGORY_COLORS.learning;
+                const iconName = CATEGORY_ICONS[quest.category] || "star";
+                const isCompleted = quest.status === "completed";
+                const isOngoing = quest.status === "ongoing";
+                const isPending = quest.status === "pending";
+                const isExpired = quest.status === "failed";
 
-              {/* Stats */}
-              <div className="flex flex-col gap-3">
-                <div className="bg-white border-4 border-[#1C1917] px-5 py-3 rounded-xl comic-shadow text-center">
-                  <p className="font-black text-3xl text-[#F472B6]">{completedCount}</p>
-                  <p className="font-black text-[10px] uppercase text-slate-600">Done Today</p>
-                </div>
-                <div className="bg-white border-4 border-[#1C1917] px-5 py-3 rounded-xl comic-shadow text-center">
-                  <p className="font-black text-3xl text-[#34D399]">{totalCount - completedCount}</p>
-                  <p className="font-black text-[10px] uppercase text-slate-600">Remaining</p>
-                </div>
-              </div>
+                return (
+                  <article
+                    key={quest.id}
+                    className={`
+                      bg-[#FBF8F1] border-3 border-[#D8E3D1] rounded-2xl overflow-hidden
+                      shadow-sm transition-all duration-200
+                      ${isCompleted ? "opacity-70" : ""}
+                      ${isOngoing ? "border-[#0284C7] border-3 ring-2 ring-[#BAE6FD]" : ""}
+                      ${isExpired ? "opacity-40" : ""}
+                      hover:shadow-md hover:border-[#B8C6B1]
+                    `}
+                  >
+                    {/* Card header */}
+                    <div className={`${colors.bg} ${colors.text} px-4 py-3 flex items-center justify-between`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-lg ${colors.border} border-2 bg-white/30 flex items-center justify-center`}>
+                          <MaterialIcon icon={iconName} className={`!text-lg ${colors.text}`} />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider opacity-70">
+                            {quest.category}
+                          </span>
+                          <h3 className="font-bold text-base leading-tight capitalize" style={{ fontFamily: "inherit" }}>
+                            {quest.title}
+                          </h3>
+                        </div>
+                      </div>
+
+                      {/* Status badge */}
+                      <div
+                        className={`
+                          px-2.5 py-1 rounded-full border ${colors.border} text-[10px] font-bold uppercase tracking-wide
+                          ${isCompleted ? "bg-white/50" : ""}
+                          ${isOngoing ? "bg-white/50" : ""}
+                          ${isPending ? "bg-white/50" : ""}
+                          ${isExpired ? "bg-white/50" : ""}
+                        `}
+                      >
+                        {isCompleted && "Done"}
+                        {isOngoing && "Active"}
+                        {isPending && "Ready"}
+                        {isExpired && "Expired"}
+                      </div>
+                    </div>
+
+                    {/* Card body */}
+                    <div className="p-4">
+                      {/* Description */}
+                      <p className="text-sm text-[#5B6550] leading-relaxed mb-4" style={{ lineHeight: "1.6" }}>
+                        {quest.description || `Complete this ${quest.category} quest to earn seeds!`}
+                      </p>
+
+                      {/* Reward + Timer */}
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex items-center gap-1.5 bg-[#FEF9C3] border border-[#E6C766] rounded-full px-3 py-1">
+                          <MaterialIcon icon="eco" className="!text-sm text-[#CA8A04]" />
+                          <span className="text-sm font-semibold text-[#92400E]">
+                            {quest.reward} Seeds
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2">
+                        {isPending && (
+                          <ComicButton
+                            variant="primary"
+                            size="md"
+                            fullWidth
+                            icon="play_arrow"
+                            onClick={() => handleStartQuest(quest.id)}
+                          >
+                            Start Quest
+                          </ComicButton>
+                        )}
+
+                        {isOngoing && (
+                          <>
+                            <ComicButton
+                              variant="success"
+                              size="md"
+                              icon="check"
+                              onClick={() => handleCompleteQuest(quest.id)}
+                              className="flex-1"
+                            >
+                              Done!
+                            </ComicButton>
+                            <ComicButton
+                              variant="danger"
+                              size="md"
+                              icon="close"
+                              onClick={() => handleFailQuest(quest.id)}
+                            >
+                              Fail
+                            </ComicButton>
+                          </>
+                        )}
+
+                        {isCompleted && (
+                          <ComicButton
+                            variant="gold"
+                            size="md"
+                            fullWidth
+                            icon="refresh"
+                            onClick={() => handleRedoQuest(quest.id)}
+                          >
+                            Do Again
+                          </ComicButton>
+                        )}
+
+                        {isExpired && (
+                          <div className="flex-1 text-center py-2">
+                            <span className="text-xs font-medium text-[#7C8E76] uppercase tracking-wide">
+                              Quest Expired
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </div>
+
+          {/* Bottom decoration */}
+          <div className="mt-10 pt-6 text-center">
+            <div className="inline-flex items-center gap-2 text-[#B8C6B1]">
+              <MaterialIcon icon="potted_plant" className="!text-2xl" />
+              <span className="text-xs font-medium tracking-wide">Keep growing!</span>
             </div>
           </div>
         </div>

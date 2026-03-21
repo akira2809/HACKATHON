@@ -51,7 +51,6 @@ export function DreamsContent() {
         badge={dream.badge}
         badgeColor={dream.badgeColor}
         message={dream.message}
-        onAddSeeds={() => {}}
       />
 
       {/* Story Progress */}
