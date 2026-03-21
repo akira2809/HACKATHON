@@ -1,0 +1,399 @@
+🌸 MASTER UI GENERATOR PROMPT (V2)
+
+You are a senior full-stack engineer.
+
+Generate a complete hackathon MVP frontend project for a mobile-first web app called:
+
+Lena’s Homestead
+TECH STACK
+
+Use:
+
+Next.js (App Router)
+React
+TailwindCSS
+Zustand for global state
+OpenAI API integration
+ElevenLabs voice API
+Browser geolocation
+No backend server required
+
+The project should run locally using:
+
+npm install
+npm run dev
+APP CONCEPT
+
+Lena’s Homestead is an AI-powered family companion app where children grow through quests, goals, and family activities guided by Lena, a friendly flower nymph.
+
+The AI agent Lena AI Steward reasons about the family household context.
+
+Children complete quests and earn glowing seeds.
+
+Parents approve quests and participate in shared activities called:
+
+Homestead Moments
+CORE GAME LOOPS
+QUEST LOOP
+
+AI generates quests → parent approves → child completes quest → coins increase → streak increases → goal progress advances.
+
+GOAL LOOP
+
+Seeds earned from quests contribute toward a meaningful goal.
+
+Example:
+
+Birthday Gift
+100 Seeds
+FAMILY MOMENT LOOP
+
+AI suggests an activity → parent schedules moment → proximity check → timer → reward.
+
+FAMILY SYSTEM
+
+The app supports multiple children per family.
+
+The UI must include a child selector.
+
+Example:
+
+Nguyen Household
+
+Select Child
+
+Emma
+Liam
+
+All screens update based on the selected child.
+
+VISUAL STYLE
+
+Design a cozy magical homestead aesthetic inspired by:
+
+Studio Ghibli
+Animal Crossing
+Stardew Valley
+
+Color palette:
+
+sage green
+warm beige
+blossom pink
+soft gold accents
+
+Coins are represented as glowing seeds.
+
+Include small emoji icons.
+
+PROJECT STRUCTURE
+
+Generate this folder structure:
+
+/app
+/page.tsx                 (Parent Dashboard)
+/children/page.tsx        (Child Selector)
+/adventures/page.tsx      (Child Quest Screen)
+/dreams/page.tsx          (Goals)
+/moments/page.tsx         (Family Moments Planner)
+/advisor/page.tsx         (Advisor Suggestions)
+
+/moments/proximity/page.tsx
+/moments/timer/page.tsx
+
+/components
+Navbar.tsx
+ChildSelector.tsx
+QuestCard.tsx
+GoalCard.tsx
+MomentCard.tsx
+AdvisorCard.tsx
+PlaceSuggestionCard.tsx
+MascotBubble.tsx
+ProgressBar.tsx
+StreakBadge.tsx
+QuestCountdown.tsx
+
+/lib
+openai.ts
+elevenlabs.ts
+distance.ts
+
+/state
+appState.ts
+GLOBAL STATE
+
+Use Zustand.
+
+Example state structure:
+
+family = {
+ name: "Nguyen Household"
+}
+
+children = [
+ { id:1, name:"Emma", coins:40 },
+ { id:2, name:"Liam", coins:15 }
+]
+
+selectedChildId = 1
+
+quests = []
+
+streak = 5
+
+goal = {
+ title:"Birthday Gift",
+ target:100
+}
+
+advisorMessages = []
+
+dailyTokens = 5
+MAIN FEATURES
+1️⃣ CHILD SELECTOR
+
+Allow switching children.
+
+Display:
+
+Emma
+Liam
+
+Switching child updates:
+
+quests
+streak
+goals
+preferences
+2️⃣ QUEST GENERATION
+
+Parent dashboard includes button:
+
+Generate Quests with AI
+
+Use OpenAI.
+
+Prompt template:
+
+Generate 3 daily quests for a child.
+
+Age: 8
+
+Categories:
+learning
+exercise
+responsibility
+
+Return JSON:
+[
+ {title:"", reward:10},
+ {title:"", reward:10},
+ {title:"", reward:10}
+]
+
+Display quests using QuestCard.
+
+Parent must approve them.
+
+3️⃣ QUEST EXPIRATION
+
+Display countdown until quests reset.
+
+Example UI:
+
+Today's Quests
+Reset in 6h 12m
+
+Implement QuestCountdown component.
+
+4️⃣ QUEST COMPLETION
+
+QuestCard includes button:
+
+"I Did It!"
+
+When clicked:
+
+mark quest completed
+increase seeds
+update goal progress
+update streak
+trigger mascot message
+play voice with ElevenLabs
+5️⃣ STREAK SYSTEM
+
+Display streak badge:
+
+🔥 5 Day Streak
+
+Use StreakBadge component.
+
+When streak reaches milestones:
+
+show celebration animation
+6️⃣ GOAL PROGRESS
+
+Goal page shows:
+
+Birthday Gift
+
+60 / 100 seeds
+
+Use ProgressBar component.
+
+7️⃣ ADVISOR SYSTEM
+
+Parent dashboard includes:
+
+Homestead Advisor
+
+AI generates suggestions based on child preferences.
+
+Example prompt:
+
+Suggest one activity a parent and child can do together.
+
+Duration: 20 minutes
+Theme: cozy homestead
+Child preference: aquarium
+
+Return JSON:
+
+{
+ activity:"",
+ duration:""
+}
+
+Display suggestion using AdvisorCard.
+
+8️⃣ PLACE DISCOVERY
+
+Advisor suggestions may include location ideas.
+
+Display:
+
+Nearby Suggestions
+
+Aquarium Cafe
+⭐ 4.6
+📍 1.2 km away
+
+Use PlaceSuggestionCard.
+
+Include button:
+
+Open in Google Maps
+
+Maps link:
+
+https://www.google.com/maps/search/?api=1&query=aquarium
+9️⃣ FAMILY MOMENTS
+
+Parent accepts activity.
+
+MomentCard shows:
+
+Start Moment
+🔟 PROXIMITY CHECK
+
+Use browser geolocation.
+
+navigator.geolocation.getCurrentPosition()
+
+Calculate distance using Haversine formula.
+
+If:
+
+distance < 50 meters
+
+Show:
+
+Homestead connection confirmed
+11️⃣ FAMILY MOMENT TIMER
+
+Start countdown timer:
+
+20 minutes
+
+When finished:
+
+reward seeds
+add AI tokens
+play mascot voice
+12️⃣ MASCOT INTERACTIONS
+
+Create MascotBubble component.
+
+Example messages:
+
+Welcome back to the homestead!
+Wonderful job!
+The homestead grows when families spend time together.
+13️⃣ VOICE INTEGRATION
+
+Use ElevenLabs.
+
+Create helper:
+
+lib/elevenlabs.ts
+
+Play voice when:
+
+quest completed
+moment completed
+goal milestone reached
+14️⃣ NAVIGATION
+
+Bottom navigation bar:
+
+Home
+Adventures
+Dreams
+Moments
+Advisor
+
+Mobile-first design.
+
+OUTPUT REQUIREMENTS
+
+Generate:
+
+Full folder structure
+All React components
+Tailwind styling
+Zustand state store
+OpenAI API integration
+ElevenLabs voice integration
+Geolocation logic
+Example .env file
+NEXT_PUBLIC_OPENAI_API_KEY=
+NEXT_PUBLIC_ELEVENLABS_API_KEY=
+
+Ensure the project runs immediately after installation.
+
+DESIGN GOAL
+
+The UI should feel like:
+
+A magical cozy companion for families
+
+and demonstrate clearly:
+
+quests
+streaks
+goals
+family activities
+AI suggestions
+Result
+
+This V2 master prompt now aligns with the full system design, including:
+
+family architecture
+quest lifecycle
+streak system
+advisor AI
+place discovery
+multi-child support
+
+while remaining hackathon-friendly.

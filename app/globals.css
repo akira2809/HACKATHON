@@ -1,82 +1,65 @@
 @import "tailwindcss";
 @plugin '../hero.ts';
-/* Note: You may need to change the path to fit your project structure */
 @source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 
-/* Custom Theme Colors for Culinary Consultation */
-:root {
-    /* Màu chủ đạo (Logo) */
-    --color-primary: #F2994A;
-    --color-primary-dark: #e8873a;
-    --color-secondary: #F7E14F;
+/* ============================================================
+   LENA'S HOMESTEAD — Design System
+   "Cozy Homestead Meets Comic Hero"
+   Tailwind v4 — register utilities with @utility
+   ============================================================ */
 
-    /* Màu phụ trợ loại 1 */
-    --color-dark: #2D3436;
-    --color-accent-red: #EB5757;
-    --color-accent-green: #6FCF97;
-
-    /* Màu phụ trợ loại 2 */
-    --color-background-light: #FDFCF0;
-    --color-background-gray: #F2F2F2;
-    --color-surface-light: #ffffff;
-    --color-surface-dark: #2d3436;
+/* ---------- Comic Utility Classes ---------- */
+@utility comic-border {
+  border: 4px solid #1c1917;
 }
 
-/* Tailwind Custom Classes - Force Override */
-.bg-primary {
-    background-color: #F2994A !important;
+@utility comic-border-2 {
+  border: 2px solid #1c1917;
 }
 
-.bg-primary-dark {
-    background-color: #e8873a !important;
+@utility comic-shadow {
+  box-shadow: 4px 4px 0px #1c1917;
 }
 
-.text-primary {
-    color: #F2994A !important;
+@utility comic-shadow-sm {
+  box-shadow: 2px 2px 0px #1c1917;
 }
 
-.border-primary {
-    border-color: #F2994A !important;
+@utility comic-shadow-lg {
+  box-shadow: 6px 6px 0px #1c1917;
 }
 
-.shadow-primary\/20 {
-    box-shadow: 0 10px 15px -3px rgba(242, 153, 74, 0.2) !important;
+@utility comic-shadow-gold {
+  box-shadow: 4px 4px 0px #eec200;
 }
 
-.shadow-primary\/30 {
-    box-shadow: 0 10px 15px -3px rgba(242, 153, 74, 0.3) !important;
+@utility comic-shadow-pink {
+  box-shadow: 4px 4px 0px #ec6fa0;
 }
 
-.shadow-primary\/40 {
-    box-shadow: 0 10px 15px -3px rgba(242, 153, 74, 0.4) !important;
+@utility comic-shadow-mint {
+  box-shadow: 4px 4px 0px #059669;
 }
 
-.hover\:bg-primary-dark:hover {
-    background-color: #e8873a !important;
+@utility comic-shadow-magic {
+  box-shadow: 4px 4px 0px #7e22ce;
 }
 
-.bg-background-light {
-    background-color: #FDFCF0 !important;
+@utility skew-panel {
+  transform: skewX(-1deg);
 }
 
-/* Gradient text fix */
-.bg-gradient-to-r.from-primary {
-    background-image: linear-gradient(to right, #F2994A, #F7E14F) !important;
+@utility skew-panel-reverse {
+  transform: skewX(1deg);
 }
 
-.from-primary.to-orange-500 {
-    background-image: linear-gradient(to right, #F2994A, #F7E14F) !important;
+@utility skew-panel-2 {
+  transform: skewX(-2deg);
 }
 
-/* Custom Animations */
-@keyframes scroll {
-    0% {
-        transform: translateX(0);
-    }
-
-    100% {
-        transform: translateX(-100%);
-    }
+@utility halftone-bg {
+  background-image: radial-gradient(#1c1917 1px, transparent 1px);
+  background-size: 12px 12px;
 }
 
 .animate-scroll {
@@ -198,4 +181,49 @@
     background-size: 18px 18px, 24px 24px;
     opacity: 0.35;
     mix-blend-mode: multiply;
+}
+
+@utility seed-glow {
+  filter: drop-shadow(0 0 6px #facc15);
+}
+
+@utility text-stroke {
+  -webkit-text-stroke: 1.5px #1c1917;
+}
+
+@utility animate-seed-float {
+  animation: seed-float 3s ease-in-out infinite;
+}
+
+@utility animate-sparkle {
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+@utility animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ---------- Material Symbols ---------- */
+@utility material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+@utility material-symbols-filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ---------- Animations (keyframes only) ---------- */
+@keyframes seed-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 4px 4px 0px #1c1917; }
+  50% { box-shadow: 4px 4px 12px #facc15; }
 }
