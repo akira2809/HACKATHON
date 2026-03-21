@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardBody, Chip } from '@heroui/react';
 import { useParams, useRouter } from 'next/navigation';
-import { AppShell } from '@/components/AppShell';
-import { MascotBubble } from '@/components/MascotBubble';
-import { ProgressBar } from '@/components/ProgressBar';
+import { AppShell } from '@/components/parent/AppShell';
+import { MascotBubble } from '@/components/parent/MascotBubble';
+import { ProgressBar } from '@/components/parent/ProgressBar';
 import { HearthActionButton } from '@/components/design-system/HearthPrimitives';
 import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/design-system/HearthPrimitives';
 import { buildLocalizedHref } from '@/lib/locale-path';
@@ -78,24 +78,24 @@ function ProximityPanel({
     return (
         <>
             <Card shadow="none" className="hearth-ledger-card rounded-[28px]">
-                <CardBody className="grid gap-5 p-6 text-center">
-                    <div className="grid gap-2 justify-items-center">
+                <CardBody className="grid gap-4 p-5 text-center sm:gap-5 sm:p-6">
+                    <div className="grid gap-1.5 justify-items-center sm:gap-2">
                         <p className="hearth-kicker">Shared Readiness</p>
-                        <h2 className="hearth-heading text-[1.7rem] font-semibold tracking-[-0.03em] text-[var(--hearth-text-primary)]">
+                        <h2 className="hearth-heading text-[1.5rem] font-semibold tracking-[-0.03em] text-[var(--hearth-text-primary)] sm:text-[1.7rem]">
                             Move close enough to begin together
                         </h2>
-                        <p className="max-w-[280px] text-sm leading-6 text-[var(--hearth-text-secondary)]">
+                        <p className="max-w-[260px] text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:max-w-[280px] sm:text-sm">
                             {momentTitle} will unlock once the homestead can confirm a gentle shared space.
                         </p>
                     </div>
 
                     <div className="grid justify-items-center gap-2">
-                        <div className="rounded-full border border-[rgba(230,199,102,0.28)] bg-[rgba(230,199,102,0.18)] px-6 py-4">
-                            <span className="hearth-number text-4xl font-semibold text-[var(--hearth-text-primary)]">
+                        <div className="rounded-full border border-[rgba(230,199,102,0.28)] bg-[rgba(230,199,102,0.18)] px-5 py-3 sm:px-6 sm:py-4">
+                            <span className="hearth-number text-[2.25rem] font-semibold text-[var(--hearth-text-primary)] sm:text-4xl">
                                 {closenessScore}%
                             </span>
                         </div>
-                        <p className="text-sm text-[var(--hearth-text-secondary)]">
+                        <p className="text-[13px] text-[var(--hearth-text-secondary)] sm:text-sm">
                             closeness score for {childName}
                         </p>
                     </div>
@@ -110,14 +110,14 @@ function ProximityPanel({
 
                     <div className="flex flex-wrap justify-center gap-2">
                         <Chip radius="full" variant="flat" className="border border-[rgba(230,199,102,0.24)] bg-[rgba(230,199,102,0.18)] text-[var(--hearth-text-primary)]">
-                            <span className="px-1 text-[11px] font-semibold">2. Proximity</span>
+                            <span className="px-1 text-[10px] font-semibold sm:text-[11px]">2. Proximity</span>
                         </Chip>
                         <Chip radius="full" variant="flat" className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.22)] text-[var(--hearth-text-secondary)]">
-                            <span className="px-1 text-[11px] font-semibold">3. Timer Next</span>
+                            <span className="px-1 text-[10px] font-semibold sm:text-[11px]">3. Timer Next</span>
                         </Chip>
                     </div>
 
-                    <div className="flex flex-wrap justify-center gap-3">
+                    <div className="flex flex-wrap justify-center gap-2.5 sm:gap-3">
                         {isReady ? (
                             <HearthActionButton onPress={onOpenTimer}>
                                 Continue To Timer

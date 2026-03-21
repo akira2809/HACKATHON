@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { Chip } from '@heroui/react';
 import type { ParentChild } from '@/state/appState';
-import { ChildSelector } from './ChildSelector';
+import { ChildSelector } from './ChildSelector'; 
 import { BottomNavigation, type BottomNavigationItem } from './BottomNavigation';
 
 type AppShellProps = {
@@ -35,25 +35,25 @@ export function AppShell({
 }: AppShellProps) {
     return (
         <main className="hearth-page">
-            <div className="mx-auto grid min-h-screen max-w-[460px] gap-4 px-4 pb-28 pt-6">
-                <header className="hearth-ledger-card rounded-[30px] p-5">
-                    <div className="grid gap-3">
+            <div className="mx-auto grid min-h-screen max-w-[420px] gap-3 px-3 pb-24 pt-4 sm:max-w-[460px] sm:gap-4 sm:px-4 sm:pb-28 sm:pt-6">
+                <header className="hearth-ledger-card rounded-[28px] p-4 sm:rounded-[30px] sm:p-5">
+                    <div className="grid gap-2.5 sm:gap-3">
                         <p className="hearth-kicker">Lena&apos;s Homestead</p>
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="grid gap-2">
-                                <h1 className="hearth-heading text-[2.05rem] font-semibold tracking-[-0.04em] text-[var(--hearth-text-primary)]">
+                        <div className="flex items-start justify-between gap-3 sm:gap-4">
+                            <div className="grid min-w-0 gap-1.5 sm:gap-2">
+                                <h1 className="hearth-heading text-[1.8rem] font-semibold tracking-[-0.04em] text-[var(--hearth-text-primary)] sm:text-[2.05rem]">
                                     {title}
                                 </h1>
-                                <p className="max-w-[220px] text-sm leading-6 text-[var(--hearth-text-secondary)]">
+                                <p className="max-w-[190px] text-[13px] leading-5 text-[var(--hearth-text-secondary)] sm:max-w-[220px] sm:text-sm sm:leading-6">
                                     {description}
                                 </p>
                             </div>
                             <Chip
                                 radius="full"
                                 variant="flat"
-                                className="border border-[rgba(230,199,102,0.28)] bg-[rgba(230,199,102,0.18)] px-1 text-[var(--hearth-text-primary)]"
+                                className="shrink-0 border border-[rgba(230,199,102,0.28)] bg-[rgba(230,199,102,0.18)] px-1 text-[var(--hearth-text-primary)]"
                             >
-                                <span className="hearth-number text-sm font-semibold">
+                                <span className="hearth-number text-[13px] font-semibold sm:text-sm">
                                     Family {familySeeds}
                                 </span>
                             </Chip>
@@ -76,7 +76,7 @@ export function AppShell({
                     {children}
                 </div>
 
-                <div className="fixed bottom-4 left-1/2 z-30 w-full max-w-[460px] -translate-x-1/2 px-4">
+                <div className="fixed bottom-3 left-1/2 z-30 w-full max-w-[420px] -translate-x-1/2 px-3 sm:bottom-4 sm:max-w-[460px] sm:px-4">
                     <BottomNavigation items={navItems} />
                 </div>
             </div>

@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardBody, Chip } from '@heroui/react';
 import { useParams, useRouter } from 'next/navigation';
-import { AppShell } from '@/components/AppShell';
-import { MomentCard } from '@/components/MomentCard';
-import { MascotBubble } from '@/components/MascotBubble';
+import { AppShell } from '@/components/parent/AppShell';
+import { MomentCard } from '@/components/parent/MomentCard';
+import { MascotBubble } from '@/components/parent/MascotBubble';
 import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/design-system/HearthPrimitives';
 import { buildLocalizedHref } from '@/lib/locale-path';
 import { useAppState } from '@/state/appState';
@@ -173,32 +173,32 @@ export function ParentMomentsScreen() {
             title="Moments Planner"
             notice={activeChild.networkIssue ? (
                 <Card shadow="none" className="rounded-[22px] border border-[rgba(180,106,90,0.12)] bg-[rgba(251,248,241,0.92)]">
-                    <CardBody className="p-4 text-sm leading-6 text-[var(--hearth-text-secondary)]">
+                    <CardBody className="p-4 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                         {activeChild.networkIssue}
                     </CardBody>
                 </Card>
             ) : null}
         >
             <Card shadow="none" className="hearth-panel rounded-[24px]">
-                <CardBody className="grid gap-4 p-5">
+                <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
                     <div className="grid gap-2">
                         <p className="hearth-kicker">Moments Flow</p>
-                        <h2 className="hearth-heading text-[1.55rem] font-semibold tracking-[-0.03em] text-[var(--hearth-text-primary)]">
+                        <h2 className="hearth-heading text-[1.45rem] font-semibold tracking-[-0.03em] text-[var(--hearth-text-primary)] sm:text-[1.55rem]">
                             Planner, proximity, timer, then a quiet completion summary
                         </h2>
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <Chip radius="full" variant="flat" className="border border-[rgba(230,199,102,0.24)] bg-[rgba(230,199,102,0.18)] text-[var(--hearth-text-primary)]">
-                            <span className="px-1 text-[11px] font-semibold">1. Planner</span>
+                            <span className="px-1 text-[10px] font-semibold sm:text-[11px]">1. Planner</span>
                         </Chip>
                         <Chip radius="full" variant="flat" className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.22)] text-[var(--hearth-text-secondary)]">
-                            <span className="px-1 text-[11px] font-semibold">2. Proximity</span>
+                            <span className="px-1 text-[10px] font-semibold sm:text-[11px]">2. Proximity</span>
                         </Chip>
                         <Chip radius="full" variant="flat" className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.22)] text-[var(--hearth-text-secondary)]">
-                            <span className="px-1 text-[11px] font-semibold">3. Timer</span>
+                            <span className="px-1 text-[10px] font-semibold sm:text-[11px]">3. Timer</span>
                         </Chip>
                         <Chip radius="full" variant="flat" className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.22)] text-[var(--hearth-text-secondary)]">
-                            <span className="px-1 text-[11px] font-semibold">4. Completion</span>
+                            <span className="px-1 text-[10px] font-semibold sm:text-[11px]">4. Completion</span>
                         </Chip>
                     </div>
                 </CardBody>
@@ -226,10 +226,10 @@ export function ParentMomentsScreen() {
 
             {activeChild.moment ? (
                 <Card shadow="none" className="hearth-panel rounded-[24px]">
-                    <CardBody className="grid gap-4 p-5">
+                    <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
                         <div className="grid gap-2">
                             <p className="hearth-kicker">Before You Begin</p>
-                            <h3 className="hearth-heading text-[1.35rem] font-semibold tracking-[-0.03em] text-[var(--hearth-text-primary)]">
+                            <h3 className="hearth-heading text-[1.25rem] font-semibold tracking-[-0.03em] text-[var(--hearth-text-primary)] sm:text-[1.35rem]">
                                 Keep the setup light and ready
                             </h3>
                         </div>
@@ -241,11 +241,11 @@ export function ParentMomentsScreen() {
                                     variant="flat"
                                     className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.22)] text-[var(--hearth-text-secondary)]"
                                 >
-                                    <span className="px-1 text-[11px] font-semibold">{supply}</span>
+                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">{supply}</span>
                                 </Chip>
                             ))}
                         </div>
-                        <p className="text-sm leading-6 text-[var(--hearth-text-secondary)]">
+                        <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                             Once you start, the child stays locked for the rest of the moment flow so the activity feels intentional and focused.
                         </p>
                     </CardBody>

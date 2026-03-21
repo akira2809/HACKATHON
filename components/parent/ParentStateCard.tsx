@@ -20,13 +20,13 @@ export function ParentStateCard({
 }: ParentStateCardProps) {
     return (
         <Card shadow="none" className="hearth-panel rounded-[24px]">
-            <CardBody className="grid gap-4 p-5">
+            <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
                 <div className="grid gap-2">
                     <p className="hearth-kicker">{kicker}</p>
-                    <h3 className="hearth-heading text-[1.45rem] font-semibold tracking-[-0.03em] text-[var(--hearth-text-primary)]">
+                    <h3 className="hearth-heading text-[1.3rem] font-semibold tracking-[-0.03em] text-[var(--hearth-text-primary)] sm:text-[1.45rem]">
                         {title}
                     </h3>
-                    <p className="text-sm leading-6 text-[var(--hearth-text-secondary)]">
+                    <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                         {description}
                     </p>
                 </div>

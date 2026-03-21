@@ -36,7 +36,7 @@ export function HearthActionButton({
     return (
         <Button
             radius="full"
-            className={`h-11 border px-5 font-semibold transition-transform duration-200 ${toneClasses[tone]} ${className}`}
+            className={`h-10 border px-4 text-sm font-semibold transition-transform duration-200 sm:h-11 sm:px-5 sm:text-[15px] ${toneClasses[tone]} ${className}`}
             {...props}
         />
     );
@@ -55,7 +55,7 @@ export function HearthRewardChip({
             variant="flat"
             className={`border border-[rgba(166,124,82,0.2)] bg-[rgba(230,199,102,0.18)] px-1 text-[var(--hearth-text-primary)] ${className}`}
         >
-            <span className="hearth-number text-xs font-semibold">{children}</span>
+            <span className="hearth-number text-[11px] font-semibold sm:text-xs">{children}</span>
         </Chip>
     );
 }
@@ -80,7 +80,7 @@ export function HearthStatusChip({
             variant="flat"
             className={`border px-1 ${toneMap[tone]}`}
         >
-            <span className="text-[11px] font-semibold">{label}</span>
+            <span className="text-[10px] font-semibold sm:text-[11px]">{label}</span>
         </Chip>
     );
 }

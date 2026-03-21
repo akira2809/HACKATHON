@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardBody, Chip } from '@heroui/react';
 import { useParams, useRouter } from 'next/navigation';
-import { AppShell } from '@/components/AppShell';
-import { GoalCard } from '@/components/GoalCard';
-import { QuestCard } from '@/components/QuestCard';
-import { MascotBubble } from '@/components/MascotBubble';
+import { AppShell } from '@/components/parent/AppShell';
+import { GoalCard } from '@/components/parent/GoalCard';
+import { QuestCard } from '@/components/parent/QuestCard';
+import { MascotBubble } from '@/components/parent/MascotBubble';
 import { buildLocalizedHref } from '@/lib/locale-path';
 import { useAppState } from '@/state/appState';
 import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/design-system/HearthPrimitives';
@@ -234,7 +234,7 @@ export function ParentDashboardScreen({
             title={tab === 'home' ? 'Parent Dashboard' : tab === 'adventures' ? 'Adventures' : 'Dreams'}
             notice={activeChild.networkIssue ? (
                 <Card shadow="none" className="rounded-[22px] border border-[rgba(180,106,90,0.12)] bg-[rgba(251,248,241,0.92)]">
-                    <CardBody className="p-4 text-sm leading-6 text-[var(--hearth-text-secondary)]">
+                    <CardBody className="p-4 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                         {activeChild.networkIssue}
                     </CardBody>
                 </Card>
@@ -243,11 +243,11 @@ export function ParentDashboardScreen({
             {tab === 'home' ? (
                 <>
                     <Card shadow="none" className="hearth-panel rounded-[24px]">
-                        <CardBody className="grid gap-4 p-5">
-                            <div className="flex items-start justify-between gap-4">
-                                <div className="grid gap-2">
+                        <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
+                            <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
+                                <div className="grid min-w-0 flex-1 gap-2">
                                     <p className="hearth-kicker">Overview</p>
-                                    <h2 className="hearth-heading text-[1.6rem] font-semibold tracking-[-0.03em] text-[var(--hearth-text-primary)]">
+                                    <h2 className="hearth-heading text-[1.4rem] font-semibold tracking-[-0.03em] text-[var(--hearth-text-primary)] sm:text-[1.6rem]">
                                         A calm view of {activeChild.name}&apos;s day
                                     </h2>
                                 </div>
@@ -255,22 +255,22 @@ export function ParentDashboardScreen({
                                     Generate Quests
                                 </HearthActionButton>
                             </div>
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="hearth-subtle-panel rounded-[20px] p-4">
+                            <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+                                <div className="hearth-subtle-panel rounded-[20px] p-3 sm:p-4">
                                     <p className="hearth-kicker">Suggested</p>
-                                    <p className="hearth-number mt-2 text-lg font-semibold text-[var(--hearth-text-primary)]">
+                                    <p className="hearth-number mt-1.5 text-base font-semibold text-[var(--hearth-text-primary)] sm:mt-2 sm:text-lg">
                                         {suggestedQuests.length}
                                     </p>
                                 </div>
-                                <div className="hearth-subtle-panel rounded-[20px] p-4">
+                                <div className="hearth-subtle-panel rounded-[20px] p-3 sm:p-4">
                                     <p className="hearth-kicker">Approved</p>
-                                    <p className="hearth-number mt-2 text-lg font-semibold text-[var(--hearth-text-primary)]">
+                                    <p className="hearth-number mt-1.5 text-base font-semibold text-[var(--hearth-text-primary)] sm:mt-2 sm:text-lg">
                                         {approvedQuests.length}
                                     </p>
                                 </div>
-                                <div className="hearth-subtle-panel rounded-[20px] p-4">
+                                <div className="hearth-subtle-panel rounded-[20px] p-3 sm:p-4">
                                     <p className="hearth-kicker">Moments</p>
-                                    <p className="hearth-number mt-2 text-lg font-semibold text-[var(--hearth-text-primary)]">
+                                    <p className="hearth-number mt-1.5 text-base font-semibold text-[var(--hearth-text-primary)] sm:mt-2 sm:text-lg">
                                         {activeChild.moment ? 1 : 0}
                                     </p>
                                 </div>
@@ -329,16 +329,16 @@ export function ParentDashboardScreen({
             {tab === 'adventures' ? (
                 <>
                     <Card shadow="none" className="hearth-panel rounded-[24px]">
-                        <CardBody className="grid gap-4 p-5">
+                        <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
                             <div className="flex flex-wrap items-center gap-2">
                                 <Chip radius="full" variant="flat" className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.26)] text-[var(--hearth-text-secondary)]">
-                                    <span className="px-1 text-[11px] font-semibold">Learning</span>
+                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">Learning</span>
                                 </Chip>
                                 <Chip radius="full" variant="flat" className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.26)] text-[var(--hearth-text-secondary)]">
-                                    <span className="px-1 text-[11px] font-semibold">Responsibility</span>
+                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">Responsibility</span>
                                 </Chip>
                                 <Chip radius="full" variant="flat" className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.26)] text-[var(--hearth-text-secondary)]">
-                                    <span className="px-1 text-[11px] font-semibold">Movement</span>
+                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">Movement</span>
                                 </Chip>
                             </div>
                             <HearthActionButton onPress={handleGenerateQuests}>
@@ -384,7 +384,7 @@ export function ParentDashboardScreen({
 
                     {approvedQuests.length ? (
                         <Card shadow="none" className="hearth-panel rounded-[24px]">
-                            <CardBody className="grid gap-3 p-5">
+                            <CardBody className="grid gap-3 p-4 sm:p-5">
                                 <p className="hearth-kicker">Approved Today</p>
                                 {approvedQuests.map((quest) => (
                                     <QuestCard
@@ -414,7 +414,7 @@ export function ParentDashboardScreen({
                     {activeChild.goal ? (
                         <>
                             <Card shadow="none" className="hearth-panel rounded-[24px]">
-                                <CardBody className="grid gap-4 p-5">
+                                <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
                                     <p className="hearth-kicker">Seed Actions</p>
                                     <div className="flex flex-wrap gap-3">
                                         <HearthActionButton tone="secondary" onPress={() => sendSeeds(activeChild.id, 5)}>
@@ -431,9 +431,9 @@ export function ParentDashboardScreen({
                             </Card>
 
                             <Card shadow="none" className="hearth-panel rounded-[24px]">
-                                <CardBody className="grid gap-3 p-5">
+                                <CardBody className="grid gap-3 p-4 sm:p-5">
                                     <p className="hearth-kicker">Progress Moments</p>
-                                    <div className="grid gap-2 text-sm leading-6 text-[var(--hearth-text-secondary)]">
+                                    <div className="grid gap-2 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                                         <p>10 seeds / first sprout</p>
                                         <p>{activeChild.goal.milestone} seeds / brighter ledger ribbon</p>
                                         <p>{activeChild.goal.target} seeds / goal achieved</p>
