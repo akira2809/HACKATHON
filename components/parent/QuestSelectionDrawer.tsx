@@ -88,8 +88,8 @@ export function QuestSelectionDrawer({
             backdrop="blur"
             hideCloseButton={true}
             shouldBlockScroll={true}
-            isDismissable
-            isKeyboardDismissDisabled={isConfirming}
+            isDismissable={false}
+            isKeyboardDismissDisabled={true}
             isOpen={isOpen}
             placement="bottom"
             onOpenChange={onOpenChange}

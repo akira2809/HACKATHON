@@ -10,6 +10,7 @@ import { QuestSelectionDrawer } from '@/components/parent/QuestSelectionDrawer';
 import { MascotBubble } from '@/components/parent/MascotBubble';
 import { generateQuestsWithAgent } from '@/lib/agent';
 import { buildLocalizedHref } from '@/lib/locale-path';
+import { useGlobalLoadingState } from '@/state/global-loading-state';
 import { useAppState, type ParentChild, type ParentQuest } from '@/state/appState';
 import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/design-system/HearthPrimitives';
 import { HearthActionButton } from '@/components/design-system/HearthPrimitives';
@@ -156,6 +157,8 @@ export function ParentDashboardScreen({
     const completeQuest = useAppState((state) => state.completeQuest);
     const applyGeneratedQuests = useAppState((state) => state.applyGeneratedQuests);
     const sendSeeds = useAppState((state) => state.sendSeeds);
+    const startGlobalLoading = useGlobalLoadingState((state) => state.startLoading);
+    const stopGlobalLoading = useGlobalLoadingState((state) => state.stopLoading);
 
     const [tab, setTab] = useState<ParentTab>(getInitialTab(initialTab));
     const [isSwitching, setIsSwitching] = useState(false);
@@ -266,6 +269,25 @@ export function ParentDashboardScreen({
 
         const requestId = generateRequestRef.current + 1;
         generateRequestRef.current = requestId;
+        const loadingRequestId = startGlobalLoading({
+            duration: 1400,
+            helperText: preserveSelected
+                ? 'Selected quests stay pinned while Lena prepares different options for the remaining slots.'
+                : 'Please wait while Lena prepares a fresh set of calm quest options.',
+            loadingStates: [
+                {
+                    text: preserveSelected
+                        ? `Keeping ${activeChild.name}'s selected quests in place`
+                        : `Preparing ${activeChild.name}'s quest board`,
+                },
+                { text: 'Asking Lena for new quest ideas' },
+                {
+                    text: preserveSelected
+                        ? 'Refreshing the remaining choices'
+                        : 'Arranging a calm set of five options',
+                },
+            ],
+        });
 
         try {
             const response = await generateQuestsWithAgent({
@@ -324,6 +346,8 @@ export function ParentDashboardScreen({
                 setQuestDrawerError(message);
             }
         } finally {
+            stopGlobalLoading(loadingRequestId);
+
             if (generateRequestRef.current === requestId) {
                 setIsQuestDrawerLoading(false);
                 setIsQuestDrawerRefreshing(false);
