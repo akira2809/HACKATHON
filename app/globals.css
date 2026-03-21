@@ -183,6 +183,15 @@
     mix-blend-mode: multiply;
 }
 
+.hearth-scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.hearth-scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+}
+
 @utility seed-glow {
   filter: drop-shadow(0 0 6px #facc15);
 }

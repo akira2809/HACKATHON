@@ -31,6 +31,7 @@ export type ParentMoment = {
 
 export type ParentChild = {
     id: string;
+    agentChildId: string;
     name: string;
     age: number;
     seeds: number;
@@ -47,6 +48,7 @@ export type ParentChild = {
 
 type ParentAppState = {
     parentName: string;
+    familyId: string;
     familySeeds: number;
     children: ParentChild[];
     selectedChildId: string;
@@ -57,6 +59,7 @@ type ParentAppState = {
     rejectQuest: (childId: string, questId: string) => void;
     completeQuest: (childId: string, questId: string) => void;
     regenerateSuggestedQuests: (childId: string) => boolean;
+    applyGeneratedQuests: (childId: string, quests: ParentQuest[]) => void;
     sendSeeds: (childId: string, amount: number) => void;
     startMomentFlow: (childId: string) => void;
     cancelMomentFlow: () => void;
@@ -123,6 +126,7 @@ const regeneratedQuestSets: Record<string, ParentQuest[]> = {
 const initialChildren: ParentChild[] = [
     {
         id: 'mina',
+        agentChildId: 'c1000000-0000-0000-0000-000000000001',
         name: 'Mina',
         age: 8,
         seeds: 30,
@@ -172,6 +176,7 @@ const initialChildren: ParentChild[] = [
     },
     {
         id: 'leo',
+        agentChildId: 'c1000000-0000-0000-0000-000000000002',
         name: 'Leo',
         age: 6,
         seeds: 18,
@@ -208,6 +213,7 @@ const initialChildren: ParentChild[] = [
     },
     {
         id: 'ava',
+        agentChildId: 'c1000000-0000-0000-0000-000000000003',
         name: 'Ava',
         age: 9,
         seeds: 62,
@@ -225,6 +231,7 @@ const initialChildren: ParentChild[] = [
     },
     {
         id: 'noah',
+        agentChildId: 'c1000000-0000-0000-0000-000000000004',
         name: 'Noah',
         age: 7,
         seeds: 25,
@@ -255,6 +262,7 @@ function updateChild(
 
 export const useAppState = create<ParentAppState>((set, get) => ({
     parentName: 'Eric',
+    familyId: 'a1000000-0000-0000-0000-000000000001',
     familySeeds: 30,
     children: initialChildren,
     selectedChildId: initialChildren[0].id,
@@ -320,11 +328,29 @@ export const useAppState = create<ParentAppState>((set, get) => ({
         set((state) => ({
             children: updateChild(state.children, childId, (currentChild) => ({
                 ...currentChild,
-                quests: fallback,
+                quests: [
+                    ...fallback,
+                    ...currentChild.quests.filter((quest) => quest.status === 'approved' || quest.status === 'completed'),
+                ],
             })),
         }));
 
         return true;
+    },
+    applyGeneratedQuests: (childId, quests) => {
+        set((state) => ({
+            children: updateChild(state.children, childId, (child) => ({
+                ...child,
+                generationError: undefined,
+                quests: [
+                    ...quests.map((quest) => ({
+                        ...quest,
+                        status: 'suggested' as const,
+                    })),
+                    ...child.quests.filter((quest) => quest.status === 'approved' || quest.status === 'completed'),
+                ],
+            })),
+        }));
     },
     sendSeeds: (childId, amount) => {
         const safeAmount = Math.max(0, Math.min(amount, get().familySeeds));
