@@ -128,8 +128,8 @@ export function QuestSelectionDrawer({
                                             <Icon icon="lucide:refresh-cw" className="size-4 animate-spin [animation-duration:1.8s]" />
                                         </span>
                                         {isRefreshingOptions
-                                            ? `Keeping ${selectedCount} selected ${selectedCount === 1 ? 'quest' : 'quests'} while Lena gathers different ideas...`
-                                            : 'Lena is gathering a fresh set of quest ideas...'}
+                                            ? `Keeping ${selectedCount} selected ${selectedCount === 1 ? 'quest' : 'quests'} while the remaining options refresh...`
+                                            : "Preparing today's quest options..."}
                                     </div>
                                 ) : null}
                             </div>
@@ -140,9 +140,9 @@ export function QuestSelectionDrawer({
                                 <>
                                     <div className="rounded-[24px] border border-[rgba(230,199,102,0.2)] bg-[rgba(230,199,102,0.08)] p-4">
                                         <div className="grid gap-2">
-                                            <p className="hearth-kicker">Fetching From Lena</p>
+                                            <p className="hearth-kicker">Preparing Options</p>
                                             <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                                                We are preparing five thoughtful quest options for {childName}. This takes a quiet moment.
+                                                We are preparing five calm quest options for {childName}.
                                             </p>
                                         </div>
                                     </div>
@@ -316,32 +316,42 @@ export function QuestSelectionDrawer({
 
                         <DrawerFooter className="border-t border-[rgba(79,107,82,0.08)] bg-[rgba(251,248,241,0.94)] px-4 py-4 sm:px-5">
                             {errorMessage ? (
-                                <div className="flex w-full flex-wrap items-center gap-2.5">
-                                    <HearthActionButton tone="secondary" onPress={onClose}>
-                                        Close
-                                    </HearthActionButton>
-                                    <HearthActionButton onPress={onRetry}>
-                                        Try Again
-                                    </HearthActionButton>
+                                <div className="grid w-full gap-3">
+                                    <div className="grid gap-1.5">
+                                        <p className="hearth-kicker">Need Another Try</p>
+                                        <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
+                                            The quest options did not come through this time.
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap justify-end gap-2.5">
+                                        <HearthActionButton tone="secondary" onPress={onClose}>
+                                            Close
+                                        </HearthActionButton>
+                                        <HearthActionButton onPress={onRetry}>
+                                            Try Again
+                                        </HearthActionButton>
+                                    </div>
                                 </div>
                             ) : phase === 'confirm' ? (
-                                <div className="flex w-full flex-wrap items-center gap-3">
-                                    <div className="min-w-0 flex-1">
+                                <div className="grid w-full gap-3">
+                                    <div className="grid gap-1.5">
                                         <p className="hearth-kicker">Confirm</p>
                                         <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                                             The selected 3 quests will replace the current suggested set.
                                         </p>
                                     </div>
-                                    <HearthActionButton tone="secondary" onPress={onBackToSelection}>
-                                        Edit
-                                    </HearthActionButton>
-                                    <HearthActionButton isLoading={isConfirming} onPress={onConfirm}>
-                                        Confirm
-                                    </HearthActionButton>
+                                    <div className="flex flex-wrap justify-end gap-2.5">
+                                        <HearthActionButton tone="secondary" onPress={onBackToSelection}>
+                                            Edit
+                                        </HearthActionButton>
+                                        <HearthActionButton isLoading={isConfirming} onPress={onConfirm}>
+                                            Confirm
+                                        </HearthActionButton>
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="flex w-full flex-wrap items-center gap-3">
-                                    <div className="min-w-0 flex-1">
+                                <div className="grid w-full gap-3">
+                                    <div className="grid gap-1.5">
                                         <p className="hearth-kicker">Selection</p>
                                         <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                                             {shouldShowRegenerate
@@ -353,20 +363,23 @@ export function QuestSelectionDrawer({
                                         <HearthActionButton
                                             isLoading={isRefreshingOptions}
                                             tone="ghost"
+                                            className="justify-self-start"
                                             onPress={onRegenerateOptions}
                                         >
                                             Regenerate Others
                                         </HearthActionButton>
                                     ) : null}
-                                    <HearthActionButton tone="secondary" onPress={onClose}>
-                                        Close
-                                    </HearthActionButton>
-                                    <HearthActionButton
-                                        isDisabled={selectedCount !== 3 || !options.length}
-                                        onPress={onDone}
-                                    >
-                                        Done
-                                    </HearthActionButton>
+                                    <div className="flex flex-wrap justify-end gap-2.5">
+                                        <HearthActionButton tone="secondary" onPress={onClose}>
+                                            Close
+                                        </HearthActionButton>
+                                        <HearthActionButton
+                                            isDisabled={selectedCount !== 3 || !options.length}
+                                            onPress={onDone}
+                                        >
+                                            Done
+                                        </HearthActionButton>
+                                    </div>
                                 </div>
                             )}
                         </DrawerFooter>
