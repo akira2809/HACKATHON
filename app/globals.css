@@ -82,3 +82,120 @@
 .animate-scroll {
     animation: scroll 40s linear infinite;
 }
+
+/* Hearth Ledger Design System */
+:root {
+    --hearth-bg-app: #F6F0E5;
+    --hearth-bg-surface: #FBF8F1;
+    --hearth-bg-muted: #EEE5D6;
+    --hearth-bg-soft: #D8E3D1;
+    --hearth-text-primary: #2F342C;
+    --hearth-text-secondary: #4F6B52;
+    --hearth-text-muted: #7C8E76;
+    --hearth-accent-gold: #E6C766;
+    --hearth-accent-wood: #A67C52;
+    --hearth-accent-rose: #D8B7AA;
+    --hearth-border-soft: #D8E3D1;
+    --hearth-border-strong: #B8C6B1;
+    --hearth-success: #6E8B63;
+    --hearth-warning: #C69A43;
+    --hearth-danger: #B46A5A;
+    --hearth-shadow-soft: 0 12px 28px rgba(79, 107, 82, 0.10);
+    --hearth-shadow-card: 0 6px 18px rgba(79, 107, 82, 0.12);
+    --hearth-shadow-dock: 0 10px 30px rgba(47, 52, 44, 0.12);
+    --hearth-font-heading: var(--font-hearth-heading), Georgia, serif;
+    --hearth-font-body: var(--font-hearth-body), "Segoe UI", sans-serif;
+    --hearth-font-number: var(--font-hearth-number), "Segoe UI", sans-serif;
+}
+
+.hearth-page {
+    min-height: 100vh;
+    color: var(--hearth-text-primary);
+    font-family: var(--hearth-font-body);
+    background:
+        radial-gradient(circle at top left, rgba(230, 199, 102, 0.18), transparent 24%),
+        radial-gradient(circle at top right, rgba(216, 227, 209, 0.92), transparent 32%),
+        linear-gradient(180deg, #fbf8f1 0%, #f6f0e5 100%);
+}
+
+.hearth-heading {
+    font-family: var(--hearth-font-heading);
+}
+
+.hearth-number {
+    font-family: var(--hearth-font-number);
+}
+
+.hearth-kicker {
+    color: var(--hearth-text-muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.hearth-panel {
+    border: 1px solid var(--hearth-border-soft);
+    background: var(--hearth-bg-surface);
+    box-shadow: var(--hearth-shadow-card);
+}
+
+.hearth-subtle-panel {
+    border: 1px solid rgba(79, 107, 82, 0.08);
+    background: var(--hearth-bg-muted);
+}
+
+.hearth-ledger-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--hearth-border-soft);
+    background:
+        linear-gradient(180deg, rgba(251, 248, 241, 0.98) 0%, rgba(246, 240, 229, 0.96) 100%);
+    box-shadow: var(--hearth-shadow-card);
+}
+
+.hearth-ledger-card::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, rgba(230, 199, 102, 0.35), rgba(216, 227, 209, 0.1));
+    clip-path: polygon(100% 0, 0 0, 100% 100%);
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.hearth-pill {
+    border: 1px solid rgba(79, 107, 82, 0.12);
+    background: rgba(251, 248, 241, 0.92);
+    box-shadow: 0 2px 10px rgba(79, 107, 82, 0.08);
+}
+
+.hearth-dock {
+    border: 1px solid rgba(79, 107, 82, 0.12);
+    background: rgba(251, 248, 241, 0.96);
+    box-shadow: var(--hearth-shadow-dock);
+}
+
+.hearth-divider {
+    border-top: 1px dashed rgba(79, 107, 82, 0.2);
+}
+
+.hearth-grain {
+    position: relative;
+    isolation: isolate;
+}
+
+.hearth-grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle at 20% 20%, rgba(166, 124, 82, 0.08) 0.8px, transparent 0.8px),
+        radial-gradient(circle at 80% 40%, rgba(79, 107, 82, 0.06) 0.8px, transparent 0.8px);
+    background-size: 18px 18px, 24px 24px;
+    opacity: 0.35;
+    mix-blend-mode: multiply;
+}
