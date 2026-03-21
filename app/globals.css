@@ -227,3 +227,14 @@
   0%, 100% { box-shadow: 4px 4px 0px #1c1917; }
   50% { box-shadow: 4px 4px 12px #facc15; }
 }
+
+@keyframes bounce-float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    box-shadow: 4px 4px 0px #1c1917, 0 0 12px rgba(244, 114, 182, 0.4);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.05);
+    box-shadow: 4px 4px 0px #1c1917, 0 0 24px rgba(244, 114, 182, 0.7);
+  }
+}

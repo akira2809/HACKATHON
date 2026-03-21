@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // ============================================================
 // Client Component: Child Home interactive content
@@ -6,7 +6,8 @@
 // Parent: (homestead)/page.tsx (Server Component)
 // ============================================================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ComicCard,
   BentoGrid,
@@ -17,17 +18,15 @@ import {
   ConfirmationModal,
   QuestStartModal,
   RecommendationModal,
-  ProgressBar,
   StreakBadge,
-} from '@/components/homestead';
-import { useQuestStore } from '@/stores';
+  MaterialIcon,
+} from "@/components/homestead";
+import { useQuestStore } from "@/stores";
 
 export function ChildHomeContent() {
+  const router = useRouter();
   const {
     seeds,
-    level,
-    xp,
-    xpToNext,
     streak,
     todayQuests,
     showWelcome,
@@ -93,23 +92,26 @@ export function ChildHomeContent() {
     setShowWelcome(true);
   };
 
-  const pendingCount = todayQuests.filter((q) => q.status === 'pending').length;
+  const handleOpenRecommendations = () => {
+    setShowRecommendations(true);
+  };
+
+  const pendingCount = todayQuests.filter((q) => q.status === "pending").length;
   const mascotMessage =
     pendingCount === todayQuests.length
       ? "Welcome back! Ready to grow your homestead today? 🌸"
       : pendingCount > 0
-      ? `${pendingCount} quests left — keep going! 💪`
-      : "All done! You're a superstar! ⭐";
+        ? `${pendingCount} quests left — keep going! 💪`
+        : "All done! You're a superstar! ⭐";
 
   return (
     <>
-      <main className="pt-24 px-4 max-w-2xl mx-auto space-y-8 pb-32">
-
+      <main className="pt-24 px-4 max-w-2xl mx-auto space-y-8 pb-10">
         {/* 1. Mascot Greeting */}
         <MascotSection message={mascotMessage} />
 
         {/* 2. Stats Grid */}
-        <BentoGrid cols={3} gap="md">
+        <BentoGrid cols={2} gap="md">
           {/* Seeds */}
           <ComicCard bg="yellow" shadow="gold" skew="right" padding="md">
             <div className="flex flex-col items-center justify-center space-y-1">
@@ -134,27 +136,6 @@ export function ChildHomeContent() {
           <div className="flex items-center justify-center">
             <StreakBadge streak={streak} size="md" />
           </div>
-
-          {/* Level Progress */}
-          <ComicCard bg="blue" skew="left" padding="md">
-            <div className="flex flex-col justify-between h-full">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-[10px] font-black uppercase text-[#0284C7]">
-                  Level {level}
-                </span>
-                <span className="text-[10px] font-black text-[#0284C7]">
-                  XP {xp}%
-                </span>
-              </div>
-              <ProgressBar
-                value={xp}
-                max={xpToNext}
-                size="md"
-                color="bg-[#38BDF8]"
-                bgColor="bg-white"
-              />
-            </div>
-          </ComicCard>
         </BentoGrid>
 
         {/* 3. Today's Quests */}
@@ -184,13 +165,40 @@ export function ChildHomeContent() {
           subtitle="New LEGO Set"
           current={seeds}
           goal={100}
-          message="Keep going! You're almost at the Lego set! 🧱"
-          onAddSeeds={() => setShowRecommendations(true)}
+          message="Keep going! You're almost at the Lego set!"
+          navigateToAdventures="/adventures"
         />
 
         {/* Bottom Nav Spacer */}
         <div className="h-12" />
       </main>
+
+      {/* FAB: Recommendations */}
+      <button
+        onClick={handleOpenRecommendations}
+        className="
+          fixed bottom-30 right-4
+          w-14 h-14
+          bg-[#F472B6] text-white
+          rounded-full
+          border-4 border-[#1C1917]
+          comic-shadow
+          flex items-center justify-center
+          hover:scale-110 hover:bg-[#F9A8D4]
+          active:scale-95 active:shadow-none
+          transition-all duration-200
+          cursor-pointer
+          z-50
+          animate-bounce-float
+        "
+        style={{
+          animation: "bounce-float 3s ease-in-out infinite",
+          boxShadow: "4px 4px 0px #1c1917, 0 0 12px rgba(244, 114, 182, 0.4)",
+        }}
+        aria-label="Get recommendations"
+      >
+        <MaterialIcon icon="lightbulb" className="!text-2xl" filled />
+      </button>
 
       {/* Welcome Modal */}
       <ConfirmationModal
@@ -204,14 +212,18 @@ export function ChildHomeContent() {
       {/* Quest Start Modal */}
       <QuestStartModal
         isOpen={showQuestModal}
-        questTitle={selectedQuest?.title ?? ''}
+        questTitle={selectedQuest?.title ?? ""}
         questDescription={selectedQuest?.description}
-        questIcon={selectedQuest?.icon ?? 'task'}
+        questIcon={selectedQuest?.icon ?? "task"}
         questCategory={selectedQuest?.category}
         reward={selectedQuest?.reward ?? 0}
-        durationMinutes={selectedQuest?.expiredAt && selectedQuest?.startedAt
-          ? Math.round((selectedQuest.expiredAt - selectedQuest.startedAt) / 60000)
-          : 120}
+        durationMinutes={
+          selectedQuest?.expiredAt && selectedQuest?.startedAt
+            ? Math.round(
+                (selectedQuest.expiredAt - selectedQuest.startedAt) / 60000,
+              )
+            : 120
+        }
         onStart={handleQuestStart}
         onClose={handleQuestModalClose}
       />

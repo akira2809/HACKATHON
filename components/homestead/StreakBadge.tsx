@@ -2,7 +2,7 @@
 
 // ============================================================
 // StreakBadge — Fire streak indicator
-// Shows: 🔥 N Day Streak
+// Shows: Fire icon + N Day Streak
 // ============================================================
 
 import React from 'react';
@@ -61,8 +61,8 @@ export function StreakBadge({ streak, className = '', size = 'md' }: StreakBadge
         transition-all
       `}
     >
-      {/* Fire emoji + icon */}
-      <span className="text-xl">🔥</span>
+      {/* Fire icon */}
+      <MaterialIcon icon="local_fire_department" className="!text-xl" />
       <span className="font-black uppercase tracking-wider">
         {streak} Day{streak !== 1 ? 's' : ''} Streak
       </span>
