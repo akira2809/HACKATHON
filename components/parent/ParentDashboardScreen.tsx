@@ -6,9 +6,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { AppShell } from '@/components/parent/AppShell';
 import { GoalCard } from '@/components/parent/GoalCard';
 import { QuestCard } from '@/components/parent/QuestCard';
+import { QuestSelectionDrawer } from '@/components/parent/QuestSelectionDrawer';
 import { MascotBubble } from '@/components/parent/MascotBubble';
+import { generateQuestsWithAgent } from '@/lib/agent';
 import { buildLocalizedHref } from '@/lib/locale-path';
-import { useAppState } from '@/state/appState';
+import { useAppState, type ParentChild, type ParentQuest } from '@/state/appState';
 import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/design-system/HearthPrimitives';
 import { HearthActionButton } from '@/components/design-system/HearthPrimitives';
 import { ParentStateCard } from './ParentStateCard';
@@ -20,12 +22,119 @@ type ParentDashboardScreenProps = {
 
 type ParentTab = 'home' | 'adventures' | 'dreams';
 
+const QUEST_DRAWER_FOCUS_AREAS = ['learning', 'exercise', 'responsibility', 'habit', 'learning'] as const;
+
+const fallbackQuestOptions: ParentQuest[] = [
+    {
+        id: 'fallback-learning-notes',
+        title: 'Collect three new story words',
+        reward: 8,
+        category: 'Learning',
+        description: 'A quiet language quest that still feels curious, warm, and easy to start.',
+        status: 'suggested',
+    },
+    {
+        id: 'fallback-movement-break',
+        title: 'Take a five-minute stretch path',
+        reward: 8,
+        category: 'Movement',
+        description: 'A gentle movement reset designed to support focus without pushing the day too hard.',
+        status: 'suggested',
+    },
+    {
+        id: 'fallback-small-reset',
+        title: 'Reset one small family space',
+        reward: 9,
+        category: 'Responsibility',
+        description: 'A calm responsibility quest that helps the room feel lighter again.',
+        status: 'suggested',
+    },
+    {
+        id: 'fallback-care-tidy',
+        title: 'Water or tend something living',
+        reward: 10,
+        category: 'Care',
+        description: 'A nurturing quest that keeps the homestead tone soft and meaningful.',
+        status: 'suggested',
+    },
+    {
+        id: 'fallback-learning-sketch',
+        title: 'Sketch one thing you noticed today',
+        reward: 9,
+        category: 'Learning',
+        description: 'A reflective creative quest that supports calm attention and small wins.',
+        status: 'suggested',
+    },
+];
+
 function getInitialTab(value?: string): ParentTab {
     if (value === 'adventures' || value === 'dreams') {
         return value;
     }
 
     return 'home';
+}
+
+function buildQuestDrawerOptions(child: ParentChild, apiQuests: ParentQuest[]) {
+    return buildQuestDrawerOptionsFromSource(child, apiQuests, [], []);
+}
+
+function buildQuestDrawerOptionsFromSource(
+    child: ParentChild,
+    apiQuests: ParentQuest[],
+    lockedQuests: ParentQuest[],
+    excludedTitles: string[],
+) {
+    const uniqueQuests: ParentQuest[] = [];
+    const seenTitles = new Set<string>(excludedTitles.map((title) => title.trim().toLowerCase()));
+
+    for (const quest of lockedQuests) {
+        const titleKey = quest.title.trim().toLowerCase();
+
+        if (!titleKey || seenTitles.has(titleKey)) {
+            continue;
+        }
+
+        seenTitles.add(titleKey);
+        uniqueQuests.push({
+            ...quest,
+            status: 'suggested',
+        });
+    }
+
+    const candidateQuests = [
+        ...apiQuests,
+        ...fallbackQuestOptions.map((quest, index) => ({
+            ...quest,
+            id: `${quest.id}-${child.id}-${index}`,
+        })),
+        ...child.quests
+            .filter((quest) => quest.status === 'suggested')
+            .map((quest, index) => ({
+                ...quest,
+                id: `${quest.id}-existing-${index}`,
+            })),
+    ];
+
+    for (const quest of candidateQuests) {
+        const titleKey = quest.title.trim().toLowerCase();
+
+        if (!titleKey || seenTitles.has(titleKey)) {
+            continue;
+        }
+
+        seenTitles.add(titleKey);
+        uniqueQuests.push({
+            ...quest,
+            status: 'suggested',
+        });
+
+        if (uniqueQuests.length === 5) {
+            break;
+        }
+    }
+
+    return uniqueQuests;
 }
 
 export function ParentDashboardScreen({
@@ -36,6 +145,7 @@ export function ParentDashboardScreen({
     const router = useRouter();
 
     const parentName = useAppState((state) => state.parentName);
+    const familyId = useAppState((state) => state.familyId);
     const familySeeds = useAppState((state) => state.familySeeds);
     const allChildren = useAppState((state) => state.children);
     const selectedChildId = useAppState((state) => state.selectedChildId);
@@ -43,15 +153,21 @@ export function ParentDashboardScreen({
     const approveQuest = useAppState((state) => state.approveQuest);
     const rejectQuest = useAppState((state) => state.rejectQuest);
     const completeQuest = useAppState((state) => state.completeQuest);
-    const regenerateSuggestedQuests = useAppState((state) => state.regenerateSuggestedQuests);
+    const applyGeneratedQuests = useAppState((state) => state.applyGeneratedQuests);
     const sendSeeds = useAppState((state) => state.sendSeeds);
 
     const [tab, setTab] = useState<ParentTab>(getInitialTab(initialTab));
     const [isSwitching, setIsSwitching] = useState(false);
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [generationFeedback, setGenerationFeedback] = useState<string | null>(null);
+    const [isQuestDrawerOpen, setIsQuestDrawerOpen] = useState(false);
+    const [isQuestDrawerLoading, setIsQuestDrawerLoading] = useState(false);
+    const [isQuestDrawerRefreshing, setIsQuestDrawerRefreshing] = useState(false);
+    const [questDrawerError, setQuestDrawerError] = useState<string | null>(null);
+    const [questDrawerFeedback, setQuestDrawerFeedback] = useState<string | null>(null);
+    const [questDrawerPhase, setQuestDrawerPhase] = useState<'select' | 'confirm'>('select');
+    const [questDrawerOptions, setQuestDrawerOptions] = useState<ParentQuest[]>([]);
+    const [selectedQuestIds, setSelectedQuestIds] = useState<string[]>([]);
     const switchTimeoutRef = useRef<number | null>(null);
-    const generateTimeoutRef = useRef<number | null>(null);
+    const generateRequestRef = useRef(0);
 
     const childItems = demoState === 'no-children' ? [] : allChildren;
     const activeChild = childItems.find((child) => child.id === selectedChildId) ?? childItems[0];
@@ -64,10 +180,6 @@ export function ParentDashboardScreen({
         return () => {
             if (switchTimeoutRef.current) {
                 window.clearTimeout(switchTimeoutRef.current);
-            }
-
-            if (generateTimeoutRef.current) {
-                window.clearTimeout(generateTimeoutRef.current);
             }
         };
     }, []);
@@ -95,7 +207,7 @@ export function ParentDashboardScreen({
         }
 
         setIsSwitching(true);
-        setGenerationFeedback(null);
+        handleQuestDrawerOpenChange(false);
         selectChild(childId);
 
         if (switchTimeoutRef.current) {
@@ -107,34 +219,154 @@ export function ParentDashboardScreen({
         }, 180);
     };
 
-    const handleGenerateQuests = () => {
+    const handleQuestDrawerOpenChange = (isOpen: boolean) => {
+        if (!isOpen) {
+            generateRequestRef.current += 1;
+            setIsQuestDrawerOpen(false);
+            setIsQuestDrawerLoading(false);
+            setIsQuestDrawerRefreshing(false);
+            setQuestDrawerError(null);
+            setQuestDrawerFeedback(null);
+            setQuestDrawerPhase('select');
+            setQuestDrawerOptions([]);
+            setSelectedQuestIds([]);
+            return;
+        }
+
+        setIsQuestDrawerOpen(true);
+    };
+
+    const handleGenerateQuests = async (preserveSelected = false) => {
         if (!activeChild) {
             return;
         }
 
-        setIsGenerating(true);
-        setGenerationFeedback(null);
+        const lockedQuests = preserveSelected
+            ? questDrawerOptions.filter((quest) => selectedQuestIds.includes(quest.id))
+            : [];
+        const excludedTitles = preserveSelected
+            ? questDrawerOptions
+                .filter((quest) => !selectedQuestIds.includes(quest.id))
+                .map((quest) => quest.title)
+            : [];
 
-        if (generateTimeoutRef.current) {
-            window.clearTimeout(generateTimeoutRef.current);
+        if (!preserveSelected) {
+            handleQuestDrawerOpenChange(true);
+            setIsQuestDrawerLoading(true);
+            setQuestDrawerOptions([]);
+            setSelectedQuestIds([]);
+        } else {
+            setIsQuestDrawerRefreshing(true);
         }
 
-        const activeChildId = activeChild.id;
+        setQuestDrawerError(null);
+        setQuestDrawerFeedback(null);
+        setQuestDrawerPhase('select');
 
-        generateTimeoutRef.current = window.setTimeout(() => {
-            const succeeded = regenerateSuggestedQuests(activeChildId);
-            const currentChild = useAppState.getState().children.find((child) => child.id === activeChildId);
+        const requestId = generateRequestRef.current + 1;
+        generateRequestRef.current = requestId;
 
-            if (!succeeded) {
-                setGenerationFeedback(
-                    currentChild?.generationError ??
-                    currentChild?.networkIssue ??
-                    'The homestead could not gather new quests right now.',
-                );
+        try {
+            const response = await generateQuestsWithAgent({
+                familyId,
+                childId: activeChild.agentChildId,
+                childAge: activeChild.age,
+                focusAreas: [...QUEST_DRAWER_FOCUS_AREAS],
+            });
+
+            if (generateRequestRef.current !== requestId) {
+                return;
             }
 
-            setIsGenerating(false);
-        }, 700);
+            const normalizedApiQuests = Array.isArray(response.quests)
+                ? response.quests.map((quest, index) => ({
+                    id: quest.id || `generated-${activeChild.id}-${index + 1}`,
+                    title: quest.title,
+                    reward: quest.reward,
+                    category: quest.category as ParentQuest['category'],
+                    description: quest.description,
+                    status: 'suggested' as const,
+                }))
+                : [];
+
+            const drawerOptions = preserveSelected
+                ? buildQuestDrawerOptionsFromSource(activeChild, normalizedApiQuests, lockedQuests, excludedTitles)
+                : buildQuestDrawerOptions(activeChild, normalizedApiQuests);
+
+            if (!drawerOptions.length) {
+                setQuestDrawerError('The homestead could not gather quest options right now. Please try again in a moment.');
+                return;
+            }
+
+            setQuestDrawerOptions(drawerOptions);
+
+            if (preserveSelected) {
+                setSelectedQuestIds(lockedQuests.map((quest) => quest.id));
+                setQuestDrawerFeedback(
+                    lockedQuests.length === 1
+                        ? 'Kept your selected quest and refreshed the remaining options.'
+                        : 'Kept your selected quests and refreshed the remaining options.',
+                );
+            }
+        } catch (error) {
+            if (generateRequestRef.current !== requestId) {
+                return;
+            }
+
+            const message = error instanceof Error
+                ? error.message
+                : 'The homestead could not gather quest options right now.';
+
+            if (preserveSelected && lockedQuests.length) {
+                setQuestDrawerFeedback(message);
+            } else {
+                setQuestDrawerError(message);
+            }
+        } finally {
+            if (generateRequestRef.current === requestId) {
+                setIsQuestDrawerLoading(false);
+                setIsQuestDrawerRefreshing(false);
+            }
+        }
+    };
+
+    const handleQuestToggle = (questId: string) => {
+        setQuestDrawerFeedback(null);
+        setQuestDrawerPhase('select');
+
+        setSelectedQuestIds((currentIds) => {
+            if (currentIds.includes(questId)) {
+                return currentIds.filter((currentId) => currentId !== questId);
+            }
+
+            if (currentIds.length >= 3) {
+                setQuestDrawerFeedback('Choose 3 quests. Deselect one before choosing another.');
+                return currentIds;
+            }
+
+            return [...currentIds, questId];
+        });
+    };
+
+    const handleQuestDone = () => {
+        if (selectedQuestIds.length !== 3) {
+            return;
+        }
+
+        setQuestDrawerFeedback(null);
+        setQuestDrawerPhase('confirm');
+    };
+
+    const handleQuestConfirm = () => {
+        if (!activeChild || questDrawerPhase !== 'confirm' || selectedQuestIds.length !== 3) {
+            return;
+        }
+
+        applyGeneratedQuests(
+            activeChild.id,
+            questDrawerOptions.filter((quest) => selectedQuestIds.includes(quest.id)),
+        );
+        handleQuestDrawerOpenChange(false);
     };
 
     if (!childItems.length) {
@@ -251,7 +483,9 @@ export function ParentDashboardScreen({
                                         A calm view of {activeChild.name}&apos;s day
                                     </h2>
                                 </div>
-                                <HearthActionButton onPress={handleGenerateQuests}>
+                                <HearthActionButton onPress={() => {
+                                    void handleGenerateQuests();
+                                }}>
                                     Generate Quests
                                 </HearthActionButton>
                             </div>
@@ -286,22 +520,8 @@ export function ParentDashboardScreen({
                         seeds={activeChild.seeds}
                     />
 
-                    {generationFeedback ? (
-                        <ParentStateCard
-                            title="Quest generation paused"
-                            description={generationFeedback}
-                            actionLabel="Try Again"
-                            onAction={handleGenerateQuests}
-                        />
-                    ) : null}
-
                     <div className="grid gap-3">
-                        {isGenerating ? (
-                            <>
-                                <QuestCard isLoading />
-                                <QuestCard isLoading />
-                            </>
-                        ) : suggestedQuests.length ? (
+                        {suggestedQuests.length ? (
                             suggestedQuests.slice(0, 2).map((quest) => (
                                 <QuestCard
                                     key={quest.id}
@@ -315,7 +535,9 @@ export function ParentDashboardScreen({
                                 title="No suggested quests right now"
                                 description="Use Lena to gather a fresh set when the family is ready."
                                 actionLabel="Generate Quests"
-                                onAction={handleGenerateQuests}
+                                onAction={() => {
+                                    void handleGenerateQuests();
+                                }}
                             />
                         )}
                     </div>
@@ -341,29 +563,16 @@ export function ParentDashboardScreen({
                                     <span className="px-1 text-[10px] font-semibold sm:text-[11px]">Movement</span>
                                 </Chip>
                             </div>
-                            <HearthActionButton onPress={handleGenerateQuests}>
-                                Regenerate 3 Quests
+                            <HearthActionButton onPress={() => {
+                                void handleGenerateQuests();
+                            }}>
+                                Generate Quests
                             </HearthActionButton>
                         </CardBody>
                     </Card>
 
-                    {generationFeedback ? (
-                        <ParentStateCard
-                            title="Lena needs a quiet moment"
-                            description={generationFeedback}
-                            actionLabel="Try Again"
-                            onAction={handleGenerateQuests}
-                        />
-                    ) : null}
-
                     <div className="grid gap-3">
-                        {isGenerating ? (
-                            <>
-                                <QuestCard isLoading />
-                                <QuestCard isLoading />
-                                <QuestCard isLoading />
-                            </>
-                        ) : suggestedQuests.length ? (
+                        {suggestedQuests.length ? (
                             suggestedQuests.map((quest) => (
                                 <QuestCard
                                     key={quest.id}
@@ -377,7 +586,9 @@ export function ParentDashboardScreen({
                                 title="No quests waiting for review"
                                 description="There are no fresh suggestions for this child yet. Generate another calm set when you are ready."
                                 actionLabel="Generate Quests"
-                                onAction={handleGenerateQuests}
+                                onAction={() => {
+                                    void handleGenerateQuests();
+                                }}
                             />
                         )}
                     </div>
@@ -455,6 +666,30 @@ export function ParentDashboardScreen({
                     ) : null}
                 </>
             ) : null}
+
+            <QuestSelectionDrawer
+                childName={activeChild.name}
+                errorMessage={questDrawerError}
+                feedbackMessage={questDrawerFeedback}
+                isConfirming={false}
+                isLoading={isQuestDrawerLoading}
+                isRefreshingOptions={isQuestDrawerRefreshing}
+                isOpen={isQuestDrawerOpen}
+                onBackToSelection={() => setQuestDrawerPhase('select')}
+                onConfirm={handleQuestConfirm}
+                onDone={handleQuestDone}
+                onOpenChange={handleQuestDrawerOpenChange}
+                onRegenerateOptions={() => {
+                    void handleGenerateQuests(true);
+                }}
+                onRetry={() => {
+                    void handleGenerateQuests();
+                }}
+                onToggleQuest={handleQuestToggle}
+                options={questDrawerOptions}
+                phase={questDrawerPhase}
+                selectedQuestIds={selectedQuestIds}
+            />
         </AppShell>
     );
 }

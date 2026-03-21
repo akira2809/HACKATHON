@@ -1,6 +1,7 @@
 'use client';
 
 import type { ComponentProps, ReactNode } from 'react';
+import { Icon } from '@iconify/react';
 import { Button, Card, CardBody, Chip, Code, Divider, Input } from '@heroui/react';
 
 type HearthActionButtonProps = ComponentProps<typeof Button> & {
@@ -45,17 +46,89 @@ export function HearthActionButton({
 export function HearthRewardChip({
     children,
     className = '',
+    startContent,
 }: {
     children: ReactNode;
     className?: string;
+    startContent?: ReactNode;
 }) {
     return (
         <Chip
             radius="full"
             variant="flat"
+            startContent={startContent}
             className={`border border-[rgba(166,124,82,0.2)] bg-[rgba(230,199,102,0.18)] px-1 text-[var(--hearth-text-primary)] ${className}`}
         >
             <span className="hearth-number text-[11px] font-semibold sm:text-xs">{children}</span>
+        </Chip>
+    );
+}
+
+const hearthCategoryMeta = {
+    learning: {
+        label: 'Learning',
+        icon: 'lucide:book-open-text',
+        chipClassName: 'border-[rgba(118,147,112,0.2)] bg-[rgba(216,227,209,0.34)] text-[var(--hearth-text-secondary)]',
+        iconClassName: 'text-[var(--hearth-text-secondary)]',
+    },
+    exercise: {
+        label: 'Exercise',
+        icon: 'lucide:dumbbell',
+        chipClassName: 'border-[rgba(100,136,148,0.24)] bg-[rgba(211,230,236,0.6)] text-[#4E6973]',
+        iconClassName: 'text-[#4E6973]',
+    },
+    responsibility: {
+        label: 'Responsibility',
+        icon: 'lucide:clipboard-check',
+        chipClassName: 'border-[rgba(166,124,82,0.2)] bg-[rgba(238,229,214,0.85)] text-[var(--hearth-accent-wood)]',
+        iconClassName: 'text-[var(--hearth-accent-wood)]',
+    },
+    habit: {
+        label: 'Habit',
+        icon: 'lucide:sparkles',
+        chipClassName: 'border-[rgba(214,174,95,0.24)] bg-[rgba(230,199,102,0.18)] text-[#8B6C25]',
+        iconClassName: 'text-[#8B6C25]',
+    },
+    care: {
+        label: 'Care',
+        icon: 'lucide:heart-handshake',
+        chipClassName: 'border-[rgba(216,183,170,0.26)] bg-[rgba(216,183,170,0.18)] text-[#8F675E]',
+        iconClassName: 'text-[#8F675E]',
+    },
+    movement: {
+        label: 'Movement',
+        icon: 'lucide:footprints',
+        chipClassName: 'border-[rgba(110,146,131,0.22)] bg-[rgba(217,234,224,0.54)] text-[#52715F]',
+        iconClassName: 'text-[#52715F]',
+    },
+} as const;
+
+export function getHearthCategoryMeta(category: string) {
+    const normalizedCategory = category.trim().toLowerCase();
+
+    return hearthCategoryMeta[normalizedCategory as keyof typeof hearthCategoryMeta]
+        ?? hearthCategoryMeta.learning;
+}
+
+export function HearthCategoryChip({
+    category,
+    className = '',
+}: {
+    category: string;
+    className?: string;
+}) {
+    const meta = getHearthCategoryMeta(category);
+
+    return (
+        <Chip
+            radius="full"
+            variant="flat"
+            startContent={<Icon icon={meta.icon} className={`size-3.5 ${meta.iconClassName}`} />}
+            className={`border px-1 ${meta.chipClassName} ${className}`}
+        >
+            <span className="px-0.5 text-[10px] font-semibold sm:text-[11px]">
+                {meta.label}
+            </span>
         </Chip>
     );
 }
