@@ -1,28 +1,15 @@
 'use client';
 
-import React from 'react';
+// ============================================================
+// TopNav — Fixed top navigation bar
+// Reads seeds from quest store (auto-sync with Home/Dreams/Adventures)
+// ============================================================
 
-// Material Symbols helper
-const MaterialIcon = ({
-  icon,
-  filled = false,
-  className = ''
-}: {
-  icon: string;
-  filled?: boolean;
-  className?: string;
-}) => (
-  <span
-    className={`material-symbols-outlined ${filled ? 'material-symbols-filled' : ''} ${className}`}
-    data-icon={icon}
-    style={filled ? { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" } : undefined}
-  >
-    {icon}
-  </span>
-);
+import React from 'react';
+import { useQuestStore } from '@/stores';
 
 interface TopNavProps {
-  showSeeds?: number;
+  showSeeds?: number;  // Optional override — if omitted, reads from quest store
   showLogo?: boolean;
   logoText?: string;
   logoColor?: string;
@@ -36,6 +23,9 @@ export function TopNav({
   logoColor = 'text-[#0284C7]',
   rightIcons,
 }: TopNavProps) {
+  // Always read from store — `showSeeds` prop is optional override
+  const seeds = showSeeds ?? useQuestStore((s) => s.seeds);
+
   return (
     <header
       className="
@@ -64,27 +54,22 @@ export function TopNav({
 
       {/* Right side */}
       <div className="flex items-center gap-3">
-        {/* Seed counter pill */}
-        {showSeeds !== undefined && (
-          <div
-            className="
-              flex items-center gap-1.5
-              bg-[#FEF08A] comic-border-2 px-3 py-1 rounded-full
-              font-black text-sm text-[#1C1917]
-              skew-x-[-6deg]
-            "
-          >
-            <MaterialIcon icon="eco" filled className="text-[#FACC15] !text-base" />
-            <span>{showSeeds.toLocaleString()}</span>
-            <span className="text-[10px] font-bold uppercase text-[#CA8A04]">Seeds</span>
-          </div>
-        )}
+        {/* Seed counter pill — always from store */}
+        <div
+          className="
+            flex items-center gap-1.5
+            bg-[#FEF08A] comic-border-2 px-3 py-1 rounded-full
+            font-black text-sm text-[#1C1917]
+            skew-x-[-6deg]
+          "
+        >
+          <MaterialIcon icon="eco" filled className="text-[#FACC15] !text-base" />
+          <span>{seeds.toLocaleString()}</span>
+          <span className="text-[10px] font-bold uppercase text-[#CA8A04]">Seeds</span>
+        </div>
 
-        {/* Custom right icons */}
-        {rightIcons}
-
-        {/* Default right icons */}
-        {!rightIcons && (
+        {/* Custom icons or default icons */}
+        {rightIcons ?? (
           <>
             <button className="p-2 rounded-xl text-[#1C1917] hover:bg-[#BAE6FD] transition-all active:translate-x-[2px] active:shadow-none">
               <MaterialIcon icon="notifications" className="!text-2xl" />
@@ -99,4 +84,24 @@ export function TopNav({
   );
 }
 
-export { MaterialIcon };
+// ─── MaterialIcon helper (exported for reuse) ─────────────────────────────────
+
+export function MaterialIcon({
+  icon,
+  filled = false,
+  className = '',
+}: {
+  icon: string;
+  filled?: boolean;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`material-symbols-outlined ${filled ? 'material-symbols-filled' : ''} ${className}`}
+      data-icon={icon}
+      style={filled ? { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" } : undefined}
+    >
+      {icon}
+    </span>
+  );
+}

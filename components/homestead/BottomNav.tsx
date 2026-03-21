@@ -1,9 +1,14 @@
 'use client';
 
-import React from 'react';
+// ============================================================
+// BottomNav — Fixed bottom navigation bar
+// Auto-detects active tab from current pathname (next-intl)
+// ============================================================
+
 import Link from 'next/link';
 import { usePathname } from '@/i18n/routing';
 import { MaterialIcon } from './TopNav';
+import { useAppStore } from '@/stores';
 
 type NavTab = {
   label: string;
@@ -13,7 +18,6 @@ type NavTab = {
 };
 
 interface BottomNavProps {
-  activeTab?: string;
   variant?: 'child' | 'parent';
 }
 
@@ -31,9 +35,30 @@ const PARENT_TABS: NavTab[] = [
   { label: 'Moments',    icon: 'auto_stories',   href: '/parent/moments',    activeColor: 'bg-[#38BDF8]' },
 ];
 
-export function BottomNav({ activeTab, variant = 'child' }: BottomNavProps) {
-  const pathname = usePathname();  // next-intl wrapper (locale-prefix-free)
-  const tabs = variant === 'child' ? CHILD_TABS : PARENT_TABS;
+// Determine active tab label from pathname
+function getActiveTabLabel(pathname: string, tabs: NavTab[]): string {
+  // Exact match first
+  const exact = tabs.find((t) => t.href === pathname);
+  if (exact) return exact.label;
+
+  // Prefix match (e.g. /adventures → Adventures)
+  const prefix = tabs.find((t) => pathname.startsWith(t.href + '/'));
+  if (prefix) return prefix.label;
+
+  // Default to Home
+  return tabs[0].label;
+}
+
+export function BottomNav({ variant }: BottomNavProps) {
+  const pathname = usePathname();
+  const { role, setRole } = useAppStore();
+
+  // Use prop variant if provided, otherwise fall back to store role
+  const activeRole = variant ?? role;
+  const tabs = activeRole === 'parent' ? PARENT_TABS : CHILD_TABS;
+  const activeTab = getActiveTabLabel(pathname, tabs);
+
+  const isChild = activeRole === 'child';
 
   return (
     <nav
@@ -48,9 +73,7 @@ export function BottomNav({ activeTab, variant = 'child' }: BottomNavProps) {
       "
     >
       {tabs.map((tab) => {
-        const isActive = activeTab === tab.label ||
-          pathname === tab.href ||
-          pathname.startsWith(tab.href + '/');
+        const isActive = activeTab === tab.label;
 
         return (
           <Link
@@ -77,6 +100,39 @@ export function BottomNav({ activeTab, variant = 'child' }: BottomNavProps) {
           </Link>
         );
       })}
+
+      {/* Role toggle (parent only) */}
+      {isChild && (
+        <button
+          onClick={() => setRole('parent')}
+          className="
+            flex flex-col items-center justify-center
+            px-3 py-1.5 rounded-2xl
+            text-[#1C1917] hover:bg-[#FEF08A]
+            transition-all duration-150 active:scale-90
+          "
+          title="Switch to Parent View"
+        >
+          <MaterialIcon icon="manage_accounts" className="!text-2xl" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Parent</span>
+        </button>
+      )}
+
+      {!isChild && (
+        <button
+          onClick={() => setRole('child')}
+          className="
+            flex flex-col items-center justify-center
+            px-3 py-1.5 rounded-2xl
+            text-[#1C1917] hover:bg-[#FEF08A]
+            transition-all duration-150 active:scale-90
+          "
+          title="Switch to Child View"
+        >
+          <MaterialIcon icon="face" className="!text-2xl" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Child</span>
+        </button>
+      )}
     </nav>
   );
 }

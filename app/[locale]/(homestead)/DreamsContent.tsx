@@ -1,47 +1,57 @@
 'use client';
 
 // ============================================================
-// Client Component: Dream Tracker interactive content
-// Handles: dream goal card with onAddSeeds handler
-// Parent: (homestead)/dreams/page.tsx (Server Component)
+// DreamsContent — Dream Tracker
+// Uses: quest store (seeds) + dream store
 // ============================================================
 
-import { ComicCard, BentoGrid, MascotSection, DreamGoalCard, SeedHistoryItem } from '@/components/homestead';
-
-const ACTIVE_DREAM = {
-  title: 'Birthday Gift',
-  subtitle: 'New LEGO Set',
-  current: 30,
-  goal: 100,
-};
-
-const STORY_PROGRESS = [
-  { label: 'Chapter 2', value: 'Chapter 2', sub: 'The Blue Forest', icon: 'auto_stories', iconColor: 'text-rose-600', bg: 'bg-rose-200' },
-  { label: 'Badges', value: '9 Badges', sub: 'Keep it up!', icon: 'verified', iconColor: 'text-emerald-600', bg: 'bg-emerald-200' },
-];
-
-const SEED_HISTORY = [
-  { title: 'Cleaned Room', time: 'Today, 4:30 PM', amount: 5, icon: 'brush', iconBg: 'bg-sky-100', iconColor: 'text-sky-600' },
-  { title: 'Read 20 Mins', time: 'Yesterday', amount: 10, icon: 'menu_book', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
-];
+import {
+  ComicCard,
+  BentoGrid,
+  MascotSection,
+  DreamGoalCard,
+  SeedHistoryItem,
+} from '@/components/homestead';
+import { useQuestStore, useDreamStore } from '@/stores';
 
 export function DreamsContent() {
+  const { seeds } = useQuestStore();
+  const { activeDream, seedHistory } = useDreamStore();
+
+  const dream = activeDream ?? {
+    title: 'Birthday Gift',
+    subtitle: 'New LEGO Set',
+    current: 30,
+    goal: 100,
+    badge: 'BIG DREAM',
+    badgeColor: 'bg-yellow-400',
+    message: "Keep going! You're 30% there!",
+  };
+
+  const progressPct = Math.round((dream.current / dream.goal) * 100);
+
   return (
     <main className="max-w-md mx-auto px-4 pt-20 space-y-8">
 
-      {/* Mascot + Message */}
-      <MascotSection message="AMAZING! Seeds earned!" />
+      {/* Mascot */}
+      <MascotSection
+        message={
+          progressPct >= 100
+            ? "Goal reached! Amazing! 🏆"
+            : `You're ${progressPct}% to your dream! Keep going! 🌱`
+        }
+      />
 
       {/* Dream Goal Card */}
       <DreamGoalCard
-        title={ACTIVE_DREAM.title}
-        subtitle={ACTIVE_DREAM.subtitle}
-        current={ACTIVE_DREAM.current}
-        goal={ACTIVE_DREAM.goal}
-        badge="BIG DREAM"
-        badgeColor="bg-yellow-400"
-        message="Keep going! You're 30% there!"
-        onAddSeeds={() => alert('Add seeds!')}
+        title={dream.title}
+        subtitle={dream.subtitle}
+        current={dream.current}
+        goal={dream.goal}
+        badge={dream.badge}
+        badgeColor={dream.badgeColor}
+        message={dream.message}
+        onAddSeeds={() => {}}
       />
 
       {/* Story Progress */}
@@ -50,7 +60,24 @@ export function DreamsContent() {
           Story Progress
         </h3>
         <BentoGrid cols={2} gap="md">
-          {STORY_PROGRESS.map((item) => (
+          {[
+            {
+              label: 'Chapter 2',
+              value: 'Chapter 2',
+              sub: 'The Blue Forest',
+              icon: 'auto_stories',
+              iconColor: 'text-rose-600',
+              bg: 'bg-rose-200',
+            },
+            {
+              label: 'Badges',
+              value: '9 Badges',
+              sub: 'Keep it up!',
+              icon: 'verified',
+              iconColor: 'text-emerald-600',
+              bg: 'bg-emerald-200',
+            },
+          ].map((item) => (
             <ComicCard
               key={item.label}
               bg={item.bg === 'bg-rose-200' ? 'pink' : 'mint'}
@@ -61,7 +88,6 @@ export function DreamsContent() {
                 <span
                   className="material-symbols-outlined !text-4xl"
                   style={{ fontVariationSettings: "'FILL' 1, 'wght' 400" }}
-                  data-icon={item.icon}
                 >
                   {item.icon}
                 </span>
@@ -86,8 +112,8 @@ export function DreamsContent() {
           </button>
         </div>
         <div className="space-y-3">
-          {SEED_HISTORY.map((item) => (
-            <SeedHistoryItem key={item.title} {...item} />
+          {seedHistory.map((item) => (
+            <SeedHistoryItem key={item.id} {...item} />
           ))}
         </div>
       </section>
