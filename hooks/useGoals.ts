@@ -15,7 +15,11 @@ type GoalsStore = {
 
 const emptyGoals: GoalRecord[] = [];
 
-function normalizeChildIds(childIds: string[]) {
+function normalizeChildIds(childIds: string[] | null | undefined) {
+    if (!Array.isArray(childIds)) {
+        return [];
+    }
+
     return Array.from(new Set(childIds.filter(Boolean)));
 }
 

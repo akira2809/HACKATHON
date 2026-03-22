@@ -12,7 +12,13 @@ import { useTodayQuests } from './useTodayQuests';
 
 type UseParentDashboardDataOptions = {
     demoState?: string;
+    selectedChildIdOverride?: string | null;
+    syncSelectedChild?: boolean;
 };
+
+function asArray<T>(value: T[] | null | undefined): T[] {
+    return Array.isArray(value) ? value : [];
+}
 
 function inferQuestCategory(quest: QuestRecord): ParentQuest['category'] {
     const normalizedText = `${quest.title} ${quest.description}`.toLowerCase();
@@ -92,29 +98,33 @@ function buildChildSummary(child: {
 
 export function useParentDashboardData({
     demoState,
+    selectedChildIdOverride,
+    syncSelectedChild = true,
 }: UseParentDashboardDataOptions = {}) {
     const configuredFamilyId = useAppState((state) => state.familyId);
     const selectedChildId = useAppState((state) => state.selectedChildId);
     const selectChild = useAppState((state) => state.selectChild);
+    const resolvedSelectedChildId = selectedChildIdOverride ?? selectedChildId;
 
     const familiesQuery = useFamilies();
-    const family = familiesQuery.families.find((item) => item.id === configuredFamilyId) ?? familiesQuery.families[0] ?? null;
+    const familyRecords = asArray(familiesQuery.families);
+    const family = familyRecords.find((item) => item.id === configuredFamilyId) ?? familyRecords[0] ?? null;
     const familyId = demoState === 'no-children' ? family?.id : family?.id;
 
     const childrenQuery = useChildren(familyId, {
         enabled: Boolean(familyId),
     });
 
-    const childRecords = demoState === 'no-children' ? [] : childrenQuery.children;
-    const activeChildRecord = childRecords.find((child) => child.id === selectedChildId) ?? childRecords[0] ?? null;
+    const childRecords = demoState === 'no-children' ? [] : asArray(childrenQuery.children);
+    const activeChildRecord = childRecords.find((child) => child.id === resolvedSelectedChildId) ?? childRecords[0] ?? null;
 
     useEffect(() => {
-        if (!activeChildRecord || activeChildRecord.id === selectedChildId) {
+        if (!syncSelectedChild || !activeChildRecord || activeChildRecord.id === selectedChildId) {
             return;
         }
 
         selectChild(activeChildRecord.id);
-    }, [activeChildRecord, selectChild, selectedChildId]);
+    }, [activeChildRecord, selectChild, selectedChildId, syncSelectedChild]);
 
     const childGoalsQuery = useGoalsMap(
         childRecords.map((child) => child.id),
@@ -126,7 +136,7 @@ export function useParentDashboardData({
     const goalsQuery = useGoals(activeChildRecord?.id, {
         enabled: Boolean(activeChildRecord?.id),
     });
-    const currentGoalRecord = selectCurrentGoal(goalsQuery.goals);
+    const currentGoalRecord = selectCurrentGoal(asArray(goalsQuery.goals));
     const currentGoal = mapGoal(currentGoalRecord);
 
     const todayQuestsQuery = useTodayQuests(activeChildRecord?.id, undefined, {
@@ -136,8 +146,11 @@ export function useParentDashboardData({
         enabled: Boolean(familyId),
         refetchIntervalMs: 10000,
     });
+    const todayQuestRecords = asArray(todayQuestsQuery.quests);
+    const activityRecords = asArray(activitiesQuery.activities);
+
     const momentNotifications = useMomentNotifications({
-        activities: activitiesQuery.activities,
+        activities: activityRecords,
         children: childRecords,
         familyId,
     });
@@ -153,7 +166,7 @@ export function useParentDashboardData({
         ? {
             ...buildChildSummary(activeChildRecord, currentGoal),
             introMessage: `Good evening. Let's prepare ${activeChildRecord.name}'s adventures for today.`,
-            quests: todayQuestsQuery.quests.map((quest) => ({
+            quests: todayQuestRecords.map((quest) => ({
                 assignedDate: quest.assignedDate,
                 category: inferQuestCategory(quest),
                 completedAt: quest.completedAt,
@@ -169,7 +182,7 @@ export function useParentDashboardData({
     const pendingQuests = activeChild?.quests.filter((quest) => quest.status === 'pending') ?? [];
     const ongoingQuests = activeChild?.quests.filter((quest) => quest.status === 'ongoing') ?? [];
     const momentsCount = activeChild
-        ? activitiesQuery.activities.filter((activity) => activity.childId === activeChild.id).length
+        ? activityRecords.filter((activity) => activity.childId === activeChild.id).length
         : 0;
 
     const dashboardError = familiesQuery.error || childrenQuery.error || childGoalsQuery.error || goalsQuery.error || activitiesQuery.error
@@ -202,7 +215,7 @@ export function useParentDashboardData({
             removeQuest: todayQuestsQuery.removeQuest,
             startQuest: todayQuestsQuery.startQuest,
         },
-        selectedChildId: activeChild?.id ?? selectedChildId,
+        selectedChildId: activeChild?.id ?? resolvedSelectedChildId,
         selectChild,
         todayQuestsError: todayQuestsQuery.error,
     };

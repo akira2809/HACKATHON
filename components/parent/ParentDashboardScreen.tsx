@@ -65,31 +65,40 @@ export function ParentDashboardScreen({
 }: ParentDashboardScreenProps) {
     const params = useParams<{ locale: string }>();
     const router = useRouter();
-
+    const dashboardData = useParentDashboardData({ demoState });
     const {
-        activeChild,
-        childItems,
-        dashboardError,
-        familyId,
-        familySummary,
+        activeChild = null,
+        childItems = [],
+        dashboardError = null,
+        familyId = '',
+        familySummary = 'Family Board',
         goalsQuery,
-        hasUnreadMomentRequests,
-        hasNoChildren,
-        heroDescription,
-        isChildSelectorLoading,
-        isOverviewLoading,
-        latestUnreadMomentRequest,
-        momentsCount,
-        ongoingQuests,
-        pendingQuests,
+        hasUnreadMomentRequests = false,
+        hasNoChildren = false,
+        heroDescription = 'The family board will fill in once a child profile is ready.',
+        isChildSelectorLoading = false,
+        isOverviewLoading = false,
+        latestUnreadMomentRequest = null,
+        momentsCount = 0,
+        ongoingQuests = [],
+        pendingQuests = [],
         questActions,
-        selectedChildId,
+        selectedChildId = '',
         selectChild,
-        todayQuestsError,
-    } = useParentDashboardData({ demoState });
+        todayQuestsError = null,
+    } = dashboardData;
+    const safeGoalsQuery = goalsQuery ?? { isLoading: false };
+    const safeQuestActions = questActions ?? {
+        completeQuest: async () => null,
+        createQuests: async () => [],
+        refetch: async () => [],
+        removeQuest: async () => undefined,
+        startQuest: async () => null,
+    };
+    const safeSelectChild = selectChild ?? (() => undefined);
 
     const generateQuests = useGenerateQuests(
-        activeChild
+        activeChild && familyId
             ? {
                 childAge: activeChild.age,
                 childId: activeChild.id,
@@ -149,7 +158,7 @@ export function ParentDashboardScreen({
 
         setIsSwitching(true);
         handleQuestDrawerOpenChange(false);
-        selectChild(childId);
+        safeSelectChild(childId);
 
         if (switchTimeoutRef.current) {
             window.clearTimeout(switchTimeoutRef.current);
@@ -180,7 +189,7 @@ export function ParentDashboardScreen({
     };
 
     const handleGenerateQuests = async (preserveSelected = false) => {
-        if (!activeChild) {
+        if (!activeChild || !familyId) {
             return;
         }
 
@@ -286,7 +295,7 @@ export function ParentDashboardScreen({
         setQuestDrawerFeedback(null);
 
         try {
-            await questActions.createQuests(
+            await safeQuestActions.createQuests(
                 questDrawerOptions
                     .filter((quest) => selectedQuestIds.includes(quest.id))
                     .map((quest) => ({
@@ -298,7 +307,7 @@ export function ParentDashboardScreen({
                         title: quest.title,
                     })),
             );
-            await questActions.refetch();
+            await safeQuestActions.refetch();
             handleQuestDrawerOpenChange(false);
         } catch {
             setQuestDrawerFeedback('We could not save those quests right now. Please try again.');
@@ -472,7 +481,7 @@ export function ParentDashboardScreen({
                     <GoalCard
                         childName={activeChild.name}
                         goal={activeChild.goal}
-                        isLoading={goalsQuery.isLoading}
+                        isLoading={safeGoalsQuery.isLoading}
                         onPrimaryAction={activeChild.goal ? () => handleTabChange('dreams') : undefined}
                         seeds={activeChild.seeds}
                     />
@@ -504,7 +513,7 @@ export function ParentDashboardScreen({
                                         key={quest.id}
                                         childName={activeChild.name}
                                         onComplete={() => {
-                                            void questActions.completeQuest(quest.id);
+                                            void safeQuestActions.completeQuest(quest.id);
                                         }}
                                         quest={quest}
                                     />
@@ -595,7 +604,7 @@ export function ParentDashboardScreen({
                                         key={quest.id}
                                         childName={activeChild.name}
                                         onComplete={() => {
-                                            void questActions.completeQuest(quest.id);
+                                            void safeQuestActions.completeQuest(quest.id);
                                         }}
                                         quest={quest}
                                     />
@@ -617,7 +626,7 @@ export function ParentDashboardScreen({
                     <GoalCard
                         childName={activeChild.name}
                         goal={activeChild.goal}
-                        isLoading={goalsQuery.isLoading}
+                        isLoading={safeGoalsQuery.isLoading}
                         seeds={activeChild.seeds}
                     />
 

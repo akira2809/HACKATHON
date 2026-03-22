@@ -2,11 +2,11 @@
 
 // ============================================================
 // TopNav — Fixed top navigation bar
-// Reads seeds from quest store (auto-sync with Home/Dreams/Adventures)
+// Reads seeds from the shared dashboard hook unless an override is provided
 // ============================================================
 
 import React from 'react';
-import { useQuestStore } from '@/stores';
+import { useParentDashboardData } from '@/hooks/useParentDashboardData';
 
 interface TopNavProps {
   showSeeds?: number;  // Optional override — if omitted, reads from quest store
@@ -23,8 +23,10 @@ export function TopNav({
   logoColor = 'text-[#0284C7]',
   rightIcons,
 }: TopNavProps) {
-  // Always read from store — `showSeeds` prop is optional override
-  const seeds = showSeeds ?? useQuestStore((s) => s.seeds);
+  const sharedDashboard = useParentDashboardData({
+    syncSelectedChild: false,
+  });
+  const seeds = showSeeds ?? sharedDashboard.activeChild?.seeds ?? 0;
 
   return (
     <header
