@@ -8,7 +8,6 @@
 // ============================================================
 
 import React, { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { useChildDashboardData } from '@/hooks/useChildDashboardData';
 import { useParentDashboardData } from '@/hooks/useParentDashboardData';
 import { setChildSession } from '@/hooks/useChildSession';
@@ -39,7 +38,6 @@ export function TopNav({
   rightIcons,
   onModeChange,
 }: TopNavProps) {
-  const router = useRouter();
   const [isParentMode, setIsParentMode] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -59,8 +57,8 @@ export function TopNav({
   const familyName = parentData.familyName;
   const isLoading = (isParentMode ? parentData.isChildrenLoading : childData.isChildrenLoading) || parentData.isFamiliesLoading;
 
-  // Handle mode switch with routing and refetch
-  const handleModeSwitch = useCallback(async (newMode: 'parent' | 'child') => {
+  // Handle mode switch - just toggle view mode, BottomNav handles routing
+  const handleModeSwitch = useCallback((newMode: 'parent' | 'child') => {
     const shouldBeParent = newMode === 'parent';
     
     if (shouldBeParent) {
@@ -72,26 +70,20 @@ export function TopNav({
           parentName: 'Demo Parent',
           familyName: parentData.family.name,
         });
-        // Refetch parent data
-        await parentData.refetchDashboardData?.();
       }
     } else {
-      // Switching to child mode - clear parent session and refetch child data
+      // Switching to child mode - clear parent session
       clearParentSession();
-      await childData.refetchDashboardData?.();
     }
     
     setIsParentMode(shouldBeParent);
     onModeChange?.(newMode);
-    
-    // Navigate to appropriate route
-    router.push(shouldBeParent ? '/parent' : '/');
-  }, [parentData, childData, router, onModeChange]);
+  }, [parentData]);
 
-  // Handle child selection with routing and refetch
-  const handleSelectChild = useCallback(async (childId: string) => {
+  // Handle child selection
+  const handleSelectChild = useCallback((childId: string) => {
     if (isParentMode) {
-      // In parent mode, switch to child mode with that child
+      // In parent mode, clicking a child switches to child view mode with that child
       const child = children.find((c) => c.id === childId);
       if (child) {
         setChildSession({
@@ -101,33 +93,31 @@ export function TopNav({
           childAge: child.childAge,
         });
         clearParentSession();
-        
-        // Refetch child data and navigate
-        await childData.refetchDashboardData?.();
         setIsParentMode(false);
         onModeChange?.('child');
-        router.push('/');
+        // Fetch child's data after switching
+        setTimeout(() => {
+          childData.refetchDashboardData?.();
+        }, 0);
       }
     } else {
-      // In child mode, switch child and refetch
+      // In child mode, switch child and fetch their data
       childData.selectChild(childId);
-      await childData.refetchDashboardData?.();
+      childData.refetchDashboardData?.();
     }
     setIsDropdownOpen(false);
-  }, [isParentMode, children, parentData, childData, router, onModeChange]);
+  }, [isParentMode, children, parentData, childData, onModeChange]);
 
-  // Handle switch back to child from parent mode with refetch and routing
-  const handleBackToChild = useCallback(async () => {
+  // Handle switch back to child from parent mode
+  const handleBackToChild = useCallback(() => {
     clearParentSession();
-    await childData.refetchDashboardData?.();
     setIsParentMode(false);
     setIsDropdownOpen(false);
     onModeChange?.('child');
-    router.push('/');
-  }, [childData, router, onModeChange]);
+  }, [onModeChange]);
 
-  // Handle parent login demo with routing and refetch
-  const handleParentLogin = useCallback(async () => {
+  // Handle parent login
+  const handleParentLogin = useCallback(() => {
     if (parentData.family) {
       setParentSession({
         parentId: 'demo-parent',
@@ -135,48 +125,44 @@ export function TopNav({
         parentName: 'Demo Parent',
         familyName: parentData.family.name,
       });
-      
-      // Refetch parent data and navigate
-      await parentData.refetchDashboardData?.();
       setIsParentMode(true);
       onModeChange?.('parent');
-      router.push('/parent');
     }
-  }, [parentData, router, onModeChange]);
+  }, [parentData, onModeChange]);
 
   return (
     <header
       className="
         fixed top-0 left-0 w-full z-50
-        flex justify-between items-center
-        px-4 md:px-6 h-16 md:h-20
+        flex justify-between items-center gap-1 sm:gap-2 md:gap-3 lg:gap-4
+        px-2 sm:px-3 md:px-4 lg:px-6 h-14 sm:h-16 md:h-20
         bg-white/95 backdrop-blur-sm
-        border-b-4 border-[#1C1917]
-        shadow-[4px_4px_0px_#1C1917]
+        border-b-2 sm:border-b-3 md:border-b-4 border-[#1C1917]
+        shadow-[2px_2px_0px_#1C1917] sm:shadow-[3px_3px_0px_#1C1917] md:shadow-[4px_4px_0px_#1C1917]
       "
     >
-      {/* Logo */}
-      {showLogo && (
-        <h1
-          className={`
-            text-xl md:text-2xl font-black italic uppercase tracking-tight
-            ${logoColor} drop-shadow-[2px_2px_0px_#1C1917]
-          `}
-        >
-          {logoText}
-        </h1>
-      )}
+      {/* Logo or placeholder */}
+      <div className="flex-shrink-0 w-16 sm:w-20 md:w-auto">
+        {showLogo && (
+          <h1
+            className={`
+              text-sm sm:text-lg md:text-xl lg:text-2xl font-black italic uppercase tracking-tight
+              ${logoColor} drop-shadow-[1px_1px_0px_#1C1917] sm:drop-shadow-[2px_2px_0px_#1C1917]
+            `}
+          >
+            {logoText}
+          </h1>
+        )}
+      </div>
 
-      {!showLogo && <div />}
-
-      {/* Right side */}
-      <div className="flex items-center gap-3">
+      {/* Right side - center using flex-1 and justify-end */}
+      <div className="flex items-center justify-end gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-1 min-w-0">
         {/* Mode Toggle */}
-        <div className="flex items-center bg-[#E5E7EB] rounded-full p-1">
+        <div className="flex items-center bg-[#E5E7EB] rounded-full p-0.5 sm:p-1 flex-shrink-0">
           <button
             onClick={() => handleModeSwitch('child')}
             className={`
-              px-3 py-1 rounded-full text-xs font-black transition-all
+              px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs md:text-xs font-black transition-all whitespace-nowrap
               ${!isParentMode
                 ? 'bg-[#0284C8] text-white shadow-sm'
                 : 'text-[#1C1917] hover:bg-[#D8E3D1]'
@@ -188,7 +174,7 @@ export function TopNav({
           <button
             onClick={() => handleModeSwitch('parent')}
             className={`
-              px-3 py-1 rounded-full text-xs font-black transition-all
+              px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs md:text-xs font-black transition-all whitespace-nowrap
               ${isParentMode
                 ? 'bg-[#0284C8] text-white shadow-sm'
                 : 'text-[#1C1917] hover:bg-[#D8E3D1]'
@@ -201,23 +187,23 @@ export function TopNav({
 
         {/* Child/Family Selector */}
         {isParentMode ? (
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="
-                flex items-center gap-2
-                bg-[#BAE6FD] comic-border-2 px-3 py-1.5 rounded-full
-                font-black text-sm text-[#1C1917]
-                hover:bg-[#7DD3FC] transition-all
+                flex items-center gap-0.5 sm:gap-1 md:gap-2
+                bg-[#BAE6FD] comic-border-2 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 rounded-full
+                font-black text-[9px] sm:text-xs md:text-sm text-[#1C1917]
+                hover:bg-[#7DD3FC] transition-all whitespace-nowrap
               "
             >
-              <div className="w-6 h-6 rounded-full bg-[#0284C8] flex items-center justify-center">
-                <span className="text-white text-xs font-black">👨‍👩‍👧</span>
+              <div className="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 rounded-full bg-[#0284C8] flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-[8px] sm:text-[9px] md:text-xs font-black">👨‍👩‍👧</span>
               </div>
-              <span className="hidden sm:inline max-w-[100px] truncate">
-                {familyName || 'Select Family'}
+              <span className="hidden lg:inline max-w-[80px] truncate">
+                {familyName?.substring(0, 12) || 'Family'}
               </span>
-              <MaterialIcon icon="expand_more" className="!text-base" />
+              <MaterialIcon icon="expand_more" className="!text-sm sm:!text-base md:!text-base flex-shrink-0" />
             </button>
 
             {isDropdownOpen && (
@@ -227,10 +213,11 @@ export function TopNav({
                   onClick={() => setIsDropdownOpen(false)}
                 />
                 <div className="
-                  absolute right-0 top-full mt-2
-                  bg-white border-4 border-[#1C1917] rounded-2xl
-                  shadow-[4px_4px_0px_#1C1917]
-                  min-w-[240px] z-50 overflow-hidden
+                  absolute right-0 top-full mt-1 sm:mt-2
+                  bg-white border-2 sm:border-4 border-[#1C1917] rounded-xl sm:rounded-2xl
+                  shadow-[2px_2px_0px_#1C1917] sm:shadow-[4px_4px_0px_#1C1917]
+                  min-w-[180px] sm:min-w-[240px] z-50 overflow-hidden
+                  max-h-[60vh] overflow-y-auto
                 ">
                   <div className="p-2">
                     {!parentData.hasSession && parentData.family && (
@@ -302,27 +289,27 @@ export function TopNav({
             )}
           </div>
         ) : (
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button
               onClick={() => children.length > 1 && setIsDropdownOpen(!isDropdownOpen)}
               className={`
-                flex items-center gap-2
-                bg-[#BAE6FD] comic-border-2 px-3 py-1.5 rounded-full
-                font-black text-sm text-[#1C1917]
-                transition-all
+                flex items-center gap-0.5 sm:gap-1 md:gap-2
+                bg-[#BAE6FD] comic-border-2 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 rounded-full
+                font-black text-[9px] sm:text-xs md:text-sm text-[#1C1917]
+                transition-all whitespace-nowrap
                 ${children.length > 1 ? 'hover:bg-[#7DD3FC] cursor-pointer' : 'cursor-default'}
               `}
             >
-              <div className="w-6 h-6 rounded-full bg-[#0284C8] flex items-center justify-center">
-                <span className="text-white text-xs font-black">
+              <div className="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 rounded-full bg-[#0284C8] flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-[8px] sm:text-[9px] md:text-xs font-black">
                   {childName?.[0]?.toUpperCase() || '?'}
                 </span>
               </div>
-              <span className="hidden sm:inline max-w-[80px] truncate">
-                {childName || 'No Child'}
+              <span className="hidden lg:inline max-w-[60px] truncate">
+                {childName?.substring(0, 10) || 'Child'}
               </span>
               {children.length > 1 && (
-                <MaterialIcon icon="expand_more" className="!text-base" />
+                <MaterialIcon icon="expand_more" className="!text-sm sm:!text-base md:!text-base flex-shrink-0" />
               )}
             </button>
 
@@ -333,10 +320,11 @@ export function TopNav({
                   onClick={() => setIsDropdownOpen(false)}
                 />
                 <div className="
-                  absolute right-0 top-full mt-2
-                  bg-white border-4 border-[#1C1917] rounded-2xl
-                  shadow-[4px_4px_0px_#1C1917]
-                  min-w-[200px] z-50 overflow-hidden
+                  absolute right-0 top-full mt-1 sm:mt-2
+                  bg-white border-2 sm:border-4 border-[#1C1917] rounded-xl sm:rounded-2xl
+                  shadow-[2px_2px_0px_#1C1917] sm:shadow-[4px_4px_0px_#1C1917]
+                  min-w-[160px] sm:min-w-[200px] z-50 overflow-hidden
+                  max-h-[60vh] overflow-y-auto
                 ">
                   <div className="p-2">
                     <p className="text-[10px] font-black uppercase text-[#7C8E76] px-2 py-1">
@@ -387,24 +375,24 @@ export function TopNav({
         {/* Seed counter */}
         <div
           className="
-            flex items-center gap-1.5
-            bg-[#FEF08A] comic-border-2 px-3 py-1 rounded-full
-            font-black text-sm text-[#1C1917]
-            skew-x-[-6deg]
+            flex items-center gap-0.5 sm:gap-1 md:gap-1.5
+            bg-[#FEF08A] comic-border-2 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 rounded-full
+            font-black text-[9px] sm:text-xs md:text-sm text-[#1C1917]
+            skew-x-[-6deg] flex-shrink-0
           "
         >
-          <MaterialIcon icon="eco" filled className="text-[#FACC15] !text-base" />
-          <span>{displaySeeds.toLocaleString()}</span>
-          <span className="text-[10px] font-bold uppercase text-[#CA8A04]">Seeds</span>
+          <MaterialIcon icon="eco" filled className="text-[#FACC15] !text-sm sm:!text-base md:!text-base flex-shrink-0" />
+          <span className="hidden xs:inline">{displaySeeds.toLocaleString()}</span>
+          <span className="hidden xs:inline text-[7px] sm:text-[9px] md:text-[10px] font-bold uppercase text-[#CA8A04]">S</span>
         </div>
 
         {rightIcons ?? (
           <>
-            <button className="p-2 rounded-xl text-[#1C1917] hover:bg-[#BAE6FD] transition-all">
-              <MaterialIcon icon="notifications" className="!text-2xl" />
+            <button className="p-0.5 sm:p-1 md:p-2 rounded-lg sm:rounded-lg md:rounded-xl text-[#1C1917] hover:bg-[#BAE6FD] transition-all flex-shrink-0">
+              <MaterialIcon icon="notifications" className="!text-base sm:!text-lg md:!text-2xl" />
             </button>
-            <button className="p-2 rounded-xl text-[#1C1917] hover:bg-[#BAE6FD] transition-all">
-              <MaterialIcon icon="account_circle" filled className="!text-2xl" />
+            <button className="p-0.5 sm:p-1 md:p-2 rounded-lg sm:rounded-lg md:rounded-xl text-[#1C1917] hover:bg-[#BAE6FD] transition-all flex-shrink-0">
+              <MaterialIcon icon="account_circle" filled className="!text-base sm:!text-lg md:!text-2xl" />
             </button>
           </>
         )}
