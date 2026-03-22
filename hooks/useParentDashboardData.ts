@@ -13,7 +13,8 @@ import type { ParentGoal, ParentQuest } from '@/state/appState';
 import { useActivities } from './useActivities';
 import { useChildren } from './useChildren';
 import { useFamilies } from './useFamilies';
-import { useGoals } from './useGoals';
+import { useGoals, useGoalsMap } from './useGoals';
+import { useMomentNotifications } from './useMomentNotifications';
 import { useTodayQuests } from './useTodayQuests';
 import { useParentSession, setParentSession } from './useParentSession';
 
@@ -45,10 +46,10 @@ function mapQuestStatus(status: QuestRecord['status']): ParentQuest['status'] {
     }
 
     if (status === 'ongoing') {
-        return 'approved';
+        return 'ongoing';
     }
 
-    return 'suggested';
+    return 'pending';
 }
 
 function selectCurrentGoal(goals: GoalRecord[]) {
@@ -95,6 +96,21 @@ export function useParentDashboardData({
     const childRecords = demoState === 'no-children' ? [] : childrenQuery.children;
     const activeChildRecord = childRecords[0] ?? null;
 
+    useEffect(() => {
+        if (!activeChildRecord || activeChildRecord.id === selectedChildId) {
+            return;
+        }
+
+        selectChild(activeChildRecord.id);
+    }, [activeChildRecord, selectChild, selectedChildId]);
+
+    const childGoalsQuery = useGoalsMap(
+        childRecords.map((child) => child.id),
+        {
+            enabled: childRecords.length > 0,
+        },
+    );
+
     // Goals
     const goalsQuery = useGoals(activeChildRecord?.id, {
         enabled: Boolean(activeChildRecord?.id),
@@ -110,6 +126,12 @@ export function useParentDashboardData({
     // Activities
     const activitiesQuery = useActivities(familyId ?? undefined, {
         enabled: Boolean(familyId),
+        refetchIntervalMs: 10000,
+    });
+    const momentNotifications = useMomentNotifications({
+        activities: activitiesQuery.activities,
+        children: childRecords,
+        familyId,
     });
 
     // Build child items
@@ -145,7 +167,9 @@ export function useParentDashboardData({
             networkIssue: undefined,
             proximityDistance: 0,
             quests: todayQuestsQuery.quests.map((quest) => ({
+                assignedDate: quest.assignedDate,
                 category: inferQuestCategory(quest),
+                completedAt: quest.completedAt,
                 description: quest.description,
                 id: quest.id,
                 reward: quest.reward,
@@ -156,13 +180,13 @@ export function useParentDashboardData({
         }
         : null;
 
-    const suggestedQuests = activeChild?.quests.filter((quest) => quest.status === 'suggested') ?? [];
-    const approvedQuests = activeChild?.quests.filter((quest) => quest.status === 'approved') ?? [];
+    const pendingQuests = activeChild?.quests.filter((quest) => quest.status === 'pending') ?? [];
+    const ongoingQuests = activeChild?.quests.filter((quest) => quest.status === 'ongoing') ?? [];
     const momentsCount = activeChild
         ? activitiesQuery.activities.filter((activity) => activity.childId === activeChild.id).length
         : 0;
 
-    const dashboardError = familiesQuery.error || childrenQuery.error || goalsQuery.error || activitiesQuery.error
+    const dashboardError = familiesQuery.error || childrenQuery.error || childGoalsQuery.error || goalsQuery.error || activitiesQuery.error
         ? 'Something did not come through just yet. Please try again.'
         : null;
 

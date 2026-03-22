@@ -15,6 +15,46 @@ type ChildrenStore = {
 };
 
 const emptyChildren: ChildRecord[] = [];
+const CHILDREN_SYNC_CHANNEL_NAME = 'homestead-children';
+const CHILDREN_SYNC_STORAGE_KEY = 'homestead-children-sync';
+const CHILDREN_SYNC_SOURCE = `children-${Math.random().toString(36).slice(2)}`;
+
+type ChildrenSyncMessage = {
+    familyId: string;
+    source: string;
+    type: 'children-updated';
+};
+
+let childrenSyncChannel: BroadcastChannel | null = null;
+
+function getChildrenSyncChannel() {
+    if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
+        return null;
+    }
+
+    if (!childrenSyncChannel) {
+        childrenSyncChannel = new BroadcastChannel(CHILDREN_SYNC_CHANNEL_NAME);
+    }
+
+    return childrenSyncChannel;
+}
+
+function broadcastChildrenSync(familyId: string) {
+    const payload = {
+        familyId,
+        source: CHILDREN_SYNC_SOURCE,
+        type: 'children-updated',
+    } satisfies ChildrenSyncMessage;
+    const channel = getChildrenSyncChannel();
+
+    if (channel) {
+        channel.postMessage(payload);
+    }
+
+    if (typeof window !== 'undefined') {
+        window.localStorage.setItem(CHILDREN_SYNC_STORAGE_KEY, JSON.stringify(payload));
+    }
+}
 
 const useChildrenStore = create<ChildrenStore>((set) => ({
     createChild: async (input) => {
@@ -43,6 +83,7 @@ const useChildrenStore = create<ChildrenStore>((set) => ({
                 },
             };
         });
+        broadcastChildrenSync(input.familyId);
 
         return child;
     },
@@ -114,6 +155,7 @@ const useChildrenStore = create<ChildrenStore>((set) => ({
 
             return { queries: nextQueries };
         });
+        broadcastChildrenSync(familyId);
     },
     updateChild: async (familyId, childId, input) => {
         const child = await homesteadApi.children.update(childId, input);
@@ -138,6 +180,7 @@ const useChildrenStore = create<ChildrenStore>((set) => ({
 
             return { queries: nextQueries };
         });
+        broadcastChildrenSync(familyId);
 
         return child;
     },
@@ -173,6 +216,70 @@ export function useChildren(familyId?: string, options: QueryOptions = {}) {
             }
         }
     }, [enabled, familyId, sessionVersion, fetchChildren, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
+
+    useEffect(() => {
+        if (!enabled || !familyId) {
+            return;
+        }
+
+        const handleSyncMessage = (payload: ChildrenSyncMessage) => {
+            if (
+                payload.type !== 'children-updated'
+                || payload.source === CHILDREN_SYNC_SOURCE
+                || payload.familyId !== familyId
+            ) {
+                return;
+            }
+
+            void fetchChildren(familyId);
+        };
+
+        const channel = getChildrenSyncChannel();
+
+        const handleChannelMessage = (event: MessageEvent<ChildrenSyncMessage>) => {
+            handleSyncMessage(event.data);
+        };
+
+        const handleStorage = (event: StorageEvent) => {
+            if (!event.newValue || event.key !== CHILDREN_SYNC_STORAGE_KEY) {
+                return;
+            }
+
+            try {
+                handleSyncMessage(JSON.parse(event.newValue) as ChildrenSyncMessage);
+            } catch {
+                return;
+            }
+        };
+
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                void fetchChildren(familyId);
+            }
+        };
+
+        const handleFocus = () => {
+            void fetchChildren(familyId);
+        };
+
+        if (channel) {
+            channel.addEventListener('message', handleChannelMessage);
+        }
+
+        window.addEventListener('storage', handleStorage);
+        document.addEventListener('visibilitychange', handleVisibility);
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            if (channel) {
+                channel.removeEventListener('message', handleChannelMessage);
+            }
+
+            window.removeEventListener('storage', handleStorage);
+            document.removeEventListener('visibilitychange', handleVisibility);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [enabled, familyId, fetchChildren]);
 
     return {
         children: resolvedQuery.data,

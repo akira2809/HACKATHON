@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { homesteadApi, type CreateQuestInput, type QuestRecord } from '@/lib/homestead-api';
 import { createMissingParameterError, createQueryState, getTodayDateString, type QueryOptions, toErrorMessage } from './query-utils';
@@ -44,7 +45,7 @@ function updateQuestAcrossQueries(
     );
 }
 
-const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
+const useTodayQuestsStore = create<TodayQuestsStore>((set, get) => ({
     completeQuest: async (questId) => {
         // Complete the quest
         const quest = await homesteadApi.quests.complete(questId);
@@ -69,6 +70,7 @@ const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
         set((state) => ({
             queries: updateQuestAcrossQueries(state.queries, questId, () => quest),
         }));
+        broadcastQuestSync(quest.childId, quest.assignedDate);
 
         return quest;
     },
@@ -93,6 +95,9 @@ const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
             });
 
             return { queries: nextQueries };
+        });
+        quests.forEach((quest) => {
+            broadcastQuestSync(quest.childId, quest.assignedDate);
         });
 
         return quests;
@@ -147,11 +152,19 @@ const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
     },
     queries: {},
     removeQuest: async (questId) => {
+        const removedQuest = Object.values(get().queries)
+            .flatMap((query) => query.data)
+            .find((quest) => quest.id === questId);
+
         await homesteadApi.quests.remove(questId);
 
         set((state) => ({
             queries: updateQuestAcrossQueries(state.queries, questId, () => null),
         }));
+
+        if (removedQuest) {
+            broadcastQuestSync(removedQuest.childId, removedQuest.assignedDate);
+        }
     },
     startQuest: async (questId) => {
         const quest = await homesteadApi.quests.start(questId);
@@ -163,6 +176,7 @@ const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
         set((state) => ({
             queries: updateQuestAcrossQueries(state.queries, questId, () => quest),
         }));
+        broadcastQuestSync(quest.childId, quest.assignedDate);
 
         return quest;
     },
@@ -188,16 +202,101 @@ export function useTodayQuests(childId?: string, assignedDate = getTodayDateStri
             return;
         }
 
-        // Re-fetch when session version changes
-        const sessionChanged = prevSessionVersionRef.current !== sessionVersion;
-        prevSessionVersionRef.current = sessionVersion;
+        const channel = getQuestSyncChannel();
 
-        if (sessionChanged || !resolvedQuery.isLoaded) {
-            if (!resolvedQuery.isLoading) {
-                void fetchTodayQuests(childId, assignedDate, sessionVersion);
-            }
+        if (!channel) {
+            const handleStorage = (event: StorageEvent) => {
+                if (!event.newValue || event.key !== QUEST_SYNC_STORAGE_KEY) {
+                    return;
+                }
+
+                try {
+                    const payload = JSON.parse(event.newValue) as QuestSyncMessage;
+
+                    if (
+                        payload.type !== 'quest-updated'
+                        || payload.source === QUEST_SYNC_SOURCE
+                        || payload.childId !== childId
+                        || payload.assignedDate !== assignedDate
+                    ) {
+                        return;
+                    }
+
+                    void fetchTodayQuests(childId, assignedDate);
+                } catch {
+                    return;
+                }
+            };
+
+            window.addEventListener('storage', handleStorage);
+
+            return () => {
+                window.removeEventListener('storage', handleStorage);
+            };
         }
-    }, [assignedDate, childId, enabled, fetchTodayQuests, sessionVersion, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
+
+        const handleMessage = (event: MessageEvent<QuestSyncMessage>) => {
+            const payload = event.data;
+
+            if (
+                payload.type !== 'quest-updated'
+                || payload.source === QUEST_SYNC_SOURCE
+                || payload.childId !== childId
+                || payload.assignedDate !== assignedDate
+            ) {
+                return;
+            }
+
+            void fetchTodayQuests(childId, assignedDate);
+        };
+
+        channel.addEventListener('message', handleMessage);
+
+        const handleStorage = (event: StorageEvent) => {
+            if (!event.newValue || event.key !== QUEST_SYNC_STORAGE_KEY) {
+                return;
+            }
+
+            try {
+                const payload = JSON.parse(event.newValue) as QuestSyncMessage;
+
+                if (
+                    payload.type !== 'quest-updated'
+                    || payload.source === QUEST_SYNC_SOURCE
+                    || payload.childId !== childId
+                    || payload.assignedDate !== assignedDate
+                ) {
+                    return;
+                }
+
+                void fetchTodayQuests(childId, assignedDate);
+            } catch {
+                return;
+            }
+        };
+
+        window.addEventListener('storage', handleStorage);
+
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                void fetchTodayQuests(childId, assignedDate);
+            }
+        };
+
+        const handleFocus = () => {
+            void fetchTodayQuests(childId, assignedDate);
+        };
+
+        document.addEventListener('visibilitychange', handleVisibility);
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            channel.removeEventListener('message', handleMessage);
+            window.removeEventListener('storage', handleStorage);
+            document.removeEventListener('visibilitychange', handleVisibility);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [assignedDate, childId, enabled, fetchTodayQuests]);
 
     return {
         completeQuest,

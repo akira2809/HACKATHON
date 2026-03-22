@@ -15,6 +15,10 @@ type GoalsStore = {
 
 const emptyGoals: GoalRecord[] = [];
 
+function normalizeChildIds(childIds: string[]) {
+    return Array.from(new Set(childIds.filter(Boolean)));
+}
+
 const useGoalsStore = create<GoalsStore>((set) => ({
     createGoal: async (input) => {
         const goal = await homesteadApi.goals.create(input);
@@ -170,5 +174,44 @@ export function useGoals(childId?: string, options: QueryOptions = {}) {
 
             return updateGoal(childId, goalId, input);
         },
+    };
+}
+
+export function useGoalsMap(childIds: string[] = [], options: QueryOptions = {}) {
+    const enabled = options.enabled ?? true;
+    const fetchGoals = useGoalsStore((state) => state.fetchGoals);
+    const queries = useGoalsStore((state) => state.queries);
+    const normalizedChildIds = normalizeChildIds(childIds);
+
+    useEffect(() => {
+        if (!enabled || !normalizedChildIds.length) {
+            return;
+        }
+
+        normalizedChildIds.forEach((childId) => {
+            const query = queries[childId];
+
+            if (query?.isLoaded || query?.isLoading) {
+                return;
+            }
+
+            void fetchGoals(childId);
+        });
+    }, [childIds, enabled, fetchGoals, normalizedChildIds, queries]);
+
+    const goalsByChild = normalizedChildIds.reduce<Record<string, GoalRecord[]>>((result, childId) => {
+        result[childId] = queries[childId]?.data ?? emptyGoals;
+        return result;
+    }, {});
+
+    return {
+        error: normalizedChildIds.map((childId) => queries[childId]?.error).find(Boolean) ?? null,
+        goalsByChild,
+        isLoaded: normalizedChildIds.every((childId) => queries[childId]?.isLoaded ?? false),
+        isLoading: enabled && normalizedChildIds.some((childId) => {
+            const query = queries[childId];
+            return !query || query.isLoading || !query.isLoaded;
+        }),
+        refetch: () => Promise.all(normalizedChildIds.map((childId) => fetchGoals(childId))),
     };
 }

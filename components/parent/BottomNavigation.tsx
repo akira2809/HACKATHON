@@ -9,6 +9,7 @@ export type BottomNavigationItem = {
     active: boolean;
     onPress: () => void;
     disabled?: boolean;
+    showNotificationDot?: boolean;
 };
 
 export function BottomNavigation({
@@ -30,7 +31,12 @@ export function BottomNavigation({
                     onClick={item.onPress}
                     type="button"
                 >
-                    {item.icon}
+                    <span className="relative inline-flex">
+                        {item.icon}
+                        {item.showNotificationDot ? (
+                            <span className="absolute -right-1 -top-1 size-2.5 rounded-full bg-[#C65A47] ring-2 ring-[var(--hearth-bg-surface)]" />
+                        ) : null}
+                    </span>
                     <span className="text-[10px] font-semibold sm:text-[11px]">{item.label}</span>
                     <span className={`h-1 w-5 rounded-full sm:h-1.5 sm:w-6 ${item.active ? 'bg-[var(--hearth-accent-gold)]' : 'bg-transparent'}`} />
                 </button>

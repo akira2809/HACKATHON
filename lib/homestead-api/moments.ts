@@ -17,6 +17,7 @@ import type {
     PlaceCacheRecord,
     UpdateActivityInput,
     UpdateAdvisorMessageInput,
+    UpdateCalendarEventInput,
 } from './types';
 
 export const activitiesApi = {
@@ -24,10 +25,15 @@ export const activitiesApi = {
         supabaseUpdateOne<ActivityRecord>('activities', input, { id: eq(activityId) }),
     create: (input: CreateActivityInput) => supabaseInsertOne<ActivityRecord>('activities', input),
     listByFamily: (familyId: string) =>
+
         supabaseList<ActivityRecord>('activities', {
             familyId: eq(familyId),
             order: 'id.desc',
         }),
+
+
+    update: (activityId: string, input: UpdateActivityInput) =>
+        supabaseUpdateOne<ActivityRecord>('activities', input, { id: eq(activityId) }),
 };
 
 export const advisorMessagesApi = {
@@ -54,4 +60,6 @@ export const calendarEventsApi = {
         supabaseInsertOne<CalendarEventRecord>('calendar_events', input),
     listByParent: (parentId: string) =>
         supabaseList<CalendarEventRecord>('calendar_events', { parentId: eq(parentId) }),
+    update: (eventId: string, input: UpdateCalendarEventInput) =>
+        supabaseUpdateOne<CalendarEventRecord>('calendar_events', input, { id: eq(eventId) }),
 };

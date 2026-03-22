@@ -6,6 +6,11 @@ type PlayLenaVoiceInput = {
     voiceId?: string;
 };
 
+type VoiceRouteError = {
+    error: string;
+    errorCode?: string | null;
+};
+
 type ActivePlayback = {
     audio: HTMLAudioElement;
     objectUrl: string;
@@ -36,16 +41,43 @@ async function readVoiceError(response: Response) {
     const contentType = response.headers.get('content-type') ?? '';
 
     if (contentType.includes('application/json')) {
-        const data = await response.json().catch(() => null);
+        const data = await response.json().catch(() => null) as VoiceRouteError | null;
 
-        if (data && typeof data === 'object' && 'error' in data && typeof data.error === 'string') {
-            return data.error;
+        if (data && typeof data === 'object' && typeof data.error === 'string') {
+            return data;
         }
     }
 
     const text = await response.text().catch(() => '');
 
-    return text || 'Voice playback request failed.';
+    return {
+        error: text || 'Voice playback request failed.',
+        errorCode: null,
+    } satisfies VoiceRouteError;
+}
+
+function canUseBrowserVoice() {
+    return typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+}
+
+function playBrowserVoice(text: string) {
+    if (!canUseBrowserVoice()) {
+        return Promise.reject(new Error('Browser voice playback is unavailable.'));
+    }
+
+    window.speechSynthesis.cancel();
+
+    return new Promise<void>((resolve, reject) => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.96;
+        utterance.pitch = 1.04;
+        utterance.volume = 1;
+
+        utterance.onend = () => resolve();
+        utterance.onerror = () => reject(new Error('Browser voice playback failed.'));
+
+        window.speechSynthesis.speak(utterance);
+    });
 }
 
 export async function playLenaVoice({
@@ -68,7 +100,17 @@ export async function playLenaVoice({
     });
 
     if (!response.ok) {
-        throw new Error(await readVoiceError(response));
+        const routeError = await readVoiceError(response);
+
+        if (
+            (routeError.errorCode === 'quota_exceeded' || response.status === 429)
+            && canUseBrowserVoice()
+        ) {
+            await playBrowserVoice(text);
+            return;
+        }
+
+        throw new Error(routeError.error);
     }
 
     const audioBlob = await response.blob();
