@@ -66,7 +66,7 @@ const useActivitiesStore = create<ActivitiesStore>((set) => ({
 
         // If the activity has a reward and childId, update the child's coins
         const { childId } = activity;
-        const reward = (input as any).reward || 0;
+        const reward = (input as UpdateActivityInput & { reward?: number }).reward ?? 0;
         if (childId && reward) {
             try {
                 const child = await homesteadApi.children.getById(childId);
@@ -257,6 +257,13 @@ export function useActivities(familyId?: string, options: QueryOptions = {}) {
             }
 
             return fetchActivities(familyId, sessionVersion);
+        },
+        updateActivity: (activityId: string, input: UpdateActivityInput) => {
+            if (!familyId) {
+                return Promise.reject(createMissingParameterError('familyId'));
+            }
+
+            return updateActivity(familyId, activityId, input);
         },
     };
 }
