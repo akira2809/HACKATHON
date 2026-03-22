@@ -1,4 +1,4 @@
-import { synthesizeLenaVoice } from '@/lib/elevenlabs';
+import { ElevenLabsError, synthesizeLenaVoice } from '@/lib/elevenlabs';
 
 type VoiceRequest = {
     text?: string;
@@ -37,11 +37,16 @@ export async function POST(request: Request) {
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Voice synthesis failed.';
+        const errorCode = error instanceof ElevenLabsError ? error.code : null;
+        const status = error instanceof ElevenLabsError ? error.status : 500;
 
         return new Response(
-            JSON.stringify({ error: message }),
+            JSON.stringify({
+                error: message,
+                errorCode,
+            }),
             {
-                status: 500,
+                status,
                 headers: {
                     'Content-Type': 'application/json',
                 },

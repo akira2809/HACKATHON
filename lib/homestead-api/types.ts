@@ -43,8 +43,8 @@ export type ActivityRecord = {
     completed?: boolean;
     familyId: string;
     id: string;
-    locationName: string;
-    mapsLink: string;
+    locationName: string | null;
+    mapsLink: string | null;
 };
 
 export type GoalRecord = {
@@ -112,7 +112,7 @@ export type UpdateQuestInput = Partial<Pick<QuestRecord, 'completedAt' | 'status
 export type UpdateQuestStreakInput = Pick<QuestStreakRecord, 'currentStreak' | 'longestStreak'>;
 
 export type CreateActivityInput = Omit<ActivityRecord, 'completed' | 'id'>;
-export type UpdateActivityInput = Pick<ActivityRecord, 'completed'>;
+export type UpdateActivityInput = Partial<Pick<ActivityRecord, 'completed' | 'locationName' | 'mapsLink'>>;
 
 export type CreateGoalInput = Omit<GoalRecord, 'id'>;
 export type UpdateGoalInput = Partial<Pick<GoalRecord, 'deadline' | 'target_coins' | 'title'>>;
@@ -127,3 +127,4 @@ export type CreateEventLogInput = Omit<EventLogRecord, 'id'>;
 export type CreatePlaceCacheInput = Omit<PlaceCacheRecord, 'id'>;
 
 export type CreateCalendarEventInput = Omit<CalendarEventRecord, 'id'>;
+export type UpdateCalendarEventInput = Partial<Pick<CalendarEventRecord, 'endTime' | 'startTime' | 'title'>>;

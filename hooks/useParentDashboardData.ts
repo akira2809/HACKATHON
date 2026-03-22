@@ -6,7 +6,7 @@ import { useAppState, type ParentChild, type ParentGoal, type ParentQuest } from
 import { useActivities } from './useActivities';
 import { useChildren } from './useChildren';
 import { useFamilies } from './useFamilies';
-import { useGoals } from './useGoals';
+import { useGoals, useGoalsMap } from './useGoals';
 import { useTodayQuests } from './useTodayQuests';
 
 type UseParentDashboardDataOptions = {
@@ -37,10 +37,10 @@ function mapQuestStatus(status: QuestRecord['status']): ParentQuest['status'] {
     }
 
     if (status === 'ongoing') {
-        return 'approved';
+        return 'ongoing';
     }
 
-    return 'suggested';
+    return 'pending';
 }
 
 function selectCurrentGoal(goals: GoalRecord[]) {
@@ -115,6 +115,13 @@ export function useParentDashboardData({
         selectChild(activeChildRecord.id);
     }, [activeChildRecord, selectChild, selectedChildId]);
 
+    const childGoalsQuery = useGoalsMap(
+        childRecords.map((child) => child.id),
+        {
+            enabled: childRecords.length > 0,
+        },
+    );
+
     const goalsQuery = useGoals(activeChildRecord?.id, {
         enabled: Boolean(activeChildRecord?.id),
     });
@@ -129,7 +136,10 @@ export function useParentDashboardData({
     });
 
     const childItems = childRecords.map((child) =>
-        buildChildSummary(child, child.id === activeChildRecord?.id ? currentGoal : null),
+        buildChildSummary(
+            child,
+            mapGoal(selectCurrentGoal(childGoalsQuery.goalsByChild[child.id] ?? [])),
+        ),
     );
 
     const activeChild = activeChildRecord
@@ -137,7 +147,9 @@ export function useParentDashboardData({
             ...buildChildSummary(activeChildRecord, currentGoal),
             introMessage: `Good evening. Let's prepare ${activeChildRecord.name}'s adventures for today.`,
             quests: todayQuestsQuery.quests.map((quest) => ({
+                assignedDate: quest.assignedDate,
                 category: inferQuestCategory(quest),
+                completedAt: quest.completedAt,
                 description: quest.description,
                 id: quest.id,
                 reward: quest.reward,
@@ -147,19 +159,18 @@ export function useParentDashboardData({
         }
         : null;
 
-    const suggestedQuests = activeChild?.quests.filter((quest) => quest.status === 'suggested') ?? [];
-    const approvedQuests = activeChild?.quests.filter((quest) => quest.status === 'approved') ?? [];
+    const pendingQuests = activeChild?.quests.filter((quest) => quest.status === 'pending') ?? [];
+    const ongoingQuests = activeChild?.quests.filter((quest) => quest.status === 'ongoing') ?? [];
     const momentsCount = activeChild
         ? activitiesQuery.activities.filter((activity) => activity.childId === activeChild.id).length
         : 0;
 
-    const dashboardError = familiesQuery.error || childrenQuery.error || goalsQuery.error || activitiesQuery.error
+    const dashboardError = familiesQuery.error || childrenQuery.error || childGoalsQuery.error || goalsQuery.error || activitiesQuery.error
         ? 'Something did not come through just yet. Please try again.'
         : null;
 
     return {
         activeChild,
-        approvedQuests,
         childItems,
         dashboardError,
         family,
@@ -170,9 +181,11 @@ export function useParentDashboardData({
         heroDescription: activeChild
             ? `Good evening. Let's prepare ${activeChild.name}'s adventures for today.`
             : 'The family board will fill in once a child profile is ready.',
-        isChildSelectorLoading: familiesQuery.isLoading || childrenQuery.isLoading,
+        isChildSelectorLoading: familiesQuery.isLoading || childrenQuery.isLoading || childGoalsQuery.isLoading,
         isOverviewLoading: Boolean(activeChildRecord?.id) && todayQuestsQuery.isLoading,
         momentsCount,
+        ongoingQuests,
+        pendingQuests,
         questActions: {
             completeQuest: todayQuestsQuery.completeQuest,
             createQuests: todayQuestsQuery.createQuests,
@@ -182,7 +195,6 @@ export function useParentDashboardData({
         },
         selectedChildId: activeChild?.id ?? selectedChildId,
         selectChild,
-        suggestedQuests,
         todayQuestsError: todayQuestsQuery.error,
     };
 }

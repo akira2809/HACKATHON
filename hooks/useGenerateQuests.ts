@@ -81,7 +81,9 @@ function normalizeAgentOptions(
         .map((item, index) => ({
             category: normalizeCategory(item.category),
             description: item.description,
-            id: item.id || `${queryKey}-generated-${version}-${index}`,
+            // These are transient drawer suggestions, so selection state must use
+            // request-scoped local ids instead of agent-provided ids that may repeat.
+            id: `${queryKey}-generated-${version}-${index}`,
             reward: item.reward,
             status: 'suggested' as const,
             title: item.title,
@@ -117,7 +119,7 @@ function buildSuggestionSet(
     agentOptions.forEach((option, index) => {
         const titleKey = option.title.trim().toLowerCase();
 
-        if (!titleKey || excludedTitles.has(titleKey) || seenTitles.has(titleKey)) {
+        if (options.length >= 5 || !titleKey || excludedTitles.has(titleKey) || seenTitles.has(titleKey)) {
             return;
         }
 
@@ -147,7 +149,7 @@ function buildSuggestionSet(
         });
     }
 
-    return options;
+    return options.slice(0, 5);
 }
 
 const useGenerateQuestsStore = create<GenerateQuestsStore>((set, get) => ({

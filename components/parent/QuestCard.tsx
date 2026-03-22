@@ -5,6 +5,7 @@ import type { ParentQuest } from '@/state/appState';
 import { HearthActionButton, HearthStatusChip } from '@/components/design-system/HearthPrimitives';
 
 type QuestCardProps = {
+    childName?: string;
     quest?: ParentQuest;
     isLoading?: boolean;
     onApprove?: () => void;
@@ -12,7 +13,53 @@ type QuestCardProps = {
     onComplete?: () => void;
 };
 
+function normalizeQuestStatus(status: ParentQuest['status']) {
+    if (status === 'approved') {
+        return 'ongoing' as const;
+    }
+
+    if (status === 'suggested') {
+        return 'pending' as const;
+    }
+
+    return status;
+}
+
+function getStatusLabel(status: ReturnType<typeof normalizeQuestStatus>) {
+    const labelMap = {
+        completed: 'Completed',
+        ongoing: 'In Progress',
+        pending: 'Ready',
+        rejected: 'Softened',
+    } as const;
+
+    return labelMap[status];
+}
+
+function formatQuestDate(value?: string | null) {
+    if (!value) {
+        return null;
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+
+    return isToday
+        ? 'Today'
+        : new Intl.DateTimeFormat('en-US', {
+            month: 'short',
+            day: 'numeric',
+        }).format(date);
+}
+
 export function QuestCard({
+    childName,
     quest,
     isLoading = false,
     onApprove,
@@ -36,16 +83,19 @@ export function QuestCard({
         return null;
     }
 
+    const normalizedStatus = normalizeQuestStatus(quest.status);
+    const assignedLabel = formatQuestDate(quest.assignedDate);
+    const completedLabel = formatQuestDate(quest.completedAt);
     const stateBackground = {
-        suggested: 'bg-[rgba(251,248,241,0.88)]',
-        approved: 'bg-[rgba(216,227,209,0.22)] -translate-y-0.5',
+        pending: 'bg-[rgba(251,248,241,0.9)]',
+        ongoing: 'bg-[rgba(216,227,209,0.22)] -translate-y-0.5',
         rejected: 'bg-[rgba(180,106,90,0.1)] opacity-80',
         completed: 'bg-[rgba(110,139,99,0.12)]',
     } as const;
 
     const statusTone = {
-        suggested: 'neutral',
-        approved: 'warning',
+        pending: 'neutral',
+        ongoing: 'warning',
         rejected: 'danger',
         completed: 'success',
     } as const;
@@ -53,7 +103,7 @@ export function QuestCard({
     return (
         <Card
             shadow="none"
-            className={`rounded-[24px] border border-[rgba(79,107,82,0.12)] transition-all duration-200 ${stateBackground[quest.status]}`}
+            className={`rounded-[24px] border border-[rgba(79,107,82,0.12)] transition-all duration-200 ${stateBackground[normalizedStatus]}`}
         >
             <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -66,13 +116,13 @@ export function QuestCard({
                             >
                                 <span className="text-[10px] font-semibold sm:text-[11px]">{quest.category}</span>
                             </Chip>
-                            <HearthStatusChip label={quest.status} tone={statusTone[quest.status]} />
+                            <HearthStatusChip label={getStatusLabel(normalizedStatus)} tone={statusTone[normalizedStatus]} />
                         </div>
                         <h3 className="text-[0.95rem] font-semibold leading-6 text-[var(--hearth-text-primary)] sm:text-base">
-                            {quest.status === 'completed' ? `Completed: ${quest.title}` : quest.title}
+                            {quest.title}
                         </h3>
                     </div>
-                    <div className={`shrink-0 self-start whitespace-nowrap rounded-full border px-2.5 py-1 sm:px-3 ${quest.status === 'approved' ? 'border-[rgba(230,199,102,0.28)] bg-[rgba(230,199,102,0.24)]' : 'border-[rgba(166,124,82,0.18)] bg-[rgba(230,199,102,0.16)]'}`}>
+                    <div className={`shrink-0 self-start whitespace-nowrap rounded-full border px-2.5 py-1 sm:px-3 ${normalizedStatus === 'ongoing' ? 'border-[rgba(230,199,102,0.28)] bg-[rgba(230,199,102,0.24)]' : 'border-[rgba(166,124,82,0.18)] bg-[rgba(230,199,102,0.16)]'}`}>
                         <span className="hearth-number text-[13px] font-semibold text-[var(--hearth-text-primary)] sm:text-sm">
                             {quest.reward} Seeds
                         </span>
@@ -83,28 +133,41 @@ export function QuestCard({
                     {quest.description}
                 </p>
 
+                {childName || assignedLabel || completedLabel ? (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--hearth-text-muted)]">
+                        {childName ? <span>{childName}</span> : null}
+                        {assignedLabel ? <span>Assigned {assignedLabel}</span> : null}
+                        {normalizedStatus === 'completed' && completedLabel ? <span>Done {completedLabel}</span> : null}
+                    </div>
+                ) : null}
+
                 <div className="flex flex-wrap gap-2">
-                    {quest.status === 'suggested' ? (
+                    {normalizedStatus === 'pending' && onApprove ? (
                         <>
                             <HearthActionButton size="sm" onPress={onApprove}>
-                                Approve
+                                Go
                             </HearthActionButton>
                             <HearthActionButton size="sm" tone="secondary" onPress={onReject}>
                                 Reject
                             </HearthActionButton>
                         </>
                     ) : null}
-                    {quest.status === 'approved' ? (
+                    {normalizedStatus === 'pending' && !onApprove ? (
+                        <p className="text-[12px] leading-6 text-[var(--hearth-text-secondary)] sm:text-[13px]">
+                            Waiting for {childName ?? 'the child'} to press Go from the child side.
+                        </p>
+                    ) : null}
+                    {normalizedStatus === 'ongoing' ? (
                         <HearthActionButton size="sm" tone="secondary" onPress={onComplete}>
-                            I Did It!
+                            Done
                         </HearthActionButton>
                     ) : null}
-                    {quest.status === 'completed' ? (
+                    {normalizedStatus === 'completed' ? (
                         <HearthActionButton size="sm" tone="ghost">
                             Progress Updated
                         </HearthActionButton>
                     ) : null}
-                    {quest.status === 'rejected' ? (
+                    {normalizedStatus === 'rejected' ? (
                         <HearthActionButton size="sm" tone="ghost">
                             Softened For Later
                         </HearthActionButton>

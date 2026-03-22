@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type QuestStatus = 'suggested' | 'approved' | 'rejected' | 'completed';
+export type QuestStatus = 'suggested' | 'pending' | 'ongoing' | 'approved' | 'rejected' | 'completed';
 
 export type QuestCategory = 'Care' | 'Exercise' | 'Habit' | 'Learning' | 'Movement' | 'Responsibility';
 
@@ -18,6 +18,8 @@ export type ParentQuest = {
     category: QuestCategory;
     description: string;
     status: QuestStatus;
+    assignedDate?: string;
+    completedAt?: string | null;
 };
 
 export type ParentMoment = {

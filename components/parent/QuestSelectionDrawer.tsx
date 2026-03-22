@@ -119,8 +119,8 @@ export function QuestSelectionDrawer({
                                 </h2>
                                 <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                                     {phase === 'select'
-                                        ? 'Pick exactly three calm quest options. These will become the suggested set waiting for parent review.'
-                                        : 'Review the three chosen quests, then confirm to place them on the dashboard.'}
+                                        ? "Pick exactly three calm quest options. These will become today's ready quests for the child to begin."
+                                        : 'Review the three chosen quests, then confirm to save them for today.'}
                                 </p>
                                 {isLoading || isRefreshingOptions ? (
                                     <div className="flex items-center gap-2 text-[13px] text-[var(--hearth-text-secondary)] sm:text-sm">
@@ -337,7 +337,7 @@ export function QuestSelectionDrawer({
                                     <div className="grid gap-1.5">
                                         <p className="hearth-kicker">Confirm</p>
                                         <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                                            The selected 3 quests will replace the current suggested set.
+                                            The selected 3 quests will be saved as ready quests for the child to begin.
                                         </p>
                                     </div>
                                     <div className="flex flex-wrap justify-end gap-2.5">
@@ -356,20 +356,18 @@ export function QuestSelectionDrawer({
                                         <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                                             {shouldShowRegenerate
                                                 ? 'Keep your selected quests and ask Lena for different ideas in the remaining slots.'
-                                                : 'Choose exactly 3 quest options before continuing.'}
+                                                : 'Choose exactly 3 quest options before saving them for today.'}
                                         </p>
                                     </div>
-                                    {shouldShowRegenerate ? (
-                                        <HearthActionButton
-                                            isLoading={isRefreshingOptions}
-                                            tone="ghost"
-                                            className="justify-self-start"
-                                            onPress={onRegenerateOptions}
-                                        >
-                                            Regenerate Others
-                                        </HearthActionButton>
-                                    ) : null}
-                                    <div className="flex flex-wrap justify-end gap-2.5">
+                                    <div className="flex flex-wrap items-center justify-end gap-2.5">
+                                        {shouldShowRegenerate ? (
+                                            <HearthActionButton
+                                                tone="ghost"
+                                                onPress={onRegenerateOptions}
+                                            >
+                                                Regenerate Others
+                                            </HearthActionButton>
+                                        ) : null}
                                         <HearthActionButton tone="secondary" onPress={onClose}>
                                             Close
                                         </HearthActionButton>

@@ -6,6 +6,18 @@ export type SynthesizeVoiceInput = {
     modelId?: string;
 };
 
+export class ElevenLabsError extends Error {
+    code: string | null;
+    status: number;
+
+    constructor(message: string, options: { code?: string | null; status: number }) {
+        super(message);
+        this.name = 'ElevenLabsError';
+        this.code = options.code ?? null;
+        this.status = options.status;
+    }
+}
+
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
 
 function getElevenLabsApiKey() {
@@ -69,9 +81,30 @@ export async function synthesizeLenaVoice({
     );
 
     if (!response.ok) {
-        const errorText = await response.text();
+        const errorText = await response.text().catch(() => '');
+        let errorCode: string | null = null;
+        let message = 'ElevenLabs request failed.';
 
-        throw new Error(errorText || 'ElevenLabs request failed.');
+        if (errorText) {
+            try {
+                const parsed = JSON.parse(errorText) as {
+                    detail?: {
+                        message?: string;
+                        status?: string;
+                    };
+                };
+
+                errorCode = parsed.detail?.status ?? null;
+                message = parsed.detail?.message ?? errorText;
+            } catch {
+                message = errorText;
+            }
+        }
+
+        throw new ElevenLabsError(message, {
+            code: errorCode,
+            status: response.status,
+        });
     }
 
     return response.arrayBuffer();

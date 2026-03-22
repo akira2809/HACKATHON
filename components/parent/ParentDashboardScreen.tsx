@@ -68,7 +68,6 @@ export function ParentDashboardScreen({
 
     const {
         activeChild,
-        approvedQuests,
         childItems,
         dashboardError,
         familyId,
@@ -79,10 +78,11 @@ export function ParentDashboardScreen({
         isChildSelectorLoading,
         isOverviewLoading,
         momentsCount,
+        ongoingQuests,
+        pendingQuests,
         questActions,
         selectedChildId,
         selectChild,
-        suggestedQuests,
         todayQuestsError,
     } = useParentDashboardData({ demoState });
 
@@ -378,11 +378,11 @@ export function ParentDashboardScreen({
                             </div>
                             <Skeleton className="h-10 w-32 rounded-full" />
                         </div>
-                        <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                            <OverviewStat label="Suggested" value={0} isLoading />
-                            <OverviewStat label="Approved" value={0} isLoading />
-                            <OverviewStat label="Moments" value={0} isLoading />
-                        </div>
+                            <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+                                <OverviewStat label="Ready" value={0} isLoading />
+                                <OverviewStat label="In Progress" value={0} isLoading />
+                                <OverviewStat label="Moments" value={0} isLoading />
+                            </div>
                     </CardBody>
                 </Card>
                 <GoalCard childName="Your child" goal={null} isLoading seeds={0} />
@@ -433,8 +433,8 @@ export function ParentDashboardScreen({
                                 </HearthActionButton>
                             </div>
                             <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                                <OverviewStat label="Suggested" value={suggestedQuests.length} isLoading={isOverviewLoading} />
-                                <OverviewStat label="Approved" value={approvedQuests.length} isLoading={isOverviewLoading} />
+                                <OverviewStat label="Ready" value={pendingQuests.length} isLoading={isOverviewLoading} />
+                                <OverviewStat label="In Progress" value={ongoingQuests.length} isLoading={isOverviewLoading} />
                                 <OverviewStat label="Moments" value={momentsCount} isLoading={isOverviewLoading} />
                             </div>
                         </CardBody>
@@ -454,23 +454,46 @@ export function ParentDashboardScreen({
                                 <QuestCard isLoading />
                                 <QuestCard isLoading />
                             </>
-                        ) : suggestedQuests.length ? (
-                            suggestedQuests.slice(0, 2).map((quest) => (
-                                <QuestCard
-                                    key={quest.id}
-                                    onApprove={() => {
-                                        void questActions.startQuest(quest.id);
-                                    }}
-                                    onReject={() => {
-                                        void questActions.removeQuest(quest.id);
-                                    }}
-                                    quest={quest}
-                                />
-                            ))
+                        ) : ongoingQuests.length || pendingQuests.length ? (
+                            <>
+                                {ongoingQuests.length > 1 ? (
+                                    <div className="flex items-center justify-between gap-3 rounded-[20px] border border-[rgba(79,107,82,0.1)] bg-[rgba(251,248,241,0.92)] px-4 py-3">
+                                        <p className="hearth-kicker">In Progress</p>
+                                        <Chip
+                                            radius="full"
+                                            variant="flat"
+                                            className="border border-[rgba(230,199,102,0.24)] bg-[rgba(230,199,102,0.18)] text-[var(--hearth-text-primary)]"
+                                        >
+                                            <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
+                                                Quests: {ongoingQuests.length}
+                                            </span>
+                                        </Chip>
+                                    </div>
+                                ) : null}
+                                {ongoingQuests.slice(0, 1).map((quest) => (
+                                    <QuestCard
+                                        key={quest.id}
+                                        childName={activeChild.name}
+                                        onComplete={() => {
+                                            void questActions.completeQuest(quest.id);
+                                        }}
+                                        quest={quest}
+                                    />
+                                ))}
+                                {pendingQuests
+                                    .slice(0, ongoingQuests.length ? 1 : 2)
+                                    .map((quest) => (
+                                        <QuestCard
+                                            key={quest.id}
+                                            childName={activeChild.name}
+                                            quest={quest}
+                                        />
+                                    ))}
+                            </>
                         ) : (
                             <ParentStateCard
-                                title="No quests for today yet"
-                                description="Choose three calm quest options when the family is ready."
+                                title="No quests ready for today yet"
+                                description="Choose three calm quest options and they will be ready for the child to begin."
                                 actionLabel="Generate Quests"
                                 onAction={() => {
                                     void handleGenerateQuests();
@@ -514,23 +537,18 @@ export function ParentDashboardScreen({
                                 <QuestCard isLoading />
                                 <QuestCard isLoading />
                             </>
-                        ) : suggestedQuests.length ? (
-                            suggestedQuests.map((quest) => (
+                        ) : pendingQuests.length ? (
+                            pendingQuests.map((quest) => (
                                 <QuestCard
                                     key={quest.id}
-                                    onApprove={() => {
-                                        void questActions.startQuest(quest.id);
-                                    }}
-                                    onReject={() => {
-                                        void questActions.removeQuest(quest.id);
-                                    }}
+                                    childName={activeChild.name}
                                     quest={quest}
                                 />
                             ))
                         ) : (
                             <ParentStateCard
-                                title="No quests waiting for review"
-                                description="There are no fresh quest cards for this child yet."
+                                title="No quests ready to begin"
+                                description="There are no ready quests for this child yet. Generate a new calm set when needed."
                                 actionLabel="Generate Quests"
                                 onAction={() => {
                                     void handleGenerateQuests();
@@ -539,13 +557,14 @@ export function ParentDashboardScreen({
                         )}
                     </div>
 
-                    {approvedQuests.length ? (
+                    {ongoingQuests.length ? (
                         <Card shadow="none" className="hearth-panel rounded-[24px]">
                             <CardBody className="grid gap-3 p-4 sm:p-5">
-                                <p className="hearth-kicker">Approved Today</p>
-                                {approvedQuests.map((quest) => (
+                                <p className="hearth-kicker">In Progress</p>
+                                {ongoingQuests.map((quest) => (
                                     <QuestCard
                                         key={quest.id}
+                                        childName={activeChild.name}
                                         onComplete={() => {
                                             void questActions.completeQuest(quest.id);
                                         }}
@@ -554,6 +573,12 @@ export function ParentDashboardScreen({
                                 ))}
                             </CardBody>
                         </Card>
+                    ) : pendingQuests.length ? (
+                        <ParentStateCard
+                            kicker="In Progress"
+                            title="Nothing is in progress yet"
+                            description={`${activeChild.name} will move a quest here after pressing Go from the child side.`}
+                        />
                     ) : null}
                 </>
             ) : null}

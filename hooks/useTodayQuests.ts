@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { homesteadApi, type CreateQuestInput, type QuestRecord } from '@/lib/homestead-api';
 import { createMissingParameterError, createQueryState, getTodayDateString, type QueryOptions, toErrorMessage } from './query-utils';
@@ -16,6 +16,54 @@ type TodayQuestsStore = {
 };
 
 const emptyQuests: QuestRecord[] = [];
+const QUEST_SYNC_CHANNEL_NAME = 'homestead-today-quests';
+const QUEST_SYNC_STORAGE_KEY = 'homestead-today-quests-sync';
+const QUEST_SYNC_SOURCE = `today-quests-${Math.random().toString(36).slice(2)}`;
+
+type QuestSyncMessage = {
+    assignedDate: string;
+    childId: string;
+    source: string;
+    type: 'quest-updated';
+};
+
+let questSyncChannel: BroadcastChannel | null = null;
+
+function getQuestSyncChannel() {
+    if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
+        return null;
+    }
+
+    if (!questSyncChannel) {
+        questSyncChannel = new BroadcastChannel(QUEST_SYNC_CHANNEL_NAME);
+    }
+
+    return questSyncChannel;
+}
+
+function broadcastQuestSync(childId: string, assignedDate: string) {
+    const channel = getQuestSyncChannel();
+    const payload = {
+        assignedDate,
+        childId,
+        source: QUEST_SYNC_SOURCE,
+        type: 'quest-updated',
+    } satisfies QuestSyncMessage;
+
+    if (!channel) {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(QUEST_SYNC_STORAGE_KEY, JSON.stringify(payload));
+        }
+
+        return;
+    }
+
+    channel.postMessage(payload);
+
+    if (typeof window !== 'undefined') {
+        window.localStorage.setItem(QUEST_SYNC_STORAGE_KEY, JSON.stringify(payload));
+    }
+}
 
 function getQueryKey(childId: string, assignedDate: string) {
     return `${childId}:${assignedDate}`;
@@ -44,7 +92,7 @@ function updateQuestAcrossQueries(
     );
 }
 
-const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
+const useTodayQuestsStore = create<TodayQuestsStore>((set, get) => ({
     completeQuest: async (questId) => {
         const quest = await homesteadApi.quests.complete(questId);
 
@@ -55,6 +103,7 @@ const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
         set((state) => ({
             queries: updateQuestAcrossQueries(state.queries, questId, () => quest),
         }));
+        broadcastQuestSync(quest.childId, quest.assignedDate);
 
         return quest;
     },
@@ -81,6 +130,9 @@ const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
             });
 
             return { queries: nextQueries };
+        });
+        quests.forEach((quest) => {
+            broadcastQuestSync(quest.childId, quest.assignedDate);
         });
 
         return quests;
@@ -135,11 +187,19 @@ const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
     },
     queries: {},
     removeQuest: async (questId) => {
+        const removedQuest = Object.values(get().queries)
+            .flatMap((query) => query.data)
+            .find((quest) => quest.id === questId);
+
         await homesteadApi.quests.remove(questId);
 
         set((state) => ({
             queries: updateQuestAcrossQueries(state.queries, questId, () => null),
         }));
+
+        if (removedQuest) {
+            broadcastQuestSync(removedQuest.childId, removedQuest.assignedDate);
+        }
     },
     startQuest: async (questId) => {
         const quest = await homesteadApi.quests.start(questId);
@@ -151,6 +211,7 @@ const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
         set((state) => ({
             queries: updateQuestAcrossQueries(state.queries, questId, () => quest),
         }));
+        broadcastQuestSync(quest.childId, quest.assignedDate);
 
         return quest;
     },
@@ -166,14 +227,126 @@ export function useTodayQuests(childId?: string, assignedDate = getTodayDateStri
     const completeQuest = useTodayQuestsStore((state) => state.completeQuest);
     const removeQuest = useTodayQuestsStore((state) => state.removeQuest);
     const resolvedQuery = query ?? createQueryState(emptyQuests);
+    const hasRevalidatedOnMountRef = useRef(false);
 
     useEffect(() => {
-        if (!enabled || !childId || resolvedQuery.isLoaded || resolvedQuery.isLoading) {
+        if (!enabled || !childId) {
+            return;
+        }
+
+        if (!hasRevalidatedOnMountRef.current) {
+            hasRevalidatedOnMountRef.current = true;
+            void fetchTodayQuests(childId, assignedDate);
+            return;
+        }
+
+        if (resolvedQuery.isLoaded || resolvedQuery.isLoading) {
             return;
         }
 
         void fetchTodayQuests(childId, assignedDate);
     }, [assignedDate, childId, enabled, fetchTodayQuests, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
+
+    useEffect(() => {
+        if (!enabled || !childId) {
+            return;
+        }
+
+        const channel = getQuestSyncChannel();
+
+        if (!channel) {
+            const handleStorage = (event: StorageEvent) => {
+                if (!event.newValue || event.key !== QUEST_SYNC_STORAGE_KEY) {
+                    return;
+                }
+
+                try {
+                    const payload = JSON.parse(event.newValue) as QuestSyncMessage;
+
+                    if (
+                        payload.type !== 'quest-updated'
+                        || payload.source === QUEST_SYNC_SOURCE
+                        || payload.childId !== childId
+                        || payload.assignedDate !== assignedDate
+                    ) {
+                        return;
+                    }
+
+                    void fetchTodayQuests(childId, assignedDate);
+                } catch {
+                    return;
+                }
+            };
+
+            window.addEventListener('storage', handleStorage);
+
+            return () => {
+                window.removeEventListener('storage', handleStorage);
+            };
+        }
+
+        const handleMessage = (event: MessageEvent<QuestSyncMessage>) => {
+            const payload = event.data;
+
+            if (
+                payload.type !== 'quest-updated'
+                || payload.source === QUEST_SYNC_SOURCE
+                || payload.childId !== childId
+                || payload.assignedDate !== assignedDate
+            ) {
+                return;
+            }
+
+            void fetchTodayQuests(childId, assignedDate);
+        };
+
+        channel.addEventListener('message', handleMessage);
+
+        const handleStorage = (event: StorageEvent) => {
+            if (!event.newValue || event.key !== QUEST_SYNC_STORAGE_KEY) {
+                return;
+            }
+
+            try {
+                const payload = JSON.parse(event.newValue) as QuestSyncMessage;
+
+                if (
+                    payload.type !== 'quest-updated'
+                    || payload.source === QUEST_SYNC_SOURCE
+                    || payload.childId !== childId
+                    || payload.assignedDate !== assignedDate
+                ) {
+                    return;
+                }
+
+                void fetchTodayQuests(childId, assignedDate);
+            } catch {
+                return;
+            }
+        };
+
+        window.addEventListener('storage', handleStorage);
+
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                void fetchTodayQuests(childId, assignedDate);
+            }
+        };
+
+        const handleFocus = () => {
+            void fetchTodayQuests(childId, assignedDate);
+        };
+
+        document.addEventListener('visibilitychange', handleVisibility);
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            channel.removeEventListener('message', handleMessage);
+            window.removeEventListener('storage', handleStorage);
+            document.removeEventListener('visibilitychange', handleVisibility);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [assignedDate, childId, enabled, fetchTodayQuests]);
 
     return {
         completeQuest,
