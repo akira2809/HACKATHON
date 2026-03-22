@@ -398,16 +398,7 @@ export function TopNav({
           <span className="text-[10px] font-bold uppercase text-[#CA8A04]">Seeds</span>
         </div>
 
-        {rightIcons ?? (
-          <>
-            <button className="p-2 rounded-xl text-[#1C1917] hover:bg-[#BAE6FD] transition-all">
-              <MaterialIcon icon="notifications" className="!text-2xl" />
-            </button>
-            <button className="p-2 rounded-xl text-[#1C1917] hover:bg-[#BAE6FD] transition-all">
-              <MaterialIcon icon="account_circle" filled className="!text-2xl" />
-            </button>
-          </>
-        )}
+        {rightIcons ?? null}
       </div>
     </header>
   );
