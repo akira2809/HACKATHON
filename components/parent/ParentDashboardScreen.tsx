@@ -81,7 +81,6 @@ export function ParentDashboardScreen({
 
   const {
     activeChild,
-    approvedQuests,
     childItems,
     dashboardError,
     familyId,
@@ -92,12 +91,16 @@ export function ParentDashboardScreen({
     isChildSelectorLoading,
     isOverviewLoading,
     momentsCount,
+    ongoingQuests,
+    pendingQuests,
     questActions,
     selectedChildId,
     selectChild,
-    suggestedQuests,
     todayQuestsError,
   } = useParentDashboardData({ demoState });
+
+  const suggestedQuests = pendingQuests;
+  const approvedQuests = ongoingQuests;
 
   const { approveQuest, rejectQuest } = useAppState();
 

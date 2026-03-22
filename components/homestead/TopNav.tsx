@@ -7,11 +7,11 @@
 // Child: Shows current child + seeds
 // ============================================================
 
-import React, { useState, useCallback } from 'react';
 import { useChildDashboardData } from '@/hooks/useChildDashboardData';
-import { useParentDashboardData } from '@/hooks/useParentDashboardData';
 import { setChildSession } from '@/hooks/useChildSession';
-import { setParentSession, clearParentSession } from '@/hooks/useParentSession';
+import { useParentDashboardDataChildrenUI } from '@/hooks/useParenDashboardDataChildrenUI';
+import { clearParentSession, setParentSession } from '@/hooks/useParentSession';
+import React, { useCallback, useState } from 'react';
 
 interface ChildInfo {
     id: string;
@@ -45,7 +45,7 @@ export function TopNav({
   const childData = useChildDashboardData();
 
   // Parent data
-  const parentData = useParentDashboardData();
+  const parentData = useParentDashboardDataChildrenUI();
 
   // Display values
   const displaySeeds = showSeeds ?? (isParentMode ? parentData.activeChild?.seeds ?? 0 : childData.seeds);
@@ -78,7 +78,7 @@ export function TopNav({
     
     setIsParentMode(shouldBeParent);
     onModeChange?.(newMode);
-  }, [parentData]);
+  }, [parentData, onModeChange]);
 
   // Handle child selection
   const handleSelectChild = useCallback((childId: string) => {
