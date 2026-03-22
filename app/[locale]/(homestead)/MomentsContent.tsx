@@ -17,6 +17,9 @@ import {
   generateMomentsWithAgent,
   type GeneratedActivityItem,
 } from "@/lib/agent";
+import type { ActivityRecord } from "@/lib/homestead-api";
+
+const ITEMS_PER_PAGE = 4;
 
 export function MomentsContent() {
   const router = useRouter();
@@ -34,12 +37,32 @@ export function MomentsContent() {
   const refetchActivities = () => activitiesQuery.refetch();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityRecord | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
 
   // AI Moments Generation State
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiMoments, setAiMoments] = useState<GeneratedActivityItem[]>([]);
   const [aiError, setAiError] = useState<string | null>(null);
   const [showAiMoments, setShowAiMoments] = useState(false);
+
+  // Sort activities by id descending (newest first)
+  const sortedActivities = [...activities].sort((a, b) => b.id.localeCompare(a.id));
+  const latestActivity = sortedActivities[0] ?? null;
+
+  // Pagination
+  const totalPages = Math.ceil(sortedActivities.length / ITEMS_PER_PAGE);
+  const paginatedActivities = sortedActivities.slice(
+    currentPage * ITEMS_PER_PAGE,
+    (currentPage + 1) * ITEMS_PER_PAGE
+  );
+
+  // Use selected activity or latest
+  const displayActivity = selectedActivity ?? latestActivity;
+
+  // Calculate stats
+  const totalActivities = activities.length;
+  const completedActivities = activities.filter((a) => a.completed).length;
 
   // Generate AI moments
   const generateAiMoments = useCallback(async () => {
@@ -65,7 +88,7 @@ export function MomentsContent() {
       setShowAiMoments(true);
     } catch (err) {
       setAiError(
-        err instanceof Error ? err.message : "Failed to generate moments",
+        err instanceof Error ? err.message : "Failed to generate moments"
       );
     } finally {
       setIsGeneratingAi(false);
@@ -92,11 +115,11 @@ export function MomentsContent() {
         setIsModalOpen(false);
       } catch (err) {
         setAiError(
-          err instanceof Error ? err.message : "Failed to create moment",
+          err instanceof Error ? err.message : "Failed to create moment"
         );
       }
     },
-    [familyId, childId, activityActions, refetchActivities],
+    [familyId, childId, activityActions, refetchActivities]
   );
 
   // Close AI moments panel
@@ -105,13 +128,6 @@ export function MomentsContent() {
     setShowAiMoments(false);
     setAiError(null);
   }, []);
-
-  // Get latest activity
-  const latestActivity = activities[0] ?? null;
-
-  // Calculate stats
-  const totalActivities = activities.length;
-  const completedActivities = activities.filter((a) => a.completed).length;
 
   // Handle create moment
   const handleCreateMoment = async (data: CreateMomentData) => {
@@ -122,7 +138,6 @@ export function MomentsContent() {
       familyId: data.familyId,
       childId: data.childId,
     });
-    // Refetch to get updated list
     await refetchActivities();
   };
 
@@ -130,6 +145,16 @@ export function MomentsContent() {
   const handleCompleteActivity = async (activityId: string) => {
     await activityActions.completeActivity(activityId, { completed: true });
     await refetchActivities();
+  };
+
+  // Select activity card
+  const handleSelectActivity = (activity: ActivityRecord) => {
+    setSelectedActivity(activity);
+  };
+
+  // Back to latest
+  const handleBackToLatest = () => {
+    setSelectedActivity(null);
   };
 
   if (isActivitiesLoading) {
@@ -211,23 +236,15 @@ export function MomentsContent() {
       <main className="max-w-4xl mx-auto px-6 pt-24 pb-28">
         {/* ── Hero Section ─────────────────────────────── */}
         <div className="relative mb-12">
-          {/* Mascot peeking top-right */}
-          <div className="absolute -top-8 -right-4 z-20 w-32 h-32 hover:scale-110 transition-transform cursor-pointer">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvAUdCiRolxM-2AOr96STNpbUb77wPzFny4OipaEqgjs3CFWUpxCQwiSC-3hNIDAznK2ytDt4zUo3nwe6UHx-QFzAWF5bn8Uu6OISsFl8aNy05sGsndYWEbvpTZEl0SLa2EeJDr0GEzu8iDtx-qZ9y7VVB-Z5WTQ25prqtd32j82TB6zQNx_f69xNKEw0nX6FVxomAcR0Ke9a0MjdZZADXnu4tMDv9hY0LFRCq5Is5Q6hxuMs-NHdAkHtHy2dLMdJQnFgVHRbM8CHE"
-              alt="Lena the Flower Nymph"
-              width={128}
-              height={128}
-              className="object-contain"
-            />
-            <div
-              className="absolute -left-36 top-0 bg-white border-4 border-[#1C1917] p-3 shadow-[4px_4px_0px_#1C1917] rounded-xl w-40 text-sm font-black leading-tight"
-              style={{ transform: "skewX(-2deg)" }}
+          {/* Back button when viewing selected activity */}
+          {selectedActivity && (
+            <button
+              onClick={handleBackToLatest}
+              className="absolute -left-4 top-1/2 -translate-y-1/2 z-30 bg-white border-4 border-[#1C1917] rounded-full w-12 h-12 flex items-center justify-center shadow-[4px_4px_0px_#1C1917] hover:scale-110 transition-transform"
             >
-              Homestead connection — SOLID! 💪
-            </div>
-          </div>
+              <span className="material-symbols-outlined">arrow_back</span>
+            </button>
+          )}
 
           {/* Hero Banner */}
           <div
@@ -244,10 +261,12 @@ export function MomentsContent() {
             />
             <div className="relative z-10">
               <h1 className="font-black italic text-4xl text-white uppercase tracking-tight mb-3 drop-shadow-[2px_2px_0px_#1C1917]">
-                Family Moments
+                {selectedActivity ? "Activity Details" : "Family Moments"}
               </h1>
               <p className="text-white text-lg font-extrabold max-w-md drop-shadow-[1px_1px_0px_#1C1917]">
-                Crafting heroic legacies, one small growth at a time.
+                {selectedActivity
+                  ? `Viewing: ${selectedActivity.activity}`
+                  : "Crafting heroic legacies, one small growth at a time."}
               </p>
               <div className="mt-6 flex gap-3 flex-wrap">
                 <ComicButton
@@ -272,184 +291,221 @@ export function MomentsContent() {
           </div>
         </div>
 
-        {/* ── Proximity Indicator ───────────────────────── */}
-        <div className="mb-10 flex justify-center">
-          <div className="bg-[#34D399] text-white border-4 border-[#1C1917] px-6 py-2 rounded-full font-bold flex items-center gap-3 shadow-[4px_4px_0px_#1C1917]">
+        {/* ── Main Activity Card ─────────────────────────────── */}
+        <div
+          className="bg-white border-4 border-[#1C1917] p-8 shadow-[8px_8px_0px_#1C1917] mb-8"
+          style={{ transform: "skewX(-2deg)" }}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-start mb-6">
             <span
-              className="material-symbols-outlined"
-              style={{ fontVariationSettings: "'FILL' 1, 'wght' 400" }}
+              className={`font-black text-xs uppercase px-4 py-1 border-2 border-[#1C1917] ${displayActivity.completed ? "bg-green-400" : "bg-[#FACC15]"}`}
             >
-              wifi_tethering
+              {displayActivity.locationName || "Family Activity"}
             </span>
-            <span>HOMESTEAD CONNECTION — SOLID! 💪</span>
+            <span
+              className={`font-black text-2xl px-3 py-1 ${displayActivity.completed ? "bg-[#34D399]" : "bg-[#1C1917]"}`}
+            >
+              {displayActivity.completed ? "✓" : "⏳"}
+            </span>
           </div>
-        </div>
 
-        {/* ── Bento Layout ─────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
-          {/* Active Moment Card (8 cols) */}
-          <div
-            className="md:col-span-8 bg-white border-4 border-[#1C1917] p-8 shadow-[8px_8px_0px_#1C1917]"
-            style={{ transform: "skewX(-2deg)" }}
-          >
-            <div>
-              {/* Header */}
-              <div className="flex justify-between items-start mb-6">
-                <span
-                  className={`font-black text-xs uppercase px-4 py-1 border-2 border-[#1C1917] ${latestActivity.completed ? "bg-green-400" : "bg-[#FACC15]"}`}
-                >
-                  {latestActivity.locationName || "Family Activity"}
-                </span>
-                <span
-                  className={`font-black text-2xl px-3 py-1 ${latestActivity.completed ? "bg-[#34D399]" : "bg-[#1C1917]"}`}
-                >
-                  {latestActivity.completed ? "✓" : "⏳"}
-                </span>
-              </div>
+          {/* Content */}
+          <h2 className="font-black text-3xl mb-4 text-[#1C1917] italic">
+            {displayActivity.activity}
+          </h2>
+          <p className="font-medium text-lg text-stone-600 mb-6 leading-relaxed">
+            {displayActivity.mapsLink ? (
+              <a
+                href={displayActivity.mapsLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline"
+              >
+                View location: {displayActivity.locationName}
+              </a>
+            ) : (
+              "No location set yet."
+            )}
+          </p>
 
-              {/* Content */}
-              <h2 className="font-black text-3xl mb-4 text-[#1C1917] italic">
-                {latestActivity.activity}
-              </h2>
-              <p className="font-medium text-lg text-stone-600 mb-6 leading-relaxed">
-                {latestActivity.mapsLink ? (
-                  <a
-                    href={latestActivity.mapsLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline"
-                  >
-                    View location: {latestActivity.locationName}
-                  </a>
-                ) : (
-                  "No location set yet."
-                )}
-              </p>
-
-              {/* Child indicator */}
-              <div className="flex gap-4 items-center mb-6">
-                <div className="flex -space-x-3">
-                  <div className="w-12 h-12 rounded-full border-2 border-[#1C1917] bg-[#38BDF8] overflow-hidden shadow-[2px_2px_0px_#1C1917]">
-                    <div className="w-full h-full bg-gradient-to-br from-blue-200 to-blue-300 flex items-center justify-center text-white text-xs font-black">
-                      {childName?.[0]?.toUpperCase() || "C"}
-                    </div>
-                  </div>
+          {/* Child indicator */}
+          <div className="flex gap-4 items-center mb-6">
+            <div className="flex -space-x-3">
+              <div className="w-12 h-12 rounded-full border-2 border-[#1C1917] bg-[#38BDF8] overflow-hidden shadow-[2px_2px_0px_#1C1917]">
+                <div className="w-full h-full bg-gradient-to-br from-blue-200 to-blue-300 flex items-center justify-center text-white text-xs font-black">
+                  {childName?.[0]?.toUpperCase() || "C"}
                 </div>
-                <span className="font-black text-xs uppercase tracking-widest text-[#1C1917]">
-                  {childName || "Child"} · Activity{" "}
-                  {latestActivity.completed ? "Completed" : "In Progress"}
-                </span>
-              </div>
-
-              {/* CTA */}
-              <div className="flex gap-3 mt-4">
-                {latestActivity.completed ? (
-                  <div className="flex-1 bg-green-100 border-4 border-green-400 rounded-xl p-4 text-center">
-                    <span className="font-black text-green-600">
-                      ✓ Completed!
-                    </span>
-                  </div>
-                ) : (
-                  <>
-                    <ComicButton
-                      variant="success"
-                      size="lg"
-                      icon="check"
-                      onClick={() => handleCompleteActivity(latestActivity.id)}
-                      className="flex-1"
-                    >
-                      COMPLETE!
-                    </ComicButton>
-                    <ComicButton
-                      variant="danger"
-                      size="lg"
-                      icon="play_arrow"
-                      onClick={() => router.push("/moments/proximity")}
-                    >
-                      CHECK IN!
-                    </ComicButton>
-                  </>
-                )}
               </div>
             </div>
+            <span className="font-black text-xs uppercase tracking-widest text-[#1C1917]">
+              {childName || "Child"} · Activity{" "}
+              {displayActivity.completed ? "Completed" : "In Progress"}
+            </span>
           </div>
 
-          {/* Stats Sidebar (4 cols) */}
-          <div className="md:col-span-4 space-y-6">
-            {/* Activity Stats */}
-            <ComicCard
-              shadow="none"
-              padding="md"
-              style={{ transform: "skewX(-2deg)" }}
-            >
-              <h3 className="font-black uppercase mb-4 text-[#1C1917] text-base">
-                Activity Stats
-              </h3>
-              <div className="h-8 bg-stone-100 border-4 border-[#1C1917] relative overflow-hidden rounded-full">
-                <div
-                  className="h-full bg-[#38BDF8] transition-all duration-500"
-                  style={{
-                    width: `${totalActivities > 0 ? (completedActivities / totalActivities) * 100 : 0}%`,
-                  }}
-                />
-              </div>
-              <div className="mt-2 flex justify-between font-black text-sm text-[#1C1917]">
-                <span>Activities</span>
-                <span>
-                  {completedActivities}/{totalActivities}
+          {/* CTA */}
+          <div className="flex gap-3 mt-4">
+            {displayActivity.completed ? (
+              <div className="flex-1 bg-green-100 border-4 border-green-400 rounded-xl p-4 text-center">
+                <span className="font-black text-green-600">
+                  ✓ Completed!
                 </span>
               </div>
-            </ComicCard>
-
-            {/* Seeds Card */}
-            <ComicCard
-              bg="yellow"
-              shadow="gold"
-              padding="md"
-              style={{ transform: "skewX(-2deg)" }}
-            >
-              <h3 className="font-black uppercase mb-4 text-[#1C1917] text-base">
-                Seeds
-              </h3>
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">🌱</span>
-                <span className="text-4xl font-black text-[#1C1917]">
-                  {seeds}
-                </span>
-              </div>
-            </ComicCard>
+            ) : (
+              <>
+                <ComicButton
+                  variant="success"
+                  size="lg"
+                  icon="check"
+                  onClick={() => handleCompleteActivity(displayActivity.id)}
+                  className="flex-1"
+                >
+                  COMPLETE!
+                </ComicButton>
+                <ComicButton
+                  variant="danger"
+                  size="lg"
+                  icon="play_arrow"
+                  onClick={() => router.push("/moments/proximity")}
+                >
+                  CHECK IN!
+                </ComicButton>
+              </>
+            )}
           </div>
         </div>
 
         {/* ── Activity History ──────────────────────── */}
-        {activities.length > 1 && (
-          <div>
-            <h3 className="font-black italic text-xl text-[#1C1917] uppercase mb-6 tracking-tight">
-              Activity History
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {activities.slice(0, 6).map((activity) => (
-                <div
-                  key={activity.id}
-                  className="border-4 border-[#1C1917] p-4 bg-white shadow-[4px_4px_0px_#1C1917]"
-                  style={{ transform: "skewX(-2deg)" }}
-                >
-                  <span className="font-black text-sm uppercase">
-                    {activity.locationName || "Activity"}
-                  </span>
-                  <p className="text-xs text-stone-500 mt-1">
-                    {activity.activity}
-                  </p>
-                  <span
-                    className={`inline-block mt-2 text-xs font-bold px-2 py-1 rounded ${activity.completed ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
+        <div className="mb-8">
+          <h3 className="font-black italic text-xl text-[#1C1917] uppercase mb-6 tracking-tight">
+            Activity History ({totalActivities})
+          </h3>
+
+          {sortedActivities.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {paginatedActivities.map((activity) => (
+                  <div
+                    key={activity.id}
+                    onClick={() => handleSelectActivity(activity)}
+                    className={`border-4 border-[#1C1917] p-4 bg-white shadow-[4px_4px_0px_#1C1917] cursor-pointer hover:shadow-[6px_6px_0px_#1C1917] hover:scale-[1.02] transition-all ${
+                      selectedActivity?.id === activity.id
+                        ? "ring-4 ring-[#38BDF8] ring-offset-2"
+                        : ""
+                    }`}
+                    style={{ transform: "skewX(-2deg)" }}
                   >
-                    {activity.completed ? "✓ Done" : "⏳ Pending"}
-                  </span>
+                    <div className="flex justify-between items-start">
+                      <span className="font-black text-sm uppercase">
+                        {activity.locationName || "Activity"}
+                      </span>
+                      <span
+                        className={`text-lg ${activity.completed ? "text-green-500" : "text-yellow-500"}`}
+                      >
+                        {activity.completed ? "✓" : "⏳"}
+                      </span>
+                    </div>
+                    <p className="text-base font-bold text-[#1C1917] mt-2">
+                      {activity.activity}
+                    </p>
+                    <span
+                      className={`inline-block mt-3 text-xs font-bold px-3 py-1 rounded-full ${
+                        activity.completed
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {activity.completed ? "✓ Done" : "⏳ Pending"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                    disabled={currentPage === 0}
+                    className="w-10 h-10 bg-white border-4 border-[#1C1917] rounded-full flex items-center justify-center font-black disabled:opacity-50 hover:bg-gray-100 transition-colors"
+                  >
+                    ‹
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i)}
+                      className={`w-10 h-10 border-4 border-[#1C1917] rounded-full font-black transition-colors ${
+                        currentPage === i
+                          ? "bg-[#38BDF8] text-white"
+                          : "bg-white hover:bg-gray-100"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
+                    }
+                    disabled={currentPage === totalPages - 1}
+                    className="w-10 h-10 bg-white border-4 border-[#1C1917] rounded-full flex items-center justify-center font-black disabled:opacity-50 hover:bg-gray-100 transition-colors"
+                  >
+                    ›
+                  </button>
                 </div>
-              ))}
+              )}
+            </>
+          ) : (
+            <div className="text-center py-12 text-stone-500">
+              <p>No activity history yet.</p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* ── Stats & Seeds Sidebar ──────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Activity Stats */}
+          <ComicCard shadow="none" padding="md">
+            <h3 className="font-black uppercase mb-4 text-[#1C1917] text-base">
+              Activity Stats
+            </h3>
+            <div className="h-8 bg-stone-100 border-4 border-[#1C1917] relative overflow-hidden rounded-full">
+              <div
+                className="h-full bg-[#38BDF8] transition-all duration-500"
+                style={{
+                  width: `${
+                    totalActivities > 0
+                      ? (completedActivities / totalActivities) * 100
+                      : 0
+                  }%`,
+                }}
+              />
+            </div>
+            <div className="mt-2 flex justify-between font-black text-sm text-[#1C1917]">
+              <span>Activities</span>
+              <span>
+                {completedActivities}/{totalActivities}
+              </span>
+            </div>
+          </ComicCard>
+
+          {/* Seeds Card */}
+          <ComicCard bg="yellow" shadow="gold" padding="md">
+            <h3 className="font-black uppercase mb-4 text-[#1C1917] text-base">
+              Seeds
+            </h3>
+            <div className="flex items-center gap-2">
+              <span className="text-3xl">🌱</span>
+              <span className="text-4xl font-black text-[#1C1917]">
+                {seeds}
+              </span>
+            </div>
+          </ComicCard>
+        </div>
       </main>
 
       {/* ── AI Moments Suggestions Panel ─────────────────── */}
@@ -528,9 +584,7 @@ export function MomentsContent() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-stone-500 font-medium">
-                    No moments generated yet.
-                  </p>
+                  <p className="text-stone-500 font-medium">No moments generated yet.</p>
                 </div>
               )}
             </div>
