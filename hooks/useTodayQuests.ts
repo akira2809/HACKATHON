@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { homesteadApi, type CreateQuestInput, type QuestRecord } from '@/lib/homestead-api';
 import { createMissingParameterError, createQueryState, getTodayDateString, type QueryOptions, toErrorMessage } from './query-utils';
@@ -17,6 +16,54 @@ type TodayQuestsStore = {
 };
 
 const emptyQuests: QuestRecord[] = [];
+const QUEST_SYNC_CHANNEL_NAME = 'homestead-today-quests';
+const QUEST_SYNC_STORAGE_KEY = 'homestead-today-quests-sync';
+const QUEST_SYNC_SOURCE = `today-quests-${Math.random().toString(36).slice(2)}`;
+
+type QuestSyncMessage = {
+    assignedDate: string;
+    childId: string;
+    source: string;
+    type: 'quest-updated';
+};
+
+let questSyncChannel: BroadcastChannel | null = null;
+
+function getQuestSyncChannel() {
+    if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
+        return null;
+    }
+
+    if (!questSyncChannel) {
+        questSyncChannel = new BroadcastChannel(QUEST_SYNC_CHANNEL_NAME);
+    }
+
+    return questSyncChannel;
+}
+
+function broadcastQuestSync(childId: string, assignedDate: string) {
+    const channel = getQuestSyncChannel();
+    const payload = {
+        assignedDate,
+        childId,
+        source: QUEST_SYNC_SOURCE,
+        type: 'quest-updated',
+    } satisfies QuestSyncMessage;
+
+    if (!channel) {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(QUEST_SYNC_STORAGE_KEY, JSON.stringify(payload));
+        }
+
+        return;
+    }
+
+    channel.postMessage(payload);
+
+    if (typeof window !== 'undefined') {
+        window.localStorage.setItem(QUEST_SYNC_STORAGE_KEY, JSON.stringify(payload));
+    }
+}
 
 function getQueryKey(childId: string, assignedDate: string, sessionVersion: number) {
     return `${childId}:${assignedDate}:${sessionVersion}`;
@@ -193,9 +240,36 @@ export function useTodayQuests(childId?: string, assignedDate = getTodayDateStri
     const completeQuest = useTodayQuestsStore((state) => state.completeQuest);
     const removeQuest = useTodayQuestsStore((state) => state.removeQuest);
     const resolvedQuery = query ?? createQueryState(emptyQuests);
+    const hasRevalidatedOnMountRef = useRef(false);
 
     // Track previous session version
     const prevSessionVersionRef = useRef(sessionVersion);
+
+    useEffect(() => {
+        if (!enabled || !childId) {
+            return;
+        }
+
+        if (!hasRevalidatedOnMountRef.current) {
+            hasRevalidatedOnMountRef.current = true;
+            void fetchTodayQuests(childId, assignedDate);
+            return;
+        }
+
+        if (resolvedQuery.isLoaded || resolvedQuery.isLoading) {
+            return;
+        }
+
+        // Re-fetch when session version changes
+        const sessionChanged = prevSessionVersionRef.current !== sessionVersion;
+        prevSessionVersionRef.current = sessionVersion;
+
+        if (sessionChanged || !resolvedQuery.isLoaded) {
+            if (!resolvedQuery.isLoading) {
+                void fetchTodayQuests(childId, assignedDate, sessionVersion);
+            }
+        }
+    }, [assignedDate, childId, enabled, fetchTodayQuests, sessionVersion, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
 
     useEffect(() => {
         if (!enabled || !childId) {

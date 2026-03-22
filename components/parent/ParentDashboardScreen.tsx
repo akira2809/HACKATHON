@@ -515,7 +515,7 @@ export function ParentDashboardScreen({
                 <QuestCard isLoading />
               </>
             ) : suggestedQuests.length ? (
-              suggestedQuests.slice(0, 2).map((quest) => (
+              suggestedQuests.slice(0, 2).map((quest: ParentQuest) => (
                 <QuestCard
                   key={quest.id}
                   onApprove={() => {
@@ -602,7 +602,7 @@ export function ParentDashboardScreen({
                 <QuestCard isLoading />
               </>
             ) : suggestedQuests.length ? (
-              suggestedQuests.map((quest) => (
+              suggestedQuests.map((quest: ParentQuest) => (
                 <QuestCard
                   key={quest.id}
                   onApprove={() => {
@@ -637,7 +637,7 @@ export function ParentDashboardScreen({
             <Card shadow="none" className="hearth-panel rounded-[24px]">
               <CardBody className="grid gap-3 p-4 sm:p-5">
                 <p className="hearth-kicker">Approved Today</p>
-                {approvedQuests.map((quest) => (
+                {approvedQuests.map((quest: ParentQuest) => (
                   <QuestCard
                     key={quest.id}
                     onComplete={() => {
