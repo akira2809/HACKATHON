@@ -25,7 +25,7 @@ export function LenaAvatar({
   borderColor = '#1C1917',
   className = '',
 }: LenaAvatarProps) {
-  const defaultSrc = 'https://lh3.googleusercontent.com/aida-public/AB6AXuD43Ak8jrM1vR43A58_wI-I7HzU2BCesFqsPV-OJPv5r7kYWMHaVokI7ZV6fjXkqmgUF9IkxsBC75C8RPpJY8zHscq-O0zePLLKr8u2XVYDvrGc-MjkHxDvvQ_aOOWBOFD1Ejgtjo5eenjrOwR-smQmqR30Du3jS3BO98erZ_TKsPuiwWqDgiQHXn6pVHGSQFabcpqIBu-PG3N5_KF6PJvDGfrfvGNe4_iP1xVcpgkM2B8HXR3vrQ56MY2QCyRlKYfZL77Nu97JnJEd';
+  const defaultSrc = '/Lena.gif';
 
   return (
     <div

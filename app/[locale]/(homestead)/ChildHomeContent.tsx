@@ -1,140 +1,57 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
+// ============================================================
+// Client Component: Child Home interactive content
+// Uses: useChildDashboardData (API + Zustand hooks)
+// Parent: (homestead)/page.tsx (Server Component)
+// ============================================================
+
+import { useState } from "react";
 import {
-  BentoGrid,
   ComicCard,
-  ConfirmationModal,
-  DreamGoalCard,
-  MascotSection,
-  ProgressBar,
+  BentoGrid,
   QuestCard,
   QuestSection,
+  MascotSection,
+  DreamGoalCard,
+  ConfirmationModal,
   QuestStartModal,
-  RecommendationModal,
-  StreakBadge,
-} from '@/components/homestead';
-import { useParentDashboardData } from '@/hooks/useParentDashboardData';
-
-const RECOMMENDATIONS = [
-  {
-    bgColor: 'bg-[#FEF08A]',
-    category: 'Family Moment',
-    color: 'text-[#CA8A04]',
-    icon: 'auto_stories',
-    id: 'reading',
-    title: 'Read together tonight',
-  },
-  {
-    bgColor: 'bg-[#BAE6FD]',
-    category: 'Healthy Habit',
-    color: 'text-[#0284C7]',
-    icon: 'restaurant',
-    id: 'snack',
-    title: 'Make a simple snack',
-  },
-  {
-    bgColor: 'bg-[#DCFCE7]',
-    category: 'Movement',
-    color: 'text-[#059669]',
-    icon: 'self_improvement',
-    id: 'stretch',
-    title: 'Take a calm stretch break',
-  },
-] as const;
-
-function getQuestCategory(category?: string) {
-  switch (category) {
-    case 'Exercise':
-    case 'Movement':
-      return 'exercise' as const;
-    case 'Responsibility':
-      return 'responsibility' as const;
-    case 'Care':
-      return 'nature' as const;
-    default:
-      return 'learning' as const;
-  }
-}
-
-function getQuestIcon(category?: string) {
-  switch (category) {
-    case 'Exercise':
-    case 'Movement':
-      return 'directions_run';
-    case 'Responsibility':
-      return 'cleaning_services';
-    case 'Care':
-      return 'favorite';
-    case 'Habit':
-      return 'task_alt';
-    default:
-      return 'menu_book';
-  }
-}
+  MaterialIcon,
+} from "@/components/homestead";
+import { useChildDashboardData } from "@/hooks/useChildDashboardData";
 
 export function ChildHomeContent() {
   const {
-    activeChild,
-    dashboardError,
-    hasNoChildren,
-    isOverviewLoading,
+    seeds,
+    quests,
+    pendingQuests,
+    currentGoal,
+    goalProgress,
+    childName,
+    isLoading,
     questActions,
-    todayQuestsError,
-  } = useParentDashboardData({
-    syncSelectedChild: false,
-  });
+  } = useChildDashboardData();
 
+  // Modal state
+  const [showWelcome, setShowWelcome] = useState(false);
   const [showQuestModal, setShowQuestModal] = useState(false);
   const [selectedQuestId, setSelectedQuestId] = useState<string | null>(null);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [showRecommendations, setShowRecommendations] = useState(false);
 
-  const todayQuests = useMemo(
-    () =>
-      (activeChild?.quests ?? []).map((quest) => ({
-        category: getQuestCategory(quest.category),
-        description: quest.description,
-        icon: getQuestIcon(quest.category),
-        id: quest.id,
-        reward: quest.reward,
-        status: quest.status === 'ongoing'
-          ? 'ongoing'
-          : quest.status === 'completed'
-            ? 'completed'
-            : 'pending',
-        title: quest.title,
-      })),
-    [activeChild?.quests],
-  );
-  const selectedQuest = todayQuests.find((quest) => quest.id === selectedQuestId) ?? null;
-  const pendingCount = todayQuests.filter((quest) => quest.status === 'pending').length;
-  const errorMessage = dashboardError ?? todayQuestsError;
-  const goalTarget = activeChild?.goal?.target ?? 100;
-  const goalProgress = activeChild?.goal
-    ? Math.min(100, Math.round((activeChild.seeds / activeChild.goal.target) * 100))
-    : 0;
-  const mascotMessage = !todayQuests.length
-    ? 'Lena is preparing more adventures for today.'
-    : pendingCount === todayQuests.length
-      ? `${activeChild?.name}'s adventures are ready to begin.`
-      : pendingCount > 0
-        ? `${pendingCount} quests are still ready to begin.`
-        : 'The completed quests are resting on the board now.';
+  // Get selected quest data for modal
+  const selectedQuest = quests.find((q) => q.id === selectedQuestId);
 
+  // Quest handlers
   const handleQuestGo = (id: string) => {
     setSelectedQuestId(id);
     setShowQuestModal(true);
   };
 
-  const handleQuestStart = async () => {
-    if (!selectedQuestId) {
-      return;
+  const handleQuestStart = () => {
+    if (selectedQuestId) {
+      questActions.startQuest(selectedQuestId);
+      setShowQuestModal(false);
+      setSelectedQuestId(null);
     }
-
-    await questActions.startQuest(selectedQuestId);
-    setShowQuestModal(false);
-    setSelectedQuestId(null);
   };
 
   const handleQuestModalClose = () => {
@@ -142,55 +59,34 @@ export function ChildHomeContent() {
     setSelectedQuestId(null);
   };
 
-  const handleRecommendationSelect = () => {
-    setShowRecommendations(false);
-    setShowWelcome(true);
+  const handleQuestComplete = (id: string) => {
+    questActions.completeQuest(id);
   };
 
-  if (hasNoChildren) {
-    return (
-      <main className="pt-24 px-4 max-w-2xl mx-auto space-y-8 pb-32">
-        <ComicCard bg="yellow" shadow="gold" padding="lg">
-          <div className="space-y-3 text-center">
-            <p className="text-sm font-black uppercase tracking-[0.3em] text-[#92400E]">Dashboard</p>
-            <h1 className="text-3xl font-black text-[#1C1917]">No child profile yet</h1>
-            <p className="text-base font-bold text-stone-600">
-              Add a child profile first so the home dashboard can load real quest data.
-            </p>
-          </div>
-        </ComicCard>
-      </main>
-    );
-  }
+  const handleQuestFail = (id: string) => {
+    questActions.removeQuest(id);
+  };
 
-  if (isOverviewLoading && !activeChild) {
-    return (
-      <main className="pt-24 px-4 max-w-2xl mx-auto space-y-8 pb-32">
-        <div className="space-y-4 animate-pulse">
-          <div className="h-28 rounded-[2rem] bg-[#E9D5FF]" />
-          <div className="h-40 rounded-[2rem] bg-white" />
-          <div className="h-40 rounded-[2rem] bg-white" />
-        </div>
-      </main>
-    );
-  }
-
-  if (!activeChild) {
-    return null;
-  }
+  // Mascot message
+  const pendingCount = pendingQuests.length;
+  const mascotMessage =
+    pendingCount === quests.length && quests.length > 0
+      ? `Welcome back, ${childName || 'friend'}! Ready to grow your homestead today? 🌸`
+      : pendingCount > 0
+        ? `${pendingCount} quests left — keep going! 💪`
+        : quests.length === 0
+          ? "No quests yet! Check back soon for adventures."
+          : "All done! You're a superstar! ⭐";
 
   return (
     <>
-      <main className="pt-24 px-4 max-w-2xl mx-auto space-y-8 pb-32">
+      <main className="pt-24 px-4 max-w-2xl mx-auto space-y-8 pb-10">
+        {/* 1. Mascot Greeting */}
         <MascotSection message={mascotMessage} />
 
-        {errorMessage ? (
-          <ComicCard bg="yellow" shadow="gold" padding="md">
-            <p className="text-sm font-black text-[#92400E]">{errorMessage}</p>
-          </ComicCard>
-        ) : null}
-
-        <BentoGrid cols={3} gap="md">
+        {/* 2. Stats Grid */}
+        <BentoGrid cols={2} gap="md">
+          {/* Seeds */}
           <ComicCard bg="yellow" shadow="gold" skew="right" padding="md">
             <div className="flex flex-col items-center justify-center space-y-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-[#CA8A04]">
@@ -204,86 +100,105 @@ export function ChildHomeContent() {
                   eco
                 </span>
                 <span className="text-4xl font-black text-[#1C1917]">
-                  {activeChild.seeds}
+                  {isLoading ? "—" : seeds}
                 </span>
               </div>
             </div>
           </ComicCard>
 
+          {/* Streak Badge */}
           <div className="flex items-center justify-center">
-            <StreakBadge streak={0} size="md" />
-          </div>
-
-          <ComicCard bg="blue" skew="left" padding="md">
-            <div className="flex flex-col justify-between h-full">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-[10px] font-black uppercase text-[#0284C7]">
-                  Goal Progress
-                </span>
-                <span className="text-[10px] font-black text-[#0284C7]">
-                  {goalProgress}%
-                </span>
-              </div>
-              <ProgressBar
-                value={activeChild.goal ? activeChild.seeds : 0}
-                max={goalTarget}
-                size="md"
-                color="bg-[#38BDF8]"
-                bgColor="bg-white"
-              />
+            {/* TODO: Add streak from quest_streaks API */}
+            <div className="w-16 h-16 bg-[#FBF8F1] border-4 border-[#D8E3D1] rounded-full flex items-center justify-center">
+              <span className="text-2xl">🔥</span>
             </div>
-          </ComicCard>
+          </div>
         </BentoGrid>
 
+        {/* 3. Today's Quests */}
         <QuestSection
           title="Today's Quests"
           badge="Today's Quests"
           badgeColor="bg-[#FB7185]"
         >
-          {todayQuests.length ? (
-            <div className="space-y-4 mt-4">
-              {todayQuests.map((quest) => (
+          <div className="space-y-4 mt-4">
+            {isLoading ? (
+              <div className="text-center py-8 text-[#7C8E76]">
+                Loading quests...
+              </div>
+            ) : quests.length === 0 ? (
+              <div className="text-center py-8">
+                <MaterialIcon icon="explore" className="!text-4xl text-[#7C8E76] mx-auto mb-2" />
+                <p className="text-sm text-[#7C8E76]">
+                  No quests yet! Ask a parent to create some adventures.
+                </p>
+              </div>
+            ) : (
+              quests.map((quest) => (
                 <QuestCard
                   key={quest.id}
-                  {...quest}
+                  id={quest.id}
+                  title={quest.title}
+                  description={quest.description}
+                  category="default"
+                  icon="task"
+                  reward={quest.reward}
+                  status={quest.status}
                   onGo={handleQuestGo}
+                  onComplete={handleQuestComplete}
+                  onUncomplete={() => {}}
+                  onFail={handleQuestFail}
                   isChild
                 />
-              ))}
-            </div>
-          ) : (
-            <ComicCard bg="white" padding="md" shadow="none" className="mt-4">
-              <p className="text-sm font-black text-[#1C1917]">
-                Lena is preparing the next calm set of quests now.
-              </p>
-            </ComicCard>
-          )}
+              ))
+            )}
+          </div>
         </QuestSection>
 
-        {activeChild.goal ? (
+        {/* 4. Dream Goal Widget */}
+        {currentGoal && (
           <DreamGoalCard
-            title={activeChild.goal.title}
-            subtitle={activeChild.name}
-            current={activeChild.seeds}
-            goal={activeChild.goal.target}
-            message={activeChild.goal.note}
-            onAddSeeds={() => setShowRecommendations(true)}
+            title={currentGoal.title}
+            subtitle="Keep going!"
+            current={seeds}
+            goal={currentGoal.target_coins}
+            message={`${goalProgress}% complete - Keep going!`}
+            navigateToAdventures="/adventures"
           />
-        ) : (
-          <ComicCard bg="white" padding="lg" shadow="none">
-            <div className="space-y-2">
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-stone-500">Dream Goal</p>
-              <h2 className="text-2xl font-black text-[#1C1917]">No goal yet</h2>
-              <p className="text-sm font-bold text-stone-600">
-                Quests can still begin today. Add a family goal when you want the progress bar to track something specific.
-              </p>
-            </div>
-          </ComicCard>
         )}
 
+        {/* Bottom Nav Spacer */}
         <div className="h-12" />
       </main>
 
+      {/* FAB: Recommendations */}
+      <button
+        onClick={() => setShowWelcome(true)}
+        className="
+          fixed bottom-30 right-4
+          w-14 h-14
+          bg-[#F472B6] text-white
+          rounded-full
+          border-4 border-[#1C1917]
+          comic-shadow
+          flex items-center justify-center
+          hover:scale-110 hover:bg-[#F9A8D4]
+          active:scale-95 active:shadow-none
+          transition-all duration-200
+          cursor-pointer
+          z-50
+          animate-bounce-float
+        "
+        style={{
+          animation: "bounce-float 3s ease-in-out infinite",
+          boxShadow: "4px 4px 0px #1c1917, 0 0 12px rgba(244, 114, 182, 0.4)",
+        }}
+        aria-label="Get recommendations"
+      >
+        <MaterialIcon icon="lightbulb" className="!text-2xl" filled />
+      </button>
+
+      {/* Welcome Modal */}
       <ConfirmationModal
         isOpen={showWelcome}
         onConfirm={() => setShowWelcome(false)}
@@ -292,23 +207,17 @@ export function ChildHomeContent() {
         description="Your garden is waiting for its first magical seeds! Shall we begin?"
       />
 
+      {/* Quest Start Modal */}
       <QuestStartModal
         isOpen={showQuestModal}
-        questTitle={selectedQuest?.title ?? ''}
+        questTitle={selectedQuest?.title ?? ""}
         questDescription={selectedQuest?.description}
-        questIcon={selectedQuest?.icon ?? 'task'}
-        questCategory={selectedQuest?.category}
+        questIcon={selectedQuest?.title ? "task" : "task"}
+        questCategory={selectedQuest?.status}
         reward={selectedQuest?.reward ?? 0}
         durationMinutes={120}
-        onStart={() => void handleQuestStart()}
+        onStart={handleQuestStart}
         onClose={handleQuestModalClose}
-      />
-
-      <RecommendationModal
-        isOpen={showRecommendations}
-        onClose={() => setShowRecommendations(false)}
-        recommendations={[...RECOMMENDATIONS]}
-        onSelect={handleRecommendationSelect}
       />
     </>
   );

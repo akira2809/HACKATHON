@@ -16,7 +16,10 @@ function StatusIdle({ onStart }: { onStart: () => void }) {
   const [supported, setSupported] = useState(false);
 
   useEffect(() => {
-    setSupported(isGeolocationSupported());
+    const supported = isGeolocationSupported();
+    setTimeout(() => {
+      setSupported(supported);
+    }, 0);
   }, []);
 
   return (
