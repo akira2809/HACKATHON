@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { Icon } from '@iconify/react';
 import { Avatar, Card, CardBody } from '@heroui/react';
 import { HearthActionButton, VoiceIcon } from '@/components/design-system/HearthPrimitives';
 import { playLenaVoice } from '@/lib/voice-playback';
@@ -27,6 +28,15 @@ export function MascotBubble({
     const resolvedActionIcon = actionIcon ?? (actionLabel === 'Play Voice' ? <VoiceIcon className="size-4" /> : null);
     const shouldUseVoiceAction = !onAction && actionLabel === 'Play Voice';
     const isActionEnabled = Boolean(onAction || shouldUseVoiceAction);
+    const actionContent = isPlayingVoice
+        ? {
+            icon: <Icon icon="mingcute:loading-fill" className="size-4 animate-spin" />,
+            label: 'Speaking...',
+        }
+        : {
+            icon: resolvedActionIcon,
+            label: actionLabel,
+        };
 
     const handleAction = async () => {
         if (onAction) {
@@ -64,6 +74,11 @@ export function MascotBubble({
                     <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                         {message}
                     </p>
+                    {isPlayingVoice && !voiceError ? (
+                        <p className="text-xs leading-5 text-[var(--hearth-text-muted)]">
+                            Lena is speaking now.
+                        </p>
+                    ) : null}
                     {voiceError ? (
                         <p className="text-xs leading-5 text-[var(--hearth-danger)]">
                             {voiceError}
@@ -73,14 +88,13 @@ export function MascotBubble({
                 <HearthActionButton
                     tone="secondary"
                     size="sm"
-                    className="justify-self-start sm:justify-self-end"
-                    isDisabled={!isActionEnabled}
-                    isLoading={isPlayingVoice}
+                    className="min-w-[152px] justify-self-start sm:justify-self-end"
+                    isDisabled={!isActionEnabled || isPlayingVoice}
                     onPress={handleAction}
                 >
                     <span className="flex items-center gap-2">
-                        {resolvedActionIcon}
-                        {actionLabel}
+                        {actionContent.icon}
+                        {actionContent.label}
                     </span>
                 </HearthActionButton>
             </CardBody>

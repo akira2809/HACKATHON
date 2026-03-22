@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import {
+    Accordion,
+    AccordionItem,
     Chip,
     Drawer,
     DrawerBody,
@@ -38,6 +39,10 @@ type QuestSelectionDrawerProps = {
     selectedQuestIds: string[];
 };
 
+function getGuideSteps(quest: ParentQuest) {
+    return quest.guidingQuestions?.filter((step) => step?.prompt?.trim()) ?? [];
+}
+
 function QuestOptionSkeleton() {
     return (
         <div className="rounded-[24px] border border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.96)] p-4 shadow-[0_10px_22px_rgba(79,107,82,0.05)]">
@@ -54,6 +59,117 @@ function QuestOptionSkeleton() {
                     <div className="hearth-loading-shimmer h-5 rounded-full" />
                     <div className="hearth-loading-shimmer h-5 w-[84%] rounded-full" />
                 </div>
+            </div>
+        </div>
+    );
+}
+
+function QuestGuidingSteps({
+    quest,
+}: {
+    quest: ParentQuest;
+}) {
+    const guideSteps = getGuideSteps(quest);
+
+    if (!guideSteps.length) {
+        return null;
+    }
+
+    return (
+        <div className="rounded-[18px] border border-[rgba(79,107,82,0.1)] bg-[rgba(251,248,241,0.88)] px-3">
+            <Accordion
+                selectionMode="multiple"
+                showDivider={false}
+                variant="light"
+            >
+                <AccordionItem
+                    aria-label="Guiding Steps"
+                    key={`${quest.id}-guiding-steps`}
+                    textValue="Guiding Steps"
+                    title={(
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--hearth-text-muted)]">
+                            Guiding Steps
+                        </span>
+                    )}
+                >
+                    <ol className="grid gap-1.5 pb-1">
+                        {guideSteps.map((guideStep, index) => (
+                            <li
+                                className="text-[11px] leading-5 text-[var(--hearth-text-secondary)] sm:text-[12px]"
+                                key={`${quest.id}-guide-step-${index}`}
+                            >
+                                <span className="mr-1 font-semibold text-[var(--hearth-text-primary)]">
+                                    {guideStep.step ?? index + 1}.
+                                </span>
+                                {guideStep.prompt}
+                            </li>
+                        ))}
+                    </ol>
+                </AccordionItem>
+            </Accordion>
+        </div>
+    );
+}
+
+function QuestOptionCard({
+    quest,
+    isSelected,
+    onToggle,
+}: {
+    quest: ParentQuest;
+    isSelected: boolean;
+    onToggle?: ((questId: string) => void) | undefined;
+}) {
+    const categoryMeta = getHearthCategoryMeta(quest.category);
+    const isSelectable = typeof onToggle === 'function';
+
+    return (
+        <div
+            className={`rounded-[24px] border p-4 transition-colors duration-200 ${
+                isSelected
+                    ? 'border-[rgba(79,107,82,0.22)] bg-[rgba(216,227,209,0.24)] shadow-[0_12px_24px_rgba(79,107,82,0.06)]'
+                    : 'border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.96)]'
+            }`}
+        >
+            <div className="grid gap-3">
+                <button
+                    className="grid w-full gap-3 text-left"
+                    onClick={isSelectable ? () => onToggle(quest.id) : undefined}
+                    type={isSelectable ? 'button' : undefined}
+                >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="grid min-w-0 flex-1 gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <HearthCategoryChip category={quest.category} />
+                                <Chip
+                                    radius="full"
+                                    variant="flat"
+                                    className={isSelected
+                                        ? 'border border-[rgba(230,199,102,0.28)] bg-[rgba(230,199,102,0.18)] text-[var(--hearth-text-primary)]'
+                                        : 'border border-[rgba(79,107,82,0.1)] bg-[rgba(251,248,241,0.68)] text-[var(--hearth-text-muted)]'}
+                                >
+                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
+                                        {isSelected ? 'Selected' : 'Tap To Choose'}
+                                    </span>
+                                </Chip>
+                            </div>
+                            <h3 className="text-[0.98rem] font-semibold leading-6 text-[var(--hearth-text-primary)] sm:text-base">
+                                {quest.title}
+                            </h3>
+                        </div>
+                        <HearthRewardChip
+                            className="shrink-0 whitespace-nowrap"
+                            startContent={<Icon icon={categoryMeta.icon} className={`size-3.5 ${categoryMeta.iconClassName}`} />}
+                        >
+                            {quest.reward} Seeds
+                        </HearthRewardChip>
+                    </div>
+                    <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
+                        {quest.description}
+                    </p>
+                </button>
+
+                <QuestGuidingSteps quest={quest} />
             </div>
         </div>
     );
@@ -78,15 +194,15 @@ export function QuestSelectionDrawer({
     phase,
     selectedQuestIds,
 }: QuestSelectionDrawerProps) {
-    const selectedCount = selectedQuestIds.length;
-    const selectedQuests = options.filter((quest) => selectedQuestIds.includes(quest.id));
-    const unselectedQuests = options.filter((quest) => !selectedQuestIds.includes(quest.id));
-    const shouldShowRegenerate = phase === 'select' && selectedCount > 0 && selectedCount < 3 && !isLoading;
+    const suggestedOptions = options.filter((quest) => quest.status === 'suggested');
+    const visibleSelectedQuestIds = selectedQuestIds.filter((questId) =>
+        suggestedOptions.some((quest) => quest.id === questId),
+    );
+    const selectedCount = visibleSelectedQuestIds.length;
+    const selectedQuests = suggestedOptions.filter((quest) => visibleSelectedQuestIds.includes(quest.id));
+    const unselectedQuests = suggestedOptions.filter((quest) => !visibleSelectedQuestIds.includes(quest.id));
+    const shouldShowRegenerate = phase === 'select' && selectedCount > 0 && selectedCount < 3 && !isLoading && !isRefreshingOptions;
     const refreshSkeletonCount = Math.max(1, 5 - selectedCount);
-    const [guideQuestId, setGuideQuestId] = useState<string | null>(null);
-
-    const guideQuest = options.find((quest) => quest.id === guideQuestId) ?? null;
-    const guideSteps = guideQuest?.guidingQuestions?.filter((step) => step?.prompt?.trim()) ?? [];
 
     return (
         <Drawer
@@ -157,7 +273,7 @@ export function QuestSelectionDrawer({
                                     <QuestOptionSkeleton />
                                     <QuestOptionSkeleton />
                                 </>
-                            ) : errorMessage && !options.length ? (
+                            ) : errorMessage && !suggestedOptions.length ? (
                                 <div className="grid gap-3 rounded-[24px] border border-[rgba(180,106,90,0.14)] bg-[rgba(251,248,241,0.94)] p-4">
                                     <p className="hearth-kicker">Generation Paused</p>
                                     <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
@@ -166,191 +282,46 @@ export function QuestSelectionDrawer({
                                 </div>
                             ) : phase === 'confirm' ? (
                                 <>
-                                    {selectedQuests.map((quest) => {
-                                        const categoryMeta = getHearthCategoryMeta(quest.category);
-
-                                        return (
-                                            <div
-                                                key={quest.id}
-                                                className="rounded-[24px] border border-[rgba(79,107,82,0.16)] bg-[rgba(216,227,209,0.2)] p-4"
-                                            >
-                                                <div className="grid gap-3">
-                                                    <div className="flex flex-wrap items-start justify-between gap-3">
-                                                        <div className="grid min-w-0 flex-1 gap-2">
-                                                            <div className="flex flex-wrap items-center gap-2">
-                                                                <HearthCategoryChip category={quest.category} />
-                                                                <Chip
-                                                                    radius="full"
-                                                                    variant="flat"
-                                                                    className="border border-[rgba(230,199,102,0.24)] bg-[rgba(230,199,102,0.18)] text-[var(--hearth-text-primary)]"
-                                                                >
-                                                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
-                                                                        Selected
-                                                                    </span>
-                                                                </Chip>
-                                                            </div>
-                                                            <h3 className="text-[0.98rem] font-semibold leading-6 text-[var(--hearth-text-primary)] sm:text-base">
-                                                                {quest.title}
-                                                            </h3>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            {quest.guidingQuestions?.length ? (
-                                                                <button
-                                                                    aria-label="Open steps guide"
-                                                                    className="inline-flex size-8 items-center justify-center rounded-full border border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.92)] text-[var(--hearth-text-secondary)] transition-colors duration-200 hover:bg-[rgba(216,227,209,0.24)]"
-                                                                    onClick={(event) => {
-                                                                        event.stopPropagation();
-                                                                        setGuideQuestId((currentId) => (currentId === quest.id ? null : quest.id));
-                                                                    }}
-                                                                    type="button"
-                                                                >
-                                                                    <Icon icon="lucide:info" className="size-4" />
-                                                                </button>
-                                                            ) : null}
-                                                            <HearthRewardChip
-                                                                className="shrink-0 whitespace-nowrap"
-                                                                startContent={<Icon icon={categoryMeta.icon} className={`size-3.5 ${categoryMeta.iconClassName}`} />}
-                                                            >
-                                                                {quest.reward} Seeds
-                                                            </HearthRewardChip>
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                                                        {quest.description}
-                                                    </p>
-                                                    {guideQuestId === quest.id && guideSteps.length ? (
-                                                        <div className="rounded-[16px] border border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.9)] p-3">
-                                                            <ul className="grid gap-2">
-                                                                {guideSteps.map((guideStep, index) => (
-                                                                    <li key={`${quest.id}-guide-${index}`} className="text-[12px] leading-6 text-[var(--hearth-text-secondary)] sm:text-[13px]">
-                                                                        <span className="font-semibold text-[var(--hearth-text-primary)]">Step {guideStep.step ?? index + 1}:</span>{' '}
-                                                                        {guideStep.prompt}
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    ) : null}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                    {selectedQuests.map((quest) => (
+                                        <QuestOptionCard
+                                            isSelected={true}
+                                            key={quest.id}
+                                            quest={quest}
+                                        />
+                                    ))}
                                 </>
                             ) : (
                                 <>
-                                    {selectedQuests.map((quest) => {
-                                        const isSelected = true;
-                                        const categoryMeta = getHearthCategoryMeta(quest.category);
-
-                                        return (
-                                            <button
-                                                key={quest.id}
-                                                className="w-full rounded-[24px] border border-[rgba(79,107,82,0.22)] bg-[rgba(216,227,209,0.24)] p-4 text-left shadow-[0_12px_24px_rgba(79,107,82,0.06)] transition-colors duration-200"
-                                                type="button"
-                                                onClick={() => onToggleQuest(quest.id)}
-                                            >
-                                                <div className="grid gap-3">
-                                                    <div className="flex flex-wrap items-start justify-between gap-3">
-                                                        <div className="grid min-w-0 flex-1 gap-2">
-                                                            <div className="flex flex-wrap items-center gap-2">
-                                                                <HearthCategoryChip category={quest.category} />
-                                                                <Chip
-                                                                    radius="full"
-                                                                    variant="flat"
-                                                                    className="border border-[rgba(230,199,102,0.28)] bg-[rgba(230,199,102,0.18)] text-[var(--hearth-text-primary)]"
-                                                                >
-                                                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
-                                                                        {isSelected ? 'Selected' : 'Tap To Choose'}
-                                                                    </span>
-                                                                </Chip>
-                                                            </div>
-                                                            <h3 className="text-[0.98rem] font-semibold leading-6 text-[var(--hearth-text-primary)] sm:text-base">
-                                                                {quest.title}
-                                                            </h3>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            {quest.guidingQuestions?.length ? (
-                                                                <button
-                                                                    aria-label="Open steps guide"
-                                                                    className="inline-flex size-8 items-center justify-center rounded-full border border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.92)] text-[var(--hearth-text-secondary)] transition-colors duration-200 hover:bg-[rgba(216,227,209,0.24)]"
-                                                                    onClick={(event) => {
-                                                                        event.stopPropagation();
-                                                                        setGuideQuestId((currentId) => (currentId === quest.id ? null : quest.id));
-                                                                    }}
-                                                                    type="button"
-                                                                >
-                                                                    <Icon icon="lucide:info" className="size-4" />
-                                                                </button>
-                                                            ) : null}
-                                                            <HearthRewardChip
-                                                                className="shrink-0 whitespace-nowrap"
-                                                                startContent={<Icon icon={categoryMeta.icon} className={`size-3.5 ${categoryMeta.iconClassName}`} />}
-                                                            >
-                                                                {quest.reward} Seeds
-                                                            </HearthRewardChip>
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                                                        {quest.description}
-                                                    </p>
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
+                                    {selectedQuests.map((quest) => (
+                                        <QuestOptionCard
+                                            isSelected={true}
+                                            key={quest.id}
+                                            onToggle={onToggleQuest}
+                                            quest={quest}
+                                        />
+                                    ))}
 
                                     {isRefreshingOptions
                                         ? Array.from({ length: refreshSkeletonCount }, (_, index) => (
                                             <QuestOptionSkeleton key={`refresh-skeleton-${index}`} />
                                         ))
-                                        : unselectedQuests.map((quest) => {
-                                        const isSelected = selectedQuestIds.includes(quest.id);
-                                        const categoryMeta = getHearthCategoryMeta(quest.category);
-
-                                        return (
-                                            <button
+                                        : unselectedQuests.map((quest) => (
+                                            <QuestOptionCard
+                                                isSelected={false}
                                                 key={quest.id}
-                                                className={`w-full rounded-[24px] border p-4 text-left transition-colors duration-200 ${
-                                                    isSelected
-                                                        ? 'border-[rgba(79,107,82,0.22)] bg-[rgba(216,227,209,0.24)] shadow-[0_12px_24px_rgba(79,107,82,0.06)]'
-                                                        : 'border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.96)]'
-                                                }`}
-                                                type="button"
-                                                onClick={() => onToggleQuest(quest.id)}
-                                            >
-                                                <div className="grid gap-3">
-                                                    <div className="flex flex-wrap items-start justify-between gap-3">
-                                                        <div className="grid min-w-0 flex-1 gap-2">
-                                                            <div className="flex flex-wrap items-center gap-2">
-                                                                <HearthCategoryChip category={quest.category} />
-                                                                <Chip
-                                                                    radius="full"
-                                                                    variant="flat"
-                                                                    className={isSelected
-                                                                        ? 'border border-[rgba(230,199,102,0.28)] bg-[rgba(230,199,102,0.18)] text-[var(--hearth-text-primary)]'
-                                                                        : 'border border-[rgba(79,107,82,0.1)] bg-[rgba(251,248,241,0.68)] text-[var(--hearth-text-muted)]'}
-                                                                >
-                                                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
-                                                                        {isSelected ? 'Selected' : 'Tap To Choose'}
-                                                                    </span>
-                                                                </Chip>
-                                                            </div>
-                                                            <h3 className="text-[0.98rem] font-semibold leading-6 text-[var(--hearth-text-primary)] sm:text-base">
-                                                                {quest.title}
-                                                            </h3>
-                                                        </div>
-                                                        <HearthRewardChip
-                                                            className="shrink-0 whitespace-nowrap"
-                                                            startContent={<Icon icon={categoryMeta.icon} className={`size-3.5 ${categoryMeta.iconClassName}`} />}
-                                                        >
-                                                            {quest.reward} Seeds
-                                                        </HearthRewardChip>
-                                                    </div>
-                                                    <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                                                        {quest.description}
-                                                    </p>
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
+                                                onToggle={onToggleQuest}
+                                                quest={quest}
+                                            />
+                                        ))}
+
+                                    {!isRefreshingOptions && !selectedQuests.length && !unselectedQuests.length ? (
+                                        <div className="grid gap-3 rounded-[24px] border border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.94)] p-4">
+                                            <p className="hearth-kicker">No Suggested Quests</p>
+                                            <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
+                                                Lena did not return any suggested quest cards just yet. Try again for another set.
+                                            </p>
+                                        </div>
+                                    ) : null}
                                 </>
                             )}
 
@@ -419,7 +390,7 @@ export function QuestSelectionDrawer({
                                             Close
                                         </HearthActionButton>
                                         <HearthActionButton
-                                            isDisabled={selectedCount !== 3 || !options.length}
+                                            isDisabled={selectedCount !== 3 || !suggestedOptions.length}
                                             onPress={onDone}
                                         >
                                             Done

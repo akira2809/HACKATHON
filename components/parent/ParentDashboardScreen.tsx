@@ -12,6 +12,7 @@ import { useGenerateQuests } from '@/hooks/useGenerateQuests';
 import { useParentDashboardData } from '@/hooks/useParentDashboardData';
 import { buildLocalizedHref } from '@/lib/locale-path';
 import { type ParentQuest } from '@/state/appState';
+import { useGlobalLoadingState } from '@/state/global-loading-state';
 import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/design-system/HearthPrimitives';
 import { HearthActionButton } from '@/components/design-system/HearthPrimitives';
 import { ParentStateCard } from './ParentStateCard';
@@ -34,6 +35,14 @@ function getInitialTab(value?: string): ParentTab {
 
 function getTodayDateString() {
     return new Date().toISOString().slice(0, 10);
+}
+
+function getQuestLoadingStates(childName: string) {
+    return [
+        { text: `Lena is gathering calm quest ideas for ${childName}` },
+        { text: `Shaping a balanced set for ${childName}'s day` },
+        { text: 'Preparing the final three-to-choose shortlist' },
+    ];
 }
 
 function OverviewStat({
@@ -96,6 +105,8 @@ export function ParentDashboardScreen({
         startQuest: async () => null,
     };
     const safeSelectChild = selectChild ?? (() => undefined);
+    const startGlobalLoading = useGlobalLoadingState((state) => state.startLoading);
+    const stopGlobalLoading = useGlobalLoadingState((state) => state.stopLoading);
 
     const generateQuests = useGenerateQuests(
         activeChild && familyId
@@ -121,6 +132,9 @@ export function ParentDashboardScreen({
     const [selectedQuestIds, setSelectedQuestIds] = useState<string[]>([]);
     const switchTimeoutRef = useRef<number | null>(null);
     const generateRequestRef = useRef(0);
+    const selectedSuggestedQuestIds = selectedQuestIds.filter((questId) =>
+        questDrawerOptions.some((quest) => quest.id === questId && quest.status === 'suggested'),
+    );
 
     useEffect(() => {
         setTab(getInitialTab(initialTab));
@@ -205,9 +219,18 @@ export function ParentDashboardScreen({
                 : []),
         ];
 
+        const globalLoadingRequestId = !preserveSelected
+            ? startGlobalLoading({
+                duration: 1700,
+                helperText: `Lena is preparing a fresh quest set for ${activeChild.name}.`,
+                loadingStates: getQuestLoadingStates(activeChild.name),
+                loop: true,
+            })
+            : null;
+
         if (!preserveSelected) {
-            handleQuestDrawerOpenChange(true);
-            setIsQuestDrawerLoading(true);
+            setIsQuestDrawerOpen(false);
+            setIsQuestDrawerLoading(false);
             setQuestDrawerOptions([]);
             setSelectedQuestIds([]);
         } else {
@@ -236,6 +259,9 @@ export function ParentDashboardScreen({
             }
 
             setQuestDrawerOptions(nextOptions);
+            if (!preserveSelected) {
+                setIsQuestDrawerOpen(true);
+            }
 
             if (preserveSelected) {
                 setSelectedQuestIds(lockedQuests.map((quest) => quest.id));
@@ -251,8 +277,14 @@ export function ParentDashboardScreen({
             }
 
             setQuestDrawerError('Something did not come through just yet. Please try again.');
+            if (!preserveSelected) {
+                setIsQuestDrawerOpen(true);
+            }
         } finally {
             if (generateRequestRef.current === requestId) {
+                if (globalLoadingRequestId) {
+                    stopGlobalLoading(globalLoadingRequestId);
+                }
                 setIsQuestDrawerLoading(false);
                 setIsQuestDrawerRefreshing(false);
             }
@@ -278,7 +310,7 @@ export function ParentDashboardScreen({
     };
 
     const handleQuestDone = () => {
-        if (selectedQuestIds.length !== 3) {
+        if (selectedSuggestedQuestIds.length !== 3) {
             return;
         }
 
@@ -287,7 +319,7 @@ export function ParentDashboardScreen({
     };
 
     const handleQuestConfirm = async () => {
-        if (!activeChild || questDrawerPhase !== 'confirm' || selectedQuestIds.length !== 3) {
+        if (!activeChild || questDrawerPhase !== 'confirm' || selectedSuggestedQuestIds.length !== 3) {
             return;
         }
 
@@ -297,7 +329,7 @@ export function ParentDashboardScreen({
         try {
             await safeQuestActions.createQuests(
                 questDrawerOptions
-                    .filter((quest) => selectedQuestIds.includes(quest.id))
+                    .filter((quest) => quest.status === 'suggested' && selectedSuggestedQuestIds.includes(quest.id))
                     .map((quest) => ({
                         assignedDate: getTodayDateString(),
                         childId: activeChild.id,

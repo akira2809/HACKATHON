@@ -103,7 +103,8 @@ export async function playLenaVoice({
         const routeError = await readVoiceError(response);
 
         if (
-            (routeError.errorCode === 'quota_exceeded' || response.status === 429)
+            routeError.errorCode !== 'quota_exceeded'
+            && response.status === 429
             && canUseBrowserVoice()
         ) {
             await playBrowserVoice(text);
