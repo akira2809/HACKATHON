@@ -18,6 +18,11 @@ export type ParentQuest = {
     category: QuestCategory;
     description: string;
     status: QuestStatus;
+    guidingQuestions?: Array<{
+        step?: number;
+        type?: string;
+        prompt?: string;
+    }>;
     assignedDate?: string;
     completedAt?: string | null;
 };

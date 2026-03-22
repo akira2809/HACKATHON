@@ -7,6 +7,7 @@ import { useActivities } from './useActivities';
 import { useChildren } from './useChildren';
 import { useFamilies } from './useFamilies';
 import { useGoals, useGoalsMap } from './useGoals';
+import { useMomentNotifications } from './useMomentNotifications';
 import { useTodayQuests } from './useTodayQuests';
 
 type UseParentDashboardDataOptions = {
@@ -133,6 +134,12 @@ export function useParentDashboardData({
     });
     const activitiesQuery = useActivities(familyId, {
         enabled: Boolean(familyId),
+        refetchIntervalMs: 10000,
+    });
+    const momentNotifications = useMomentNotifications({
+        activities: activitiesQuery.activities,
+        children: childRecords,
+        familyId,
     });
 
     const childItems = childRecords.map((child) =>
@@ -181,8 +188,10 @@ export function useParentDashboardData({
         heroDescription: activeChild
             ? `Good evening. Let's prepare ${activeChild.name}'s adventures for today.`
             : 'The family board will fill in once a child profile is ready.',
+        hasUnreadMomentRequests: momentNotifications.hasUnreadMomentRequests,
         isChildSelectorLoading: familiesQuery.isLoading || childrenQuery.isLoading || childGoalsQuery.isLoading,
         isOverviewLoading: Boolean(activeChildRecord?.id) && todayQuestsQuery.isLoading,
+        latestUnreadMomentRequest: momentNotifications.latestUnreadMomentRequest,
         momentsCount,
         ongoingQuests,
         pendingQuests,

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import {
     Chip,
@@ -82,6 +83,10 @@ export function QuestSelectionDrawer({
     const unselectedQuests = options.filter((quest) => !selectedQuestIds.includes(quest.id));
     const shouldShowRegenerate = phase === 'select' && selectedCount > 0 && selectedCount < 3 && !isLoading;
     const refreshSkeletonCount = Math.max(1, 5 - selectedCount);
+    const [guideQuestId, setGuideQuestId] = useState<string | null>(null);
+
+    const guideQuest = options.find((quest) => quest.id === guideQuestId) ?? null;
+    const guideSteps = guideQuest?.guidingQuestions?.filter((step) => step?.prompt?.trim()) ?? [];
 
     return (
         <Drawer
@@ -94,10 +99,10 @@ export function QuestSelectionDrawer({
             placement="bottom"
             onOpenChange={onOpenChange}
         >
-            <DrawerContent className="mx-auto w-full max-w-[460px] rounded-t-[32px] border border-[rgba(79,107,82,0.12)] bg-[var(--hearth-bg-surface)] shadow-[0_-12px_36px_rgba(47,52,44,0.14)]">
+            <DrawerContent className="mx-auto flex max-h-[92dvh] w-full max-w-[460px] flex-col overflow-hidden rounded-t-[32px] border border-[rgba(79,107,82,0.12)] bg-[var(--hearth-bg-surface)] shadow-[0_-12px_36px_rgba(47,52,44,0.14)]">
                 {(onClose) => (
                     <>
-                        <DrawerHeader className="grid gap-3 border-b border-[rgba(79,107,82,0.08)] px-4 pb-3 pt-4 sm:px-5">
+                        <DrawerHeader className="shrink-0 grid gap-3 border-b border-[rgba(79,107,82,0.08)] px-3 pb-3 pt-4 sm:px-5">
                             <div className="mx-auto h-1.5 w-12 rounded-full bg-[rgba(79,107,82,0.12)]" />
                             <div className="grid gap-2">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -135,7 +140,7 @@ export function QuestSelectionDrawer({
                             </div>
                         </DrawerHeader>
 
-                        <DrawerBody className="hearth-scrollbar-hidden max-h-[62vh] gap-3 overflow-y-auto px-4 py-4 sm:px-5">
+                        <DrawerBody className="hearth-scrollbar-hidden min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:px-5">
                             {isLoading ? (
                                 <>
                                     <div className="rounded-[24px] border border-[rgba(230,199,102,0.2)] bg-[rgba(230,199,102,0.08)] p-4">
@@ -188,16 +193,43 @@ export function QuestSelectionDrawer({
                                                                 {quest.title}
                                                             </h3>
                                                         </div>
-                                                        <HearthRewardChip
-                                                            className="shrink-0 whitespace-nowrap"
-                                                            startContent={<Icon icon={categoryMeta.icon} className={`size-3.5 ${categoryMeta.iconClassName}`} />}
-                                                        >
-                                                            {quest.reward} Seeds
-                                                        </HearthRewardChip>
+                                                        <div className="flex items-center gap-2">
+                                                            {quest.guidingQuestions?.length ? (
+                                                                <button
+                                                                    aria-label="Open steps guide"
+                                                                    className="inline-flex size-8 items-center justify-center rounded-full border border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.92)] text-[var(--hearth-text-secondary)] transition-colors duration-200 hover:bg-[rgba(216,227,209,0.24)]"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        setGuideQuestId((currentId) => (currentId === quest.id ? null : quest.id));
+                                                                    }}
+                                                                    type="button"
+                                                                >
+                                                                    <Icon icon="lucide:info" className="size-4" />
+                                                                </button>
+                                                            ) : null}
+                                                            <HearthRewardChip
+                                                                className="shrink-0 whitespace-nowrap"
+                                                                startContent={<Icon icon={categoryMeta.icon} className={`size-3.5 ${categoryMeta.iconClassName}`} />}
+                                                            >
+                                                                {quest.reward} Seeds
+                                                            </HearthRewardChip>
+                                                        </div>
                                                     </div>
                                                     <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                                                         {quest.description}
                                                     </p>
+                                                    {guideQuestId === quest.id && guideSteps.length ? (
+                                                        <div className="rounded-[16px] border border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.9)] p-3">
+                                                            <ul className="grid gap-2">
+                                                                {guideSteps.map((guideStep, index) => (
+                                                                    <li key={`${quest.id}-guide-${index}`} className="text-[12px] leading-6 text-[var(--hearth-text-secondary)] sm:text-[13px]">
+                                                                        <span className="font-semibold text-[var(--hearth-text-primary)]">Step {guideStep.step ?? index + 1}:</span>{' '}
+                                                                        {guideStep.prompt}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    ) : null}
                                                 </div>
                                             </div>
                                         );
@@ -235,12 +267,27 @@ export function QuestSelectionDrawer({
                                                                 {quest.title}
                                                             </h3>
                                                         </div>
-                                                        <HearthRewardChip
-                                                            className="shrink-0 whitespace-nowrap"
-                                                            startContent={<Icon icon={categoryMeta.icon} className={`size-3.5 ${categoryMeta.iconClassName}`} />}
-                                                        >
-                                                            {quest.reward} Seeds
-                                                        </HearthRewardChip>
+                                                        <div className="flex items-center gap-2">
+                                                            {quest.guidingQuestions?.length ? (
+                                                                <button
+                                                                    aria-label="Open steps guide"
+                                                                    className="inline-flex size-8 items-center justify-center rounded-full border border-[rgba(79,107,82,0.12)] bg-[rgba(251,248,241,0.92)] text-[var(--hearth-text-secondary)] transition-colors duration-200 hover:bg-[rgba(216,227,209,0.24)]"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        setGuideQuestId((currentId) => (currentId === quest.id ? null : quest.id));
+                                                                    }}
+                                                                    type="button"
+                                                                >
+                                                                    <Icon icon="lucide:info" className="size-4" />
+                                                                </button>
+                                                            ) : null}
+                                                            <HearthRewardChip
+                                                                className="shrink-0 whitespace-nowrap"
+                                                                startContent={<Icon icon={categoryMeta.icon} className={`size-3.5 ${categoryMeta.iconClassName}`} />}
+                                                            >
+                                                                {quest.reward} Seeds
+                                                            </HearthRewardChip>
+                                                        </div>
                                                     </div>
                                                     <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
                                                         {quest.description}
@@ -314,7 +361,7 @@ export function QuestSelectionDrawer({
                             ) : null}
                         </DrawerBody>
 
-                        <DrawerFooter className="border-t border-[rgba(79,107,82,0.08)] bg-[rgba(251,248,241,0.94)] px-4 py-4 sm:px-5">
+                        <DrawerFooter className="shrink-0 border-t border-[rgba(79,107,82,0.08)] bg-[rgba(251,248,241,0.94)] px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5">
                             {errorMessage ? (
                                 <div className="grid w-full gap-3">
                                     <div className="grid gap-1.5">

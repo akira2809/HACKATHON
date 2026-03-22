@@ -2,6 +2,7 @@
 
 export type QueryOptions = {
     enabled?: boolean;
+    refetchIntervalMs?: number;
 };
 
 export type QueryState<T> = {

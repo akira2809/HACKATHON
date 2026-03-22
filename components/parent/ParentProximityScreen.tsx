@@ -12,6 +12,7 @@ import {
     TargetIcon,
 } from '@/components/design-system/HearthPrimitives';
 import { useParentMomentsData } from '@/hooks/useParentMomentsData';
+import { useMomentNotifications } from '@/hooks/useMomentNotifications';
 import { buildLocalizedHref } from '@/lib/locale-path';
 import {
     FAMILY_MOMENT_DURATION_MINUTES,
@@ -43,8 +44,10 @@ export function ParentProximityScreen() {
 
     const {
         activeChild,
+        activitiesQuery,
         childItems,
         currentActivity,
+        familyId,
         familySummary,
         hasNoChildren,
         isChildSelectorLoading,
@@ -55,6 +58,12 @@ export function ParentProximityScreen() {
         activityIdOverride: activityId,
         childIdOverride: activeMomentChildId,
         eventIdOverride: eventId,
+    });
+
+    useMomentNotifications({
+        activities: activitiesQuery.activities,
+        autoMarkSeen: true,
+        familyId,
     });
 
     const navItems = [

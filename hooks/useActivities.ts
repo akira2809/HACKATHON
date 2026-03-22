@@ -194,6 +194,7 @@ const useActivitiesStore = create<ActivitiesStore>((set) => ({
 
 export function useActivities(familyId?: string, options: QueryOptions = {}) {
     const enabled = options.enabled ?? true;
+    const refetchIntervalMs = options.refetchIntervalMs ?? 0;
     const query = useActivitiesStore((state) => (familyId ? state.queries[familyId] : undefined));
     const fetchActivities = useActivitiesStore((state) => state.fetchActivities);
     const createActivity = useActivitiesStore((state) => state.createActivity);
@@ -208,6 +209,20 @@ export function useActivities(familyId?: string, options: QueryOptions = {}) {
 
         void fetchActivities(familyId);
     }, [enabled, familyId, fetchActivities, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
+
+    useEffect(() => {
+        if (!enabled || !familyId || refetchIntervalMs <= 0) {
+            return;
+        }
+
+        const intervalId = window.setInterval(() => {
+            void fetchActivities(familyId);
+        }, refetchIntervalMs);
+
+        return () => {
+            window.clearInterval(intervalId);
+        };
+    }, [enabled, familyId, fetchActivities, refetchIntervalMs]);
 
     useEffect(() => {
         if (!enabled || !familyId) {

@@ -61,9 +61,10 @@ function normalizeAgentOptions(
     version: number,
 ) {
     const sourceItems = response.quests?.length
-        ? response.quests.map((quest) => ({
+        ? response.quests.map((quest, index) => ({
             category: quest.category,
             description: quest.description,
+            guidingQuestions: response.suggestions?.[index]?.guidingQuestions,
             id: quest.id,
             reward: quest.reward,
             title: quest.title,
@@ -71,6 +72,7 @@ function normalizeAgentOptions(
         : (response.suggestions ?? []).map((suggestion, index) => ({
             category: suggestion.category,
             description: suggestion.description ?? '',
+            guidingQuestions: suggestion.guidingQuestions,
             id: `suggestion-${index + 1}`,
             reward: suggestion.reward ?? 0,
             title: suggestion.title ?? '',
@@ -81,6 +83,7 @@ function normalizeAgentOptions(
         .map((item, index) => ({
             category: normalizeCategory(item.category),
             description: item.description,
+            guidingQuestions: item.guidingQuestions,
             // These are transient drawer suggestions, so selection state must use
             // request-scoped local ids instead of agent-provided ids that may repeat.
             id: `${queryKey}-generated-${version}-${index}`,

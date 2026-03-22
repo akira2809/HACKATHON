@@ -13,6 +13,7 @@ import {
     TargetIcon,
 } from '@/components/design-system/HearthPrimitives';
 import { useParentMomentsData } from '@/hooks/useParentMomentsData';
+import { useMomentNotifications } from '@/hooks/useMomentNotifications';
 import { buildLocalizedHref } from '@/lib/locale-path';
 import {
     DEFAULT_MOMENT_END_TIME,
@@ -113,6 +114,12 @@ export function ParentMomentsScreen() {
     const [startTime, setStartTime] = useState(DEFAULT_MOMENT_START_TIME);
     const [endTime, setEndTime] = useState(DEFAULT_MOMENT_END_TIME);
     const switchTimeoutRef = useRef<number | null>(null);
+
+    useMomentNotifications({
+        activities: activitiesQuery.activities,
+        autoMarkSeen: true,
+        familyId,
+    });
 
     useEffect(() => {
         return () => {

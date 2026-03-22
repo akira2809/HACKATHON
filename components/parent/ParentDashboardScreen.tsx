@@ -73,10 +73,12 @@ export function ParentDashboardScreen({
         familyId,
         familySummary,
         goalsQuery,
+        hasUnreadMomentRequests,
         hasNoChildren,
         heroDescription,
         isChildSelectorLoading,
         isOverviewLoading,
+        latestUnreadMomentRequest,
         momentsCount,
         ongoingQuests,
         pendingQuests,
@@ -333,10 +335,43 @@ export function ParentDashboardScreen({
             icon: <CalendarIcon className="size-4" />,
             active: false,
             onPress: navigateToMoments,
+            showNotificationDot: hasUnreadMomentRequests,
         },
     ];
 
     const noticeMessage = dashboardError ?? todayQuestsError;
+    const notice = latestUnreadMomentRequest || noticeMessage ? (
+        <div className="grid gap-3">
+            {latestUnreadMomentRequest ? (
+                <Card shadow="none" className="rounded-[22px] border border-[rgba(198,90,71,0.14)] bg-[rgba(251,248,241,0.94)]">
+                    <CardBody className="grid gap-3 p-4">
+                        <div className="grid gap-1.5">
+                            <p className="hearth-kicker">Moment Request</p>
+                            <p className="text-sm font-semibold text-[var(--hearth-text-primary)] sm:text-[15px]">
+                                {latestUnreadMomentRequest.childName} wants to {latestUnreadMomentRequest.activity.toLowerCase()}.
+                            </p>
+                            <p className="text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
+                                Open Moments to set the family time window and let the shared activity begin.
+                            </p>
+                        </div>
+                        <div>
+                            <HearthActionButton tone="secondary" onPress={navigateToMoments}>
+                                View Moments
+                            </HearthActionButton>
+                        </div>
+                    </CardBody>
+                </Card>
+            ) : null}
+
+            {noticeMessage ? (
+                <Card shadow="none" className="rounded-[22px] border border-[rgba(180,106,90,0.12)] bg-[rgba(251,248,241,0.92)]">
+                    <CardBody className="p-4 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
+                        {noticeMessage}
+                    </CardBody>
+                </Card>
+            ) : null}
+        </div>
+    ) : null;
 
     if (hasNoChildren) {
         return (
@@ -407,13 +442,7 @@ export function ParentDashboardScreen({
             onSelectChild={handleChildSelect}
             selectedChildId={selectedChildId}
             title={tab === 'home' ? 'Parent Dashboard' : tab === 'adventures' ? 'Adventures' : 'Dreams'}
-            notice={noticeMessage ? (
-                <Card shadow="none" className="rounded-[22px] border border-[rgba(180,106,90,0.12)] bg-[rgba(251,248,241,0.92)]">
-                    <CardBody className="p-4 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                        {noticeMessage}
-                    </CardBody>
-                </Card>
-            ) : null}
+            notice={notice}
         >
             {tab === 'home' ? (
                 <>

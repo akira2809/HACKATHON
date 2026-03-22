@@ -107,7 +107,18 @@ export function useParentMomentsData({
         enabled: Boolean(familyId),
     });
     const childRecords = childrenQuery.children;
-    const activeChildRecord = childRecords.find((child) => child.id === activeChildId) ?? childRecords[0] ?? null;
+    const activitiesQuery = useActivities(familyId, {
+        enabled: Boolean(familyId),
+        refetchIntervalMs: 10000,
+    });
+    const selectedChildActivity = selectedChildId
+        ? activitiesQuery.activities.find((activity) => activity.childId === selectedChildId && !activity.completed) ?? null
+        : null;
+    const familyCurrentActivity = selectCurrentActivity(activitiesQuery.activities, activityIdOverride);
+    const resolvedChildId = childIdOverride
+        ?? (selectedChildActivity ? selectedChildId : familyCurrentActivity?.childId)
+        ?? activeChildId;
+    const activeChildRecord = childRecords.find((child) => child.id === resolvedChildId) ?? childRecords[0] ?? null;
 
     useEffect(() => {
         if (!activeChildRecord || childIdOverride || activeChildRecord.id === selectedChildId) {
@@ -143,9 +154,6 @@ export function useParentMomentsData({
     });
     const parent = parentsQuery.parents[0] ?? null;
 
-    const activitiesQuery = useActivities(familyId, {
-        enabled: Boolean(familyId),
-    });
     const activitiesForChild = activeChild
         ? activitiesQuery.activities.filter((activity) => activity.childId === activeChild.id)
         : [];

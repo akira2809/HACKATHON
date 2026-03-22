@@ -1,251 +1,245 @@
 'use client';
 
-// ============================================================
-// MomentsContent — Family Moments
-// Uses: moment store + quest store (for seeds)
-// ============================================================
+import { useMemo, useState } from 'react';
+import { ComicButton, ComicCard } from '@/components/homestead';
+import { useActivities } from '@/hooks/useActivities';
+import { useChildren } from '@/hooks/useChildren';
+import { useFamilies } from '@/hooks/useFamilies';
+import { useAppState } from '@/state/appState';
 
-import { useRouter } from 'next/navigation';
-import { ComicCard, ComicButton } from '@/components/homestead';
-import { useMomentStore, useQuestStore } from '@/stores';
+type ActivitySuggestion = {
+  description: string;
+  emoji: string;
+  id: string;
+  title: string;
+};
+
+const ACTIVITY_SUGGESTION_TEMPLATES: ActivitySuggestion[] = [
+  {
+    description: 'Take turns moving pieces, laughing, and making one cozy memory together.',
+    emoji: '🎲',
+    id: 'board-game',
+    title: 'Play a board game together',
+  },
+  {
+    description: 'Pick a short favorite story and make the room feel calm for shared reading.',
+    emoji: '📚',
+    id: 'story-time',
+    title: 'Read a short story together',
+  },
+  {
+    description: 'Share paper, colors, and one simple idea to draw side by side.',
+    emoji: '🎨',
+    id: 'drawing-time',
+    title: 'Draw a picture together',
+  },
+];
 
 export function MomentsContent() {
-  const router = useRouter();
-  const {
-    activeMoment,
-    upcomingActivities,
-    recentMemories,
-    momentXp,
-    momentLevel,
-    xpToNext,
-  } = useMomentStore();
+  const configuredFamilyId = useAppState((state) => state.familyId);
+  const selectedChildId = useAppState((state) => state.selectedChildId);
 
-  const { seeds } = useQuestStore();
+  const familiesQuery = useFamilies();
+  const family = familiesQuery.families.find((item) => item.id === configuredFamilyId) ?? familiesQuery.families[0] ?? null;
+  const familyId = family?.id;
 
-  if (!activeMoment) {
+  const childrenQuery = useChildren(familyId, {
+    enabled: Boolean(familyId),
+  });
+  const activeChild = childrenQuery.children.find((child) => child.id === selectedChildId) ?? childrenQuery.children[0] ?? null;
+
+  const activitiesQuery = useActivities(familyId, {
+    enabled: Boolean(familyId),
+  });
+
+  const currentRequest = useMemo(() => {
+    if (!activeChild) {
+      return null;
+    }
+
+    const openRequests = activitiesQuery.activities.filter(
+      (activity) => activity.childId === activeChild.id && !activity.completed,
+    );
+
+    return openRequests[openRequests.length - 1] ?? null;
+  }, [activeChild, activitiesQuery.activities]);
+
+  const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [requestMessage, setRequestMessage] = useState<string | null>(null);
+
+  const selectedSuggestion = ACTIVITY_SUGGESTION_TEMPLATES.find(
+    (suggestion) => suggestion.id === selectedSuggestionId,
+  ) ?? null;
+
+  const handleRequestActivity = async () => {
+    if (!familyId || !activeChild || !selectedSuggestion || currentRequest) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setRequestError(null);
+    setRequestMessage(null);
+
+    try {
+      await activitiesQuery.createActivity({
+        activity: selectedSuggestion.title,
+        childId: activeChild.id,
+        familyId,
+        locationName: null,
+        mapsLink: null,
+      });
+      await activitiesQuery.refetch();
+
+      setRequestMessage(`Lena sent "${selectedSuggestion.title}" to your parent.`);
+      setSelectedSuggestionId(null);
+    } catch {
+      setRequestError('Your family moment could not be sent just yet. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (familiesQuery.isLoading || childrenQuery.isLoading || activitiesQuery.isLoading) {
     return (
-      <main className="max-w-4xl mx-auto px-6 pt-24 pb-28">
-        <div className="text-center py-20">
-          <p className="font-black text-2xl text-slate-400">No active moment</p>
-          <ComicButton variant="gold" size="lg" className="mt-6">
-            GENERATE MOMENT! 🌿
-          </ComicButton>
+      <main className="mx-auto max-w-2xl space-y-6 px-4 pb-32 pt-24">
+        <div className="animate-pulse space-y-4">
+          <div className="h-32 rounded-[28px] bg-[#F5E7B2]" />
+          <div className="h-40 rounded-[28px] bg-white" />
+          <div className="h-40 rounded-[28px] bg-white" />
         </div>
       </main>
     );
   }
 
-  const progressPct = Math.round((momentXp / xpToNext) * 100);
+  if (!activeChild) {
+    return (
+      <main className="mx-auto max-w-2xl px-4 pb-32 pt-24">
+        <ComicCard bg="yellow" shadow="gold" padding="lg">
+          <div className="space-y-3 text-center">
+            <p className="text-sm font-black uppercase tracking-[0.3em] text-[#92400E]">Family Moments</p>
+            <h1 className="text-3xl font-black text-[#1C1917]">No child profile yet</h1>
+            <p className="text-base font-bold text-stone-600">
+              Add a child profile before asking Lena to send a family activity request.
+            </p>
+          </div>
+        </ComicCard>
+      </main>
+    );
+  }
 
   return (
-    <main className="max-w-4xl mx-auto px-6 pt-24 pb-28">
+    <main className="mx-auto max-w-2xl space-y-6 px-4 pb-32 pt-24">
+      <ComicCard bg="blue" padding="lg" shadow="none">
+        <div className="space-y-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-[#0369A1]">Family Moments</p>
+            <h1 className="mt-2 text-4xl font-black italic text-white">Choose one shared activity</h1>
+            <p className="mt-3 max-w-lg text-base font-bold text-white/90">
+              Pick one cozy idea for {activeChild.name}. Lena will send it to your parent so they can set the family time.
+            </p>
+          </div>
 
-      {/* ── Hero Section ─────────────────────────────── */}
-      <div className="relative mb-12">
-
-        {/* Mascot peeking top-right */}
-        <div className="absolute -top-8 -right-4 z-20 w-32 h-32 hover:scale-110 transition-transform cursor-pointer">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvAUdCiRolxM-2AOr96STNpbUb77wPzFny4OipaEqgjs3CFWUpxCQwiSC-3hNIDAznK2ytDt4zUo3nwe6UHx-QFzAWF5bn8Uu6OISsFl8aNy05sGsndYWEbvpTZEl0SLa2EeJDr0GEzu8iDtx-qZ9y7VVB-Z5WTQ25prqtd32j82TB6zQNx_f69xNKEw0nX6FVxomAcR0Ke9a0MjdZZADXnu4tMDv9hY0LFRCq5Is5Q6hxuMs-NHdAkHtHy2dLMdJQnFgVHRbM8CHE"
-            alt="Lena the Flower Nymph"
-            width={128}
-            height={128}
-            className="object-contain"
-          />
-          <div
-            className="absolute -left-36 top-0 bg-white border-4 border-[#1C1917] p-3 shadow-[4px_4px_0px_#1C1917] rounded-xl w-40 text-sm font-black leading-tight"
-            style={{ transform: 'skewX(-2deg)' }}
-          >
-            Homestead connection — SOLID! 💪
+          <div className="rounded-3xl border-4 border-[#1C1917] bg-white px-5 py-4">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-stone-500">How it works</p>
+            <p className="mt-2 text-base font-bold text-[#1C1917]">
+              Choose 1 activity, send it to your parent, then wait for the family plan.
+            </p>
           </div>
         </div>
+      </ComicCard>
 
-        {/* Hero Banner */}
-        <div
-          className="bg-[#38BDF8] border-4 border-[#1C1917] p-8 shadow-[8px_8px_0px_#1C1917] relative overflow-hidden"
-          style={{ transform: 'skewX(-2deg)' }}
-        >
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)',
-              backgroundSize: '8px 8px',
-              opacity: 0.2,
-            }}
-          />
-          <div className="relative z-10">
-            <h1 className="font-black italic text-4xl text-white uppercase tracking-tight mb-3 drop-shadow-[2px_2px_0px_#1C1917]">
-              Family Moments
-            </h1>
-            <p className="text-white text-lg font-extrabold max-w-md drop-shadow-[1px_1px_0px_#1C1917]">
-              Crafting heroic legacies, one small growth at a time.
+      {currentRequest ? (
+        <ComicCard bg="yellow" shadow="gold" padding="lg">
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-[#92400E]">Request Sent</p>
+              <h2 className="mt-2 text-3xl font-black text-[#1C1917]">{currentRequest.activity}</h2>
+            </div>
+            <p className="text-base font-bold leading-7 text-stone-700">
+              Your parent has the request now. They can open Moments on the parent side and choose the family time window.
             </p>
-            <div className="mt-6">
-              <ComicButton variant="gold" size="md" icon="add_circle">
-                GENERATE MOMENT! 🌿
+            <div className="rounded-3xl border-4 border-[#1C1917] bg-white px-4 py-3 text-sm font-black uppercase tracking-[0.2em] text-[#1C1917]">
+              Waiting for parent planning
+            </div>
+          </div>
+        </ComicCard>
+      ) : (
+        <>
+          <section className="space-y-4">
+            {ACTIVITY_SUGGESTION_TEMPLATES.map((suggestion) => {
+              const isSelected = selectedSuggestionId === suggestion.id;
+
+              return (
+                <button
+                  key={suggestion.id}
+                  className={`block w-full text-left transition-transform ${isSelected ? 'scale-[1.01]' : ''}`}
+                  onClick={() => {
+                    setSelectedSuggestionId(suggestion.id);
+                    setRequestError(null);
+                    setRequestMessage(null);
+                  }}
+                  type="button"
+                >
+                  <ComicCard
+                    bg={isSelected ? 'yellow' : 'white'}
+                    padding="lg"
+                    shadow={isSelected ? 'gold' : 'none'}
+                    className={isSelected ? 'ring-4 ring-[#FACC15]' : ''}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{suggestion.emoji}</span>
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-[0.25em] text-stone-500">Suggestion</p>
+                            <h2 className="mt-1 text-2xl font-black text-[#1C1917]">{suggestion.title}</h2>
+                          </div>
+                        </div>
+                        <span className="rounded-full border-4 border-[#1C1917] bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-[#1C1917]">
+                          {isSelected ? 'Chosen' : 'Tap'}
+                        </span>
+                      </div>
+                      <p className="text-base font-bold leading-7 text-stone-700">{suggestion.description}</p>
+                    </div>
+                  </ComicCard>
+                </button>
+              );
+            })}
+          </section>
+
+          <ComicCard bg="white" padding="lg" shadow="none">
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-stone-500">Send to parent</p>
+                <p className="mt-2 text-base font-bold leading-7 text-stone-700">
+                  {selectedSuggestion
+                    ? `Lena will send "${selectedSuggestion.title}" to your parent.`
+                    : 'Pick one activity first, then ask Lena to send it.'}
+                </p>
+              </div>
+
+              {requestError ? (
+                <p className="text-sm font-black text-[#B45309]">{requestError}</p>
+              ) : null}
+
+              {requestMessage ? (
+                <p className="text-sm font-black text-[#166534]">{requestMessage}</p>
+              ) : null}
+
+              <ComicButton
+                variant="gold"
+                size="lg"
+                disabled={!selectedSuggestion || isSubmitting}
+                onClick={() => void handleRequestActivity()}
+              >
+                {isSubmitting ? 'SENDING TO PARENT...' : 'SEND TO PARENT'}
               </ComicButton>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Proximity Indicator ───────────────────────── */}
-      <div className="mb-10 flex justify-center">
-        <div className="bg-[#34D399] text-white border-4 border-[#1C1917] px-6 py-2 rounded-full font-bold flex items-center gap-3 comic-shadow">
-          <span
-            className="material-symbols-outlined"
-            style={{ fontVariationSettings: "'FILL' 1, 'wght' 400" }}
-          >
-            wifi_tethering
-          </span>
-          <span>HOMESTEAD CONNECTION — SOLID! 💪</span>
-        </div>
-      </div>
-
-      {/* ── Bento Layout ─────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
-
-        {/* Active Moment Card (8 cols) */}
-        <div
-          className="md:col-span-8 bg-white border-4 border-[#1C1917] p-8 flex flex-col justify-between comic-shadow"
-          style={{ transform: 'skewX(-2deg)' }}
-        >
-          <div>
-            {/* Header */}
-            <div className="flex justify-between items-start mb-6">
-              <span className="bg-[#FACC15] border-2 border-[#1C1917] px-4 py-1 font-black text-xs uppercase tracking-tighter">
-                {activeMoment.badge}
-              </span>
-              <span className="font-black text-2xl bg-[#1C1917] text-white px-3 py-1">
-                {activeMoment.time}
-              </span>
-            </div>
-
-            {/* Content */}
-            <h2 className="font-black text-5xl mb-4 text-[#1C1917] italic">
-              {activeMoment.title}
-            </h2>
-            <p className="font-medium text-lg text-stone-600 mb-6 leading-relaxed">
-              {activeMoment.description}
-            </p>
-
-            {/* Participants */}
-            <div className="flex gap-4 items-center mb-6">
-              <div className="flex -space-x-3">
-                {activeMoment.participants.map((p) => (
-                  <div
-                    key={p.role}
-                    className="w-12 h-12 rounded-full border-2 border-[#1C1917] bg-[#38BDF8] overflow-hidden shadow-[2px_2px_0px_#1C1917]"
-                  >
-                    <div className="w-full h-full bg-gradient-to-br from-blue-200 to-blue-300 flex items-center justify-center text-white text-xs font-black">
-                      {p.role[0].toUpperCase()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <span className="font-black text-xs uppercase tracking-widest text-[#1C1917]">
-                Parent-Child Activity · +{activeMoment.xpReward} XP
-              </span>
-            </div>
-          </div>
-
-          {/* CTA — navigate to proximity check first */}
-          <ComicButton
-            variant="danger"
-            size="xl"
-            icon="play_arrow"
-            fullWidth
-            onClick={() => router.push('/moments/proximity')}
-            className="comic-shadow-pink mt-4"
-          >
-            START MOMENT! 🚀
-          </ComicButton>
-        </div>
-
-        {/* Stats Sidebar (4 cols) */}
-        <div className="md:col-span-4 space-y-6">
-
-          {/* Moment XP */}
-          <ComicCard shadow="none" padding="md" className="skew-panel" style={{ transform: 'skewX(-2deg)' }}>
-            <h3 className="font-black uppercase mb-4 text-[#1C1917] text-base">Moment XP</h3>
-
-            {/* Bar */}
-            <div className="h-8 bg-stone-100 border-4 border-[#1C1917] relative overflow-hidden rounded-full">
-              <div
-                className="h-full bg-[#38BDF8] transition-all duration-500"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-
-            <div className="mt-2 flex justify-between font-black text-sm text-[#1C1917]">
-              <span>LVL {momentLevel}</span>
-              <span>{momentXp}/{xpToNext}</span>
-            </div>
           </ComicCard>
-
-          {/* Recent Memories */}
-          <ComicCard bg="yellow" shadow="gold" padding="md" className="skew-panel relative overflow-hidden" style={{ transform: 'skewX(-2deg)' }}>
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                backgroundImage: 'radial-gradient(#1C1917 1px, transparent 1px)',
-                backgroundSize: '8px 8px',
-                opacity: 0.05,
-              }}
-            />
-            <h3 className="font-black uppercase mb-4 text-[#1C1917] text-base relative z-10">
-              Recent Memories
-            </h3>
-            <div className="space-y-3 relative z-10">
-              {recentMemories.map((mem) => (
-                <div key={mem.id} className="flex items-center gap-3">
-                  <span className={`material-symbols-outlined font-black ${mem.color}`}>
-                    {mem.icon}
-                  </span>
-                  <span className="font-black uppercase text-xs">{mem.label}</span>
-                </div>
-              ))}
-            </div>
-          </ComicCard>
-        </div>
-      </div>
-
-      {/* ── Upcoming Activities ──────────────────────── */}
-      <div>
-        <h3 className="font-black italic text-xl text-[#1C1917] uppercase mb-6 tracking-tight">
-          Queue of Adventures
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {upcomingActivities.map((act) => (
-            <div
-              key={act.id}
-              className={`
-                border-4 border-[#1C1917] p-4 flex flex-col items-center text-center
-                ${act.locked ? 'bg-stone-200 opacity-70' : 'bg-white'}
-                shadow-[4px_4px_0px_#1C1917]
-                cursor-pointer hover:bg-blue-50 transition-colors
-              `}
-              style={{ transform: 'skewX(-2deg)' }}
-            >
-              <span
-                className={`material-symbols-outlined text-3xl mb-2 ${act.locked ? 'text-stone-400' : 'text-[#1C1917]'}`}
-              >
-                {act.icon}
-              </span>
-              <span className="font-black text-xs uppercase">{act.label}</span>
-              <span className={`font-bold text-[10px] mt-1 ${act.locked ? 'text-stone-600' : 'text-stone-500'}`}>
-                {act.duration}
-              </span>
-              {act.locked && act.requiredLevel && (
-                <span className="text-[9px] font-black text-stone-500 mt-0.5">
-                  Req. LVL {act.requiredLevel}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+        </>
+      )}
     </main>
   );
 }

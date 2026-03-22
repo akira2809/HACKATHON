@@ -15,6 +15,7 @@ import {
 } from '@/components/design-system/HearthPrimitives';
 import { useChildren } from '@/hooks/useChildren';
 import { useEventLogs } from '@/hooks/useEventLogs';
+import { useMomentNotifications } from '@/hooks/useMomentNotifications';
 import { useParentMomentsData } from '@/hooks/useParentMomentsData';
 import { buildLocalizedHref } from '@/lib/locale-path';
 import {
@@ -59,6 +60,12 @@ export function ParentTimerScreen() {
         activityIdOverride: activityId,
         childIdOverride: activeMomentChildId,
         eventIdOverride: eventId,
+    });
+
+    useMomentNotifications({
+        activities: activitiesQuery.activities,
+        autoMarkSeen: true,
+        familyId,
     });
 
     const childrenQuery = useChildren(familyId, {
