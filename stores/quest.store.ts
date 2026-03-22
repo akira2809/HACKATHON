@@ -10,6 +10,7 @@
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import { useDreamStore } from "./dream.store";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -118,32 +119,8 @@ type QuestStore = QuestState & QuestActions;
 
 // ─── Initial Data ────────────────────────────────────────────────────────────
 
-const INITIAL_QUESTS: Quest[] = [
-  {
-    id: "q1",
-    title: "Water the Sunflowers",
-    category: "nature",
-    icon: "water_drop",
-    reward: 10,
-    status: "pending",
-  },
-  {
-    id: "q2",
-    title: "Feed the Bunnies",
-    category: "nature",
-    icon: "pets",
-    reward: 15,
-    status: "pending",
-  },
-  {
-    id: "q3",
-    title: "Magic Dust Sorting",
-    category: "learning",
-    icon: "auto_awesome",
-    reward: 20,
-    status: "pending",
-  },
-];
+// Empty - quests come from Parent dashboard via localStorage sync
+const INITIAL_QUESTS: Quest[] = [];
 
 const INITIAL_RECOMMENDATIONS: QuestRecommendation[] = [
   {
@@ -210,6 +187,7 @@ export const useQuestStore = create<QuestStore>()(
           const quest = state.todayQuests.find((q) => q.id === id);
           const today = todayStr();
           const last = state.lastCompletedDate;
+          const reward = quest?.reward ?? 0;
 
           let newStreak: number;
           if (!last) {
@@ -226,10 +204,33 @@ export const useQuestStore = create<QuestStore>()(
             todayQuests: state.todayQuests.map((q) =>
               q.id === id ? { ...q, status: "completed" } : q,
             ),
-            seeds: state.seeds + (quest?.reward ?? 0),
+            seeds: state.seeds + reward,
             lastCompletedDate: today,
             streak: newStreak,
           });
+
+          // Add to seed history in dream store
+          if (quest && reward > 0) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+            });
+            const dateStr = now.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            });
+
+            useDreamStore.getState().addSeedHistory({
+              title: quest.title,
+              time: `Today, ${timeStr}`,
+              amount: reward,
+              icon: 'check_circle',
+              iconBg: 'bg-emerald-100',
+              iconColor: 'text-emerald-600',
+            });
+          }
         },
 
         uncompleteQuest: (id) =>

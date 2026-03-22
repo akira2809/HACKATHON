@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { homesteadApi, type CreateGoalInput, type GoalRecord, type UpdateGoalInput } from '@/lib/homestead-api';
 import { createMissingParameterError, createQueryState, type QueryOptions, toErrorMessage } from './query-utils';
@@ -8,7 +8,7 @@ import { createMissingParameterError, createQueryState, type QueryOptions, toErr
 type GoalsQueryState = ReturnType<typeof createQueryState<GoalRecord[]>>;
 type GoalsStore = {
     createGoal: (input: CreateGoalInput) => Promise<GoalRecord | null>;
-    fetchGoals: (childId: string) => Promise<GoalRecord[]>;
+    fetchGoals: (childId: string, sessionVersion?: number) => Promise<GoalRecord[]>;
     queries: Record<string, GoalsQueryState>;
     updateGoal: (childId: string, goalId: string, input: UpdateGoalInput) => Promise<GoalRecord | null>;
 };
@@ -28,33 +28,34 @@ const useGoalsStore = create<GoalsStore>((set) => ({
         }
 
         set((state) => {
-            const query = state.queries[input.childId];
-
-            if (!query) {
-                return state;
-            }
-
-            return {
-                queries: {
-                    ...state.queries,
-                    [input.childId]: {
+            // Update in ALL query versions for this childId
+            const nextQueries: Record<string, GoalsQueryState> = {};
+            Object.entries(state.queries).forEach(([key, query]) => {
+                if (key.startsWith(input.childId)) {
+                    nextQueries[key] = {
                         ...query,
                         data: [...query.data, goal],
                         error: null,
                         isLoaded: true,
-                    },
-                },
-            };
+                    };
+                } else {
+                    nextQueries[key] = query;
+                }
+            });
+
+            return { queries: nextQueries };
         });
 
         return goal;
     },
-    fetchGoals: async (childId) => {
+    fetchGoals: async (childId, sessionVersion = 0) => {
+        const queryKey = `${childId}:${sessionVersion}`;
+
         set((state) => ({
             queries: {
                 ...state.queries,
-                [childId]: {
-                    ...(state.queries[childId] ?? createQueryState(emptyGoals)),
+                [queryKey]: {
+                    ...(state.queries[queryKey] ?? createQueryState(emptyGoals)),
                     error: null,
                     isLoading: true,
                 },
@@ -67,7 +68,7 @@ const useGoalsStore = create<GoalsStore>((set) => ({
             set((state) => ({
                 queries: {
                     ...state.queries,
-                    [childId]: {
+                    [queryKey]: {
                         data: goals,
                         error: null,
                         isLoaded: true,
@@ -83,8 +84,8 @@ const useGoalsStore = create<GoalsStore>((set) => ({
             set((state) => ({
                 queries: {
                     ...state.queries,
-                    [childId]: {
-                        ...(state.queries[childId] ?? createQueryState(emptyGoals)),
+                    [queryKey]: {
+                        ...(state.queries[queryKey] ?? createQueryState(emptyGoals)),
                         error: message,
                         isLoaded: true,
                         isLoading: false,
@@ -104,21 +105,20 @@ const useGoalsStore = create<GoalsStore>((set) => ({
         }
 
         set((state) => {
-            const query = state.queries[childId];
-
-            if (!query) {
-                return state;
-            }
-
-            return {
-                queries: {
-                    ...state.queries,
-                    [childId]: {
+            // Update in ALL query versions for this childId
+            const nextQueries: Record<string, GoalsQueryState> = {};
+            Object.entries(state.queries).forEach(([key, query]) => {
+                if (key.startsWith(childId)) {
+                    nextQueries[key] = {
                         ...query,
                         data: query.data.map((item) => (item.id === goalId ? goal : item)),
-                    },
-                },
-            };
+                    };
+                } else {
+                    nextQueries[key] = query;
+                }
+            });
+
+            return { queries: nextQueries };
         });
 
         return goal;
@@ -126,20 +126,33 @@ const useGoalsStore = create<GoalsStore>((set) => ({
 }));
 
 export function useGoals(childId?: string, options: QueryOptions = {}) {
+    const { sessionVersion = 0 } = options as QueryOptions & { sessionVersion?: number };
     const enabled = options.enabled ?? true;
-    const query = useGoalsStore((state) => (childId ? state.queries[childId] : undefined));
+    const queryKey = childId ? `${childId}:${sessionVersion}` : '';
+    const query = useGoalsStore((state) => (queryKey ? state.queries[queryKey] : undefined));
     const fetchGoals = useGoalsStore((state) => state.fetchGoals);
     const createGoal = useGoalsStore((state) => state.createGoal);
     const updateGoal = useGoalsStore((state) => state.updateGoal);
     const resolvedQuery = query ?? createQueryState(emptyGoals);
 
+    // Track previous session version
+    const prevSessionVersionRef = useRef(sessionVersion);
+
     useEffect(() => {
-        if (!enabled || !childId || resolvedQuery.isLoaded || resolvedQuery.isLoading) {
+        if (!enabled || !childId) {
             return;
         }
 
-        void fetchGoals(childId);
-    }, [childId, enabled, fetchGoals, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
+        // Re-fetch when session version changes
+        const sessionChanged = prevSessionVersionRef.current !== sessionVersion;
+        prevSessionVersionRef.current = sessionVersion;
+
+        if (sessionChanged || !resolvedQuery.isLoaded) {
+            if (!resolvedQuery.isLoading) {
+                void fetchGoals(childId, sessionVersion);
+            }
+        }
+    }, [enabled, childId, sessionVersion, fetchGoals, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
 
     return {
         createGoal,
@@ -152,7 +165,7 @@ export function useGoals(childId?: string, options: QueryOptions = {}) {
                 return Promise.reject(createMissingParameterError('childId'));
             }
 
-            return fetchGoals(childId);
+            return fetchGoals(childId, sessionVersion);
         },
         updateGoal: (goalId: string, input: UpdateGoalInput) => {
             if (!childId) {

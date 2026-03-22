@@ -3,6 +3,7 @@
 export type QueryOptions = {
     enabled?: boolean;
     refetchIntervalMs?: number;
+    sessionVersion?: number;
 };
 
 export type QueryState<T> = {

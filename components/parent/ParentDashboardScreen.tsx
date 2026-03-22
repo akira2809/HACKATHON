@@ -1,70 +1,83 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { Card, CardBody, Chip, Skeleton } from '@heroui/react';
-import { useParams, useRouter } from 'next/navigation';
-import { AppShell } from '@/components/parent/AppShell';
-import { GoalCard } from '@/components/parent/GoalCard';
-import { QuestCard } from '@/components/parent/QuestCard';
-import { QuestSelectionDrawer } from '@/components/parent/QuestSelectionDrawer';
-import { MascotBubble } from '@/components/parent/MascotBubble';
-import { useGenerateQuests } from '@/hooks/useGenerateQuests';
-import { useParentDashboardData } from '@/hooks/useParentDashboardData';
-import { buildLocalizedHref } from '@/lib/locale-path';
-import { type ParentQuest } from '@/state/appState';
-import { CalendarIcon, CompassIcon, HomeIcon, TargetIcon } from '@/components/design-system/HearthPrimitives';
-import { HearthActionButton } from '@/components/design-system/HearthPrimitives';
-import { ParentStateCard } from './ParentStateCard';
+import { useEffect, useRef, useState } from "react";
+import { Card, CardBody, Chip, Skeleton } from "@heroui/react";
+import { useParams, useRouter } from "next/navigation";
+import { AppShell } from "@/components/parent/AppShell";
+import { GoalCard } from "@/components/parent/GoalCard";
+import { QuestCard } from "@/components/parent/QuestCard";
+import { QuestSelectionDrawer } from "@/components/parent/QuestSelectionDrawer";
+import { MascotBubble } from "@/components/parent/MascotBubble";
+import { useGenerateQuests } from "@/hooks/useGenerateQuests";
+import { useParentDashboardData } from "@/hooks/useParentDashboardData";
+import { buildLocalizedHref } from "@/lib/locale-path";
+import { type ParentQuest } from "@/state/appState";
+import {
+  CalendarIcon,
+  CompassIcon,
+  HomeIcon,
+  TargetIcon,
+} from "@/components/design-system/HearthPrimitives";
+import { HearthActionButton } from "@/components/design-system/HearthPrimitives";
+import { ParentStateCard } from "./ParentStateCard";
+import { saveApprovedQuestToStorage } from "@/lib/child-quests";
+import { useAppState } from "@/state/appState";
 
 type ParentDashboardScreenProps = {
-    initialTab?: string;
-    demoState?: string;
+  initialTab?: string;
+  demoState?: string;
 };
 
-type ParentTab = 'home' | 'adventures' | 'dreams';
-const QUEST_DRAWER_FOCUS_AREAS = ['learning', 'exercise', 'responsibility', 'habit', 'learning'] as const;
+type ParentTab = "home" | "adventures" | "dreams";
+const QUEST_DRAWER_FOCUS_AREAS = [
+  "learning",
+  "exercise",
+  "responsibility",
+  "habit",
+  "learning",
+] as const;
 
 function getInitialTab(value?: string): ParentTab {
-    if (value === 'adventures' || value === 'dreams') {
-        return value;
-    }
+  if (value === "adventures" || value === "dreams") {
+    return value;
+  }
 
-    return 'home';
+  return "home";
 }
 
 function getTodayDateString() {
-    return new Date().toISOString().slice(0, 10);
+  return new Date().toISOString().slice(0, 10);
 }
 
 function OverviewStat({
-    label,
-    value,
-    isLoading = false,
+  label,
+  value,
+  isLoading = false,
 }: {
-    label: string;
-    value: number;
-    isLoading?: boolean;
+  label: string;
+  value: number;
+  isLoading?: boolean;
 }) {
-    return (
-        <div className="hearth-subtle-panel rounded-[20px] p-3 sm:p-4">
-            <p className="hearth-kicker">{label}</p>
-            {isLoading ? (
-                <Skeleton className="mt-2 h-6 w-10 rounded-full" />
-            ) : (
-                <p className="hearth-number mt-1.5 text-base font-semibold text-[var(--hearth-text-primary)] sm:mt-2 sm:text-lg">
-                    {value}
-                </p>
-            )}
-        </div>
-    );
+  return (
+    <div className="hearth-subtle-panel rounded-[20px] p-3 sm:p-4">
+      <p className="hearth-kicker">{label}</p>
+      {isLoading ? (
+        <Skeleton className="mt-2 h-6 w-10 rounded-full" />
+      ) : (
+        <p className="hearth-number mt-1.5 text-base font-semibold text-[var(--hearth-text-primary)] sm:mt-2 sm:text-lg">
+          {value}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export function ParentDashboardScreen({
-    initialTab,
-    demoState,
+  initialTab,
+  demoState,
 }: ParentDashboardScreenProps) {
-    const params = useParams<{ locale: string }>();
-    const router = useRouter();
+  const params = useParams<{ locale: string }>();
+  const router = useRouter();
 
     const {
         activeChild,
@@ -88,224 +101,242 @@ export function ParentDashboardScreen({
         todayQuestsError,
     } = useParentDashboardData({ demoState });
 
-    const generateQuests = useGenerateQuests(
-        activeChild
-            ? {
-                childAge: activeChild.age,
-                childId: activeChild.id,
-                familyId,
-                focusAreas: [...QUEST_DRAWER_FOCUS_AREAS],
-            }
-            : undefined,
-    );
-
-    const [tab, setTab] = useState<ParentTab>(getInitialTab(initialTab));
-    const [isSwitching, setIsSwitching] = useState(false);
-    const [isQuestDrawerOpen, setIsQuestDrawerOpen] = useState(false);
-    const [isQuestDrawerLoading, setIsQuestDrawerLoading] = useState(false);
-    const [isQuestDrawerRefreshing, setIsQuestDrawerRefreshing] = useState(false);
-    const [isQuestDrawerConfirming, setIsQuestDrawerConfirming] = useState(false);
-    const [questDrawerError, setQuestDrawerError] = useState<string | null>(null);
-    const [questDrawerFeedback, setQuestDrawerFeedback] = useState<string | null>(null);
-    const [questDrawerPhase, setQuestDrawerPhase] = useState<'select' | 'confirm'>('select');
-    const [questDrawerOptions, setQuestDrawerOptions] = useState<ParentQuest[]>([]);
-    const [selectedQuestIds, setSelectedQuestIds] = useState<string[]>([]);
-    const switchTimeoutRef = useRef<number | null>(null);
-    const generateRequestRef = useRef(0);
-
-    useEffect(() => {
-        setTab(getInitialTab(initialTab));
-    }, [initialTab]);
-
-    useEffect(() => {
-        return () => {
-            if (switchTimeoutRef.current) {
-                window.clearTimeout(switchTimeoutRef.current);
-            }
-        };
-    }, []);
-
-    const localizedParentHref = (nextTab: ParentTab) => {
-        if (nextTab === 'home') {
-            return buildLocalizedHref(params.locale, '/parent');
+  const generateQuests = useGenerateQuests(
+    activeChild
+      ? {
+          childAge: activeChild.age,
+          childId: activeChild.id,
+          familyId,
+          focusAreas: [...QUEST_DRAWER_FOCUS_AREAS],
         }
+      : undefined,
+  );
 
-        return buildLocalizedHref(params.locale, `/parent?tab=${nextTab}`);
+  const [tab, setTab] = useState<ParentTab>(getInitialTab(initialTab));
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [isQuestDrawerOpen, setIsQuestDrawerOpen] = useState(false);
+  const [isQuestDrawerLoading, setIsQuestDrawerLoading] = useState(false);
+  const [isQuestDrawerRefreshing, setIsQuestDrawerRefreshing] = useState(false);
+  const [isQuestDrawerConfirming, setIsQuestDrawerConfirming] = useState(false);
+  const [questDrawerError, setQuestDrawerError] = useState<string | null>(null);
+  const [questDrawerFeedback, setQuestDrawerFeedback] = useState<string | null>(
+    null,
+  );
+  const [questDrawerPhase, setQuestDrawerPhase] = useState<
+    "select" | "confirm"
+  >("select");
+  const [questDrawerOptions, setQuestDrawerOptions] = useState<ParentQuest[]>(
+    [],
+  );
+  const [selectedQuestIds, setSelectedQuestIds] = useState<string[]>([]);
+  const switchTimeoutRef = useRef<number | null>(null);
+  const generateRequestRef = useRef(0);
+
+  useEffect(() => {
+    setTab(getInitialTab(initialTab));
+  }, [initialTab]);
+
+  useEffect(() => {
+    return () => {
+      if (switchTimeoutRef.current) {
+        window.clearTimeout(switchTimeoutRef.current);
+      }
     };
+  }, []);
 
-    const navigateToMoments = () => {
-        router.push(buildLocalizedHref(params.locale, '/parent/moments'));
-    };
+  const localizedParentHref = (nextTab: ParentTab) => {
+    if (nextTab === "home") {
+      return buildLocalizedHref(params.locale, "/parent");
+    }
 
-    const handleTabChange = (nextTab: ParentTab) => {
-        setTab(nextTab);
-        router.replace(localizedParentHref(nextTab), { scroll: false });
-    };
+    return buildLocalizedHref(params.locale, `/parent?tab=${nextTab}`);
+  };
 
-    const handleChildSelect = (childId: string) => {
-        if (childId === selectedChildId) {
-            return;
-        }
+  const navigateToMoments = () => {
+    router.push(buildLocalizedHref(params.locale, "/parent/moments"));
+  };
 
-        setIsSwitching(true);
-        handleQuestDrawerOpenChange(false);
-        selectChild(childId);
+  const handleTabChange = (nextTab: ParentTab) => {
+    setTab(nextTab);
+    router.replace(localizedParentHref(nextTab), { scroll: false });
+  };
 
-        if (switchTimeoutRef.current) {
-            window.clearTimeout(switchTimeoutRef.current);
-        }
+  const handleChildSelect = (childId: string) => {
+    if (childId === selectedChildId) {
+      return;
+    }
 
-        switchTimeoutRef.current = window.setTimeout(() => {
-            setIsSwitching(false);
-        }, 180);
-    };
+    setIsSwitching(true);
+    handleQuestDrawerOpenChange(false);
+    selectChild(childId);
 
-    const handleQuestDrawerOpenChange = (isOpen: boolean) => {
-        if (!isOpen) {
-            generateRequestRef.current += 1;
-            setIsQuestDrawerOpen(false);
-            setIsQuestDrawerLoading(false);
-            setIsQuestDrawerRefreshing(false);
-            setIsQuestDrawerConfirming(false);
-            setQuestDrawerError(null);
-            setQuestDrawerFeedback(null);
-            setQuestDrawerPhase('select');
-            setQuestDrawerOptions([]);
-            setSelectedQuestIds([]);
-            generateQuests.reset();
-            return;
-        }
+    if (switchTimeoutRef.current) {
+      window.clearTimeout(switchTimeoutRef.current);
+    }
 
-        setIsQuestDrawerOpen(true);
-    };
+    switchTimeoutRef.current = window.setTimeout(() => {
+      setIsSwitching(false);
+    }, 180);
+  };
 
-    const handleGenerateQuests = async (preserveSelected = false) => {
-        if (!activeChild) {
-            return;
-        }
+  const handleQuestDrawerOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      generateRequestRef.current += 1;
+      setIsQuestDrawerOpen(false);
+      setIsQuestDrawerLoading(false);
+      setIsQuestDrawerRefreshing(false);
+      setIsQuestDrawerConfirming(false);
+      setQuestDrawerError(null);
+      setQuestDrawerFeedback(null);
+      setQuestDrawerPhase("select");
+      setQuestDrawerOptions([]);
+      setSelectedQuestIds([]);
+      generateQuests.reset();
+      return;
+    }
 
-        const lockedQuests = preserveSelected
-            ? questDrawerOptions.filter((quest) => selectedQuestIds.includes(quest.id))
-            : [];
-        const excludedTitles = [
-            ...activeChild.quests.map((quest) => quest.title),
-            ...(preserveSelected
-                ? questDrawerOptions
-                    .filter((quest) => !selectedQuestIds.includes(quest.id))
-                    .map((quest) => quest.title)
-                : []),
-        ];
+    setIsQuestDrawerOpen(true);
+  };
 
-        if (!preserveSelected) {
-            handleQuestDrawerOpenChange(true);
-            setIsQuestDrawerLoading(true);
-            setQuestDrawerOptions([]);
-            setSelectedQuestIds([]);
-        } else {
-            setIsQuestDrawerRefreshing(true);
-        }
+  const handleGenerateQuests = async (preserveSelected = false) => {
+    if (!activeChild) {
+      return;
+    }
 
-        setQuestDrawerError(null);
-        setQuestDrawerFeedback(null);
-        setQuestDrawerPhase('select');
+    const lockedQuests = preserveSelected
+      ? questDrawerOptions.filter((quest) =>
+          selectedQuestIds.includes(quest.id),
+        )
+      : [];
+    const excludedTitles = [
+      ...activeChild.quests.map((quest) => quest.title),
+      ...(preserveSelected
+        ? questDrawerOptions
+            .filter((quest) => !selectedQuestIds.includes(quest.id))
+            .map((quest) => quest.title)
+        : []),
+    ];
 
-        const requestId = generateRequestRef.current + 1;
-        generateRequestRef.current = requestId;
+    if (!preserveSelected) {
+      handleQuestDrawerOpenChange(true);
+      setIsQuestDrawerLoading(true);
+      setQuestDrawerOptions([]);
+      setSelectedQuestIds([]);
+    } else {
+      setIsQuestDrawerRefreshing(true);
+    }
 
-        try {
-            const nextOptions = await generateQuests.generate({
-                childAge: activeChild.age,
-                childId: activeChild.id,
-                excludeTitles: excludedTitles,
-                familyId,
-                focusAreas: [...QUEST_DRAWER_FOCUS_AREAS],
-                lockedOptions: lockedQuests,
-            });
+    setQuestDrawerError(null);
+    setQuestDrawerFeedback(null);
+    setQuestDrawerPhase("select");
 
-            if (generateRequestRef.current !== requestId) {
-                return;
-            }
+    const requestId = generateRequestRef.current + 1;
+    generateRequestRef.current = requestId;
 
-            setQuestDrawerOptions(nextOptions);
+    try {
+      const nextOptions = await generateQuests.generate({
+        childAge: activeChild.age,
+        childId: activeChild.id,
+        excludeTitles: excludedTitles,
+        familyId,
+        focusAreas: [...QUEST_DRAWER_FOCUS_AREAS],
+        lockedOptions: lockedQuests,
+      });
 
-            if (preserveSelected) {
-                setSelectedQuestIds(lockedQuests.map((quest) => quest.id));
-                setQuestDrawerFeedback(
-                    lockedQuests.length === 1
-                        ? 'Kept your selected quest and refreshed the remaining options.'
-                        : 'Kept your selected quests and refreshed the remaining options.',
-                );
-            }
-        } catch {
-            if (generateRequestRef.current !== requestId) {
-                return;
-            }
+      if (generateRequestRef.current !== requestId) {
+        return;
+      }
 
-            setQuestDrawerError('Something did not come through just yet. Please try again.');
-        } finally {
-            if (generateRequestRef.current === requestId) {
-                setIsQuestDrawerLoading(false);
-                setIsQuestDrawerRefreshing(false);
-            }
-        }
-    };
+      setQuestDrawerOptions(nextOptions);
 
-    const handleQuestToggle = (questId: string) => {
-        setQuestDrawerFeedback(null);
-        setQuestDrawerPhase('select');
+      if (preserveSelected) {
+        setSelectedQuestIds(lockedQuests.map((quest) => quest.id));
+        setQuestDrawerFeedback(
+          lockedQuests.length === 1
+            ? "Kept your selected quest and refreshed the remaining options."
+            : "Kept your selected quests and refreshed the remaining options.",
+        );
+      }
+    } catch {
+      if (generateRequestRef.current !== requestId) {
+        return;
+      }
 
-        setSelectedQuestIds((currentIds) => {
-            if (currentIds.includes(questId)) {
-                return currentIds.filter((currentId) => currentId !== questId);
-            }
+      setQuestDrawerError(
+        "Something did not come through just yet. Please try again.",
+      );
+    } finally {
+      if (generateRequestRef.current === requestId) {
+        setIsQuestDrawerLoading(false);
+        setIsQuestDrawerRefreshing(false);
+      }
+    }
+  };
 
-            if (currentIds.length >= 3) {
-                setQuestDrawerFeedback('Choose 3 quests. Deselect one before choosing another.');
-                return currentIds;
-            }
+  const handleQuestToggle = (questId: string) => {
+    setQuestDrawerFeedback(null);
+    setQuestDrawerPhase("select");
 
-            return [...currentIds, questId];
-        });
-    };
+    setSelectedQuestIds((currentIds) => {
+      if (currentIds.includes(questId)) {
+        return currentIds.filter((currentId) => currentId !== questId);
+      }
 
-    const handleQuestDone = () => {
-        if (selectedQuestIds.length !== 3) {
-            return;
-        }
+      if (currentIds.length >= 3) {
+        setQuestDrawerFeedback(
+          "Choose 3 quests. Deselect one before choosing another.",
+        );
+        return currentIds;
+      }
 
-        setQuestDrawerFeedback(null);
-        setQuestDrawerPhase('confirm');
-    };
+      return [...currentIds, questId];
+    });
+  };
 
-    const handleQuestConfirm = async () => {
-        if (!activeChild || questDrawerPhase !== 'confirm' || selectedQuestIds.length !== 3) {
-            return;
-        }
+  const handleQuestDone = () => {
+    if (selectedQuestIds.length !== 3) {
+      return;
+    }
 
-        setIsQuestDrawerConfirming(true);
-        setQuestDrawerFeedback(null);
+    setQuestDrawerFeedback(null);
+    setQuestDrawerPhase("confirm");
+  };
 
-        try {
-            await questActions.createQuests(
-                questDrawerOptions
-                    .filter((quest) => selectedQuestIds.includes(quest.id))
-                    .map((quest) => ({
-                        assignedDate: getTodayDateString(),
-                        childId: activeChild.id,
-                        description: quest.description,
-                        reward: quest.reward,
-                        status: 'pending' as const,
-                        title: quest.title,
-                    })),
-            );
-            await questActions.refetch();
-            handleQuestDrawerOpenChange(false);
-        } catch {
-            setQuestDrawerFeedback('We could not save those quests right now. Please try again.');
-        } finally {
-            setIsQuestDrawerConfirming(false);
-        }
-    };
+  const handleQuestConfirm = async () => {
+    if (
+      !activeChild ||
+      questDrawerPhase !== "confirm" ||
+      selectedQuestIds.length !== 3
+    ) {
+      return;
+    }
+
+    setIsQuestDrawerConfirming(true);
+    setQuestDrawerFeedback(null);
+
+    try {
+      await questActions.createQuests(
+        questDrawerOptions
+          .filter((quest) => selectedQuestIds.includes(quest.id))
+          .map((quest) => ({
+            assignedDate: getTodayDateString(),
+            childId: activeChild.id,
+            description: quest.description,
+            reward: quest.reward,
+            status: "pending" as const,
+            title: quest.title,
+          })),
+      );
+      await questActions.refetch();
+      handleQuestDrawerOpenChange(false);
+    } catch {
+      setQuestDrawerFeedback(
+        "We could not save those quests right now. Please try again.",
+      );
+    } finally {
+      setIsQuestDrawerConfirming(false);
+    }
+  };
 
     const navItems = [
         {
@@ -373,24 +404,24 @@ export function ParentDashboardScreen({
         </div>
     ) : null;
 
-    if (hasNoChildren) {
-        return (
-            <AppShell
-                childItems={[]}
-                description="No child profiles are available yet, so the family planner is waiting gently."
-                familySeeds={familySummary}
-                navItems={navItems}
-                onSelectChild={handleChildSelect}
-                selectedChildId=""
-                title="Parent Dashboard"
-            >
-                <ParentStateCard
-                    title="No children added yet"
-                    description="Add your first child profile to begin tracking goals, gentle quests, and shared moments."
-                />
-            </AppShell>
-        );
-    }
+  if (hasNoChildren) {
+    return (
+      <AppShell
+        childItems={[]}
+        description="No child profiles are available yet, so the family planner is waiting gently."
+        familySeeds={familySummary}
+        navItems={navItems}
+        onSelectChild={handleChildSelect}
+        selectedChildId=""
+        title="Parent Dashboard"
+      >
+        <ParentStateCard
+          title="No children added yet"
+          description="Add your first child profile to begin tracking goals, gentle quests, and shared moments."
+        />
+      </AppShell>
+    );
+  }
 
     if (!activeChild && isChildSelectorLoading) {
         return (
@@ -427,9 +458,9 @@ export function ParentDashboardScreen({
         );
     }
 
-    if (!activeChild) {
-        return null;
-    }
+  if (!activeChild) {
+    return null;
+  }
 
     return (
         <AppShell
@@ -469,13 +500,15 @@ export function ParentDashboardScreen({
                         </CardBody>
                     </Card>
 
-                    <GoalCard
-                        childName={activeChild.name}
-                        goal={activeChild.goal}
-                        isLoading={goalsQuery.isLoading}
-                        onPrimaryAction={activeChild.goal ? () => handleTabChange('dreams') : undefined}
-                        seeds={activeChild.seeds}
-                    />
+          <GoalCard
+            childName={activeChild.name}
+            goal={activeChild.goal}
+            isLoading={goalsQuery.isLoading}
+            onPrimaryAction={
+              activeChild.goal ? () => handleTabChange("dreams") : undefined
+            }
+            seeds={activeChild.seeds}
+          />
 
                     <div className="grid gap-3">
                         {isOverviewLoading ? (
@@ -531,34 +564,54 @@ export function ParentDashboardScreen({
                         )}
                     </div>
 
-                    <MascotBubble
-                        message={`Welcome back. ${activeChild.name}'s next gentle wins can stay simple today.`}
-                    />
-                </>
-            ) : null}
+          <MascotBubble
+            message={`Welcome back. ${activeChild.name}'s next gentle wins can stay simple today.`}
+          />
+        </>
+      ) : null}
 
-            {tab === 'adventures' ? (
-                <>
-                    <Card shadow="none" className="hearth-panel rounded-[24px]">
-                        <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <Chip radius="full" variant="flat" className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.26)] text-[var(--hearth-text-secondary)]">
-                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">Learning</span>
-                                </Chip>
-                                <Chip radius="full" variant="flat" className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.26)] text-[var(--hearth-text-secondary)]">
-                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">Responsibility</span>
-                                </Chip>
-                                <Chip radius="full" variant="flat" className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.26)] text-[var(--hearth-text-secondary)]">
-                                    <span className="px-1 text-[10px] font-semibold sm:text-[11px]">Movement</span>
-                                </Chip>
-                            </div>
-                            <HearthActionButton onPress={() => {
-                                void handleGenerateQuests();
-                            }}>
-                                Generate Quests
-                            </HearthActionButton>
-                        </CardBody>
-                    </Card>
+      {tab === "adventures" ? (
+        <>
+          <Card shadow="none" className="hearth-panel rounded-[24px]">
+            <CardBody className="grid gap-3 p-4 sm:gap-4 sm:p-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Chip
+                  radius="full"
+                  variant="flat"
+                  className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.26)] text-[var(--hearth-text-secondary)]"
+                >
+                  <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
+                    Learning
+                  </span>
+                </Chip>
+                <Chip
+                  radius="full"
+                  variant="flat"
+                  className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.26)] text-[var(--hearth-text-secondary)]"
+                >
+                  <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
+                    Responsibility
+                  </span>
+                </Chip>
+                <Chip
+                  radius="full"
+                  variant="flat"
+                  className="border border-[rgba(79,107,82,0.12)] bg-[rgba(216,227,209,0.26)] text-[var(--hearth-text-secondary)]"
+                >
+                  <span className="px-1 text-[10px] font-semibold sm:text-[11px]">
+                    Movement
+                  </span>
+                </Chip>
+              </div>
+              <HearthActionButton
+                onPress={() => {
+                  void handleGenerateQuests();
+                }}
+              >
+                Generate Quests
+              </HearthActionButton>
+            </CardBody>
+          </Card>
 
                     <div className="grid gap-3">
                         {isOverviewLoading ? (
@@ -612,66 +665,69 @@ export function ParentDashboardScreen({
                 </>
             ) : null}
 
-            {tab === 'dreams' ? (
-                <>
-                    <GoalCard
-                        childName={activeChild.name}
-                        goal={activeChild.goal}
-                        isLoading={goalsQuery.isLoading}
-                        seeds={activeChild.seeds}
-                    />
+      {tab === "dreams" ? (
+        <>
+          <GoalCard
+            childName={activeChild.name}
+            goal={activeChild.goal}
+            isLoading={goalsQuery.isLoading}
+            seeds={activeChild.seeds}
+          />
 
-                    {activeChild.goal ? (
-                        <Card shadow="none" className="hearth-panel rounded-[24px]">
-                            <CardBody className="grid gap-3 p-4 sm:p-5">
-                                <p className="hearth-kicker">Progress Moments</p>
-                                <div className="grid gap-2 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
-                                    <p>Rewards now come from completed quests and shared moments.</p>
-                                    <p>{activeChild.goal.milestone} seeds / brighter ledger ribbon</p>
-                                    <p>{activeChild.goal.target} seeds / goal achieved</p>
-                                </div>
-                            </CardBody>
-                        </Card>
-                    ) : (
-                        <ParentStateCard
-                            title="No goal has been set for this child"
-                            description="A shared goal gives daily progress context, but the dashboard stays usable without it."
-                        />
-                    )}
-
-                    {activeChild.goal && activeChild.seeds >= activeChild.goal.milestone ? (
-                        <MascotBubble
-                            message="A milestone has been reached. Let the next step stay steady and shared."
-                        />
-                    ) : null}
-                </>
-            ) : null}
-
-            <QuestSelectionDrawer
-                childName={activeChild.name}
-                errorMessage={questDrawerError}
-                feedbackMessage={questDrawerFeedback}
-                isConfirming={isQuestDrawerConfirming}
-                isLoading={isQuestDrawerLoading}
-                isRefreshingOptions={isQuestDrawerRefreshing}
-                isOpen={isQuestDrawerOpen}
-                onBackToSelection={() => setQuestDrawerPhase('select')}
-                onConfirm={() => {
-                    void handleQuestConfirm();
-                }}
-                onDone={handleQuestDone}
-                onOpenChange={handleQuestDrawerOpenChange}
-                onRegenerateOptions={() => {
-                    void handleGenerateQuests(true);
-                }}
-                onRetry={() => {
-                    void handleGenerateQuests();
-                }}
-                onToggleQuest={handleQuestToggle}
-                options={questDrawerOptions}
-                phase={questDrawerPhase}
-                selectedQuestIds={selectedQuestIds}
+          {activeChild.goal ? (
+            <Card shadow="none" className="hearth-panel rounded-[24px]">
+              <CardBody className="grid gap-3 p-4 sm:p-5">
+                <p className="hearth-kicker">Progress Moments</p>
+                <div className="grid gap-2 text-[13px] leading-6 text-[var(--hearth-text-secondary)] sm:text-sm">
+                  <p>
+                    Rewards now come from completed quests and shared moments.
+                  </p>
+                  <p>
+                    {activeChild.goal.milestone} seeds / brighter ledger ribbon
+                  </p>
+                  <p>{activeChild.goal.target} seeds / goal achieved</p>
+                </div>
+              </CardBody>
+            </Card>
+          ) : (
+            <ParentStateCard
+              title="No goal has been set for this child"
+              description="A shared goal gives daily progress context, but the dashboard stays usable without it."
             />
-        </AppShell>
-    );
+          )}
+
+          {activeChild.goal &&
+          activeChild.seeds >= activeChild.goal.milestone ? (
+            <MascotBubble message="A milestone has been reached. Let the next step stay steady and shared." />
+          ) : null}
+        </>
+      ) : null}
+
+      <QuestSelectionDrawer
+        childName={activeChild.name}
+        errorMessage={questDrawerError}
+        feedbackMessage={questDrawerFeedback}
+        isConfirming={isQuestDrawerConfirming}
+        isLoading={isQuestDrawerLoading}
+        isRefreshingOptions={isQuestDrawerRefreshing}
+        isOpen={isQuestDrawerOpen}
+        onBackToSelection={() => setQuestDrawerPhase("select")}
+        onConfirm={() => {
+          void handleQuestConfirm();
+        }}
+        onDone={handleQuestDone}
+        onOpenChange={handleQuestDrawerOpenChange}
+        onRegenerateOptions={() => {
+          void handleGenerateQuests(true);
+        }}
+        onRetry={() => {
+          void handleGenerateQuests();
+        }}
+        onToggleQuest={handleQuestToggle}
+        options={questDrawerOptions}
+        phase={questDrawerPhase}
+        selectedQuestIds={selectedQuestIds}
+      />
+    </AppShell>
+  );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { homesteadApi, type ChildRecord, type CreateChildInput, type UpdateChildInput } from '@/lib/homestead-api';
 import { createMissingParameterError, createQueryState, type QueryOptions, toErrorMessage } from './query-utils';
@@ -8,7 +8,7 @@ import { createMissingParameterError, createQueryState, type QueryOptions, toErr
 type ChildrenQueryState = ReturnType<typeof createQueryState<ChildRecord[]>>;
 type ChildrenStore = {
     createChild: (input: CreateChildInput) => Promise<ChildRecord | null>;
-    fetchChildren: (familyId: string) => Promise<ChildRecord[]>;
+    fetchChildren: (familyId: string, sessionVersion?: number) => Promise<ChildRecord[]>;
     queries: Record<string, ChildrenQueryState>;
     removeChild: (familyId: string, childId: string) => Promise<void>;
     updateChild: (familyId: string, childId: string, input: UpdateChildInput) => Promise<ChildRecord | null>;
@@ -87,12 +87,14 @@ const useChildrenStore = create<ChildrenStore>((set) => ({
 
         return child;
     },
-    fetchChildren: async (familyId) => {
+    fetchChildren: async (familyId, sessionVersion = 0) => {
+        const queryKey = `${familyId}:${sessionVersion}`;
+
         set((state) => ({
             queries: {
                 ...state.queries,
-                [familyId]: {
-                    ...(state.queries[familyId] ?? createQueryState(emptyChildren)),
+                [queryKey]: {
+                    ...(state.queries[queryKey] ?? createQueryState(emptyChildren)),
                     error: null,
                     isLoading: true,
                 },
@@ -105,7 +107,7 @@ const useChildrenStore = create<ChildrenStore>((set) => ({
             set((state) => ({
                 queries: {
                     ...state.queries,
-                    [familyId]: {
+                    [queryKey]: {
                         data: children,
                         error: null,
                         isLoaded: true,
@@ -121,8 +123,8 @@ const useChildrenStore = create<ChildrenStore>((set) => ({
             set((state) => ({
                 queries: {
                     ...state.queries,
-                    [familyId]: {
-                        ...(state.queries[familyId] ?? createQueryState(emptyChildren)),
+                    [queryKey]: {
+                        ...(state.queries[queryKey] ?? createQueryState(emptyChildren)),
                         error: message,
                         isLoaded: true,
                         isLoading: false,
@@ -138,21 +140,20 @@ const useChildrenStore = create<ChildrenStore>((set) => ({
         await homesteadApi.children.remove(childId);
 
         set((state) => {
-            const query = state.queries[familyId];
-
-            if (!query) {
-                return state;
-            }
-
-            return {
-                queries: {
-                    ...state.queries,
-                    [familyId]: {
+            // Remove from ALL query versions for this familyId
+            const nextQueries: Record<string, ChildrenQueryState> = {};
+            Object.entries(state.queries).forEach(([key, query]) => {
+                if (key.startsWith(familyId)) {
+                    nextQueries[key] = {
                         ...query,
                         data: query.data.filter((child) => child.id !== childId),
-                    },
-                },
-            };
+                    };
+                } else {
+                    nextQueries[key] = query;
+                }
+            });
+
+            return { queries: nextQueries };
         });
         broadcastChildrenSync(familyId);
     },
@@ -164,21 +165,20 @@ const useChildrenStore = create<ChildrenStore>((set) => ({
         }
 
         set((state) => {
-            const query = state.queries[familyId];
-
-            if (!query) {
-                return state;
-            }
-
-            return {
-                queries: {
-                    ...state.queries,
-                    [familyId]: {
+            // Update in ALL query versions for this familyId
+            const nextQueries: Record<string, ChildrenQueryState> = {};
+            Object.entries(state.queries).forEach(([key, query]) => {
+                if (key.startsWith(familyId)) {
+                    nextQueries[key] = {
                         ...query,
                         data: query.data.map((item) => (item.id === childId ? child : item)),
-                    },
-                },
-            };
+                    };
+                } else {
+                    nextQueries[key] = query;
+                }
+            });
+
+            return { queries: nextQueries };
         });
         broadcastChildrenSync(familyId);
 
@@ -187,21 +187,35 @@ const useChildrenStore = create<ChildrenStore>((set) => ({
 }));
 
 export function useChildren(familyId?: string, options: QueryOptions = {}) {
+    const { sessionVersion = 0 } = options as QueryOptions & { sessionVersion?: number };
     const enabled = options.enabled ?? true;
-    const query = useChildrenStore((state) => (familyId ? state.queries[familyId] : undefined));
+    const queryKey = familyId ? `${familyId}:${sessionVersion}` : '';
+    const query = useChildrenStore((state) => (queryKey ? state.queries[queryKey] : undefined));
     const fetchChildren = useChildrenStore((state) => state.fetchChildren);
     const createChild = useChildrenStore((state) => state.createChild);
     const updateChild = useChildrenStore((state) => state.updateChild);
     const removeChild = useChildrenStore((state) => state.removeChild);
     const resolvedQuery = query ?? createQueryState(emptyChildren);
 
+    // Track previous session version to detect changes
+    const prevSessionVersionRef = useRef(sessionVersion);
+
     useEffect(() => {
-        if (!enabled || !familyId || resolvedQuery.isLoaded || resolvedQuery.isLoading) {
+        if (!enabled || !familyId) {
             return;
         }
 
-        void fetchChildren(familyId);
-    }, [enabled, familyId, fetchChildren, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
+        // Re-fetch when session version changes (child/family switched)
+        const sessionChanged = prevSessionVersionRef.current !== sessionVersion;
+        prevSessionVersionRef.current = sessionVersion;
+
+        // Only fetch if: never loaded OR session changed
+        if (sessionChanged || !resolvedQuery.isLoaded) {
+            if (!resolvedQuery.isLoading) {
+                void fetchChildren(familyId, sessionVersion);
+            }
+        }
+    }, [enabled, familyId, sessionVersion, fetchChildren, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
 
     useEffect(() => {
         if (!enabled || !familyId) {
@@ -278,7 +292,7 @@ export function useChildren(familyId?: string, options: QueryOptions = {}) {
                 return Promise.reject(createMissingParameterError('familyId'));
             }
 
-            return fetchChildren(familyId);
+            return fetchChildren(familyId, sessionVersion);
         },
         removeChild: (childId: string) => {
             if (!familyId) {

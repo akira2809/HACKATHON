@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { MaterialIcon } from './TopNav';
 import { ProgressBar } from './ProgressBar';
 import { ComicCard } from './ComicCard';
@@ -18,7 +19,7 @@ interface DreamGoalCardProps {
   badge?: string;
   badgeColor?: string;
   message?: string;
-  onAddSeeds?: () => void;
+  navigateToAdventures?: string; // Route path to navigate to (e.g., '/en/homestead/adventures')
   className?: string;
 }
 
@@ -31,11 +32,18 @@ export function DreamGoalCard({
   badge,
   badgeColor = 'bg-[#CA8A04]',
   message,
-  onAddSeeds,
+  navigateToAdventures,
   className = '',
 }: DreamGoalCardProps) {
+  const router = useRouter();
   const pct = (current / goal) * 100;
   const remaining = goal - current;
+
+  const handleAddSeeds = () => {
+    if (navigateToAdventures) {
+      router.push(navigateToAdventures);
+    }
+  };
 
   return (
     <ComicCard className={`relative overflow-hidden ${className}`}>
@@ -48,8 +56,8 @@ export function DreamGoalCard({
 
       {/* Icon + Title */}
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-14 h-14 bg-[#FEF08A] comic-border-2 rounded-2xl flex items-center justify-center text-3xl">
-          {icon === 'card_giftcard' ? '🎁' : icon === 'eco' ? '🌱' : icon}
+        <div className="w-14 h-14 bg-[#FEF08A] comic-border-2 rounded-2xl flex items-center justify-center">
+          <MaterialIcon icon={icon} filled className="!text-3xl text-[#CA8A04]" />
         </div>
         <div>
           <h2 className="text-xl font-black text-[#1C1917]">{title}</h2>
@@ -74,16 +82,17 @@ export function DreamGoalCard({
       </div>
 
       {/* CTA */}
-      {onAddSeeds && (
+      {navigateToAdventures && (
         <button
-          onClick={onAddSeeds}
+          onClick={handleAddSeeds}
           className="
             w-full bg-[#38BDF8] text-white
             comic-border-2 comic-shadow
             py-2.5 rounded-2xl
             font-black text-sm uppercase
             active:translate-y-1 active:shadow-none
-            transition-all
+            hover:bg-[#0ea5e9] transition-all
+            cursor-pointer
           "
         >
           Add More Seeds!
