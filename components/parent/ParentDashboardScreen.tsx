@@ -1,27 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Card, CardBody, Chip, Skeleton } from "@heroui/react";
-import { useParams, useRouter } from "next/navigation";
+import {
+  CalendarIcon,
+  CompassIcon,
+  HearthActionButton,
+  HomeIcon,
+  TargetIcon,
+} from "@/components/design-system/HearthPrimitives";
 import { AppShell } from "@/components/parent/AppShell";
 import { GoalCard } from "@/components/parent/GoalCard";
+import { MascotBubble } from "@/components/parent/MascotBubble";
 import { QuestCard } from "@/components/parent/QuestCard";
 import { QuestSelectionDrawer } from "@/components/parent/QuestSelectionDrawer";
-import { MascotBubble } from "@/components/parent/MascotBubble";
 import { useGenerateQuests } from "@/hooks/useGenerateQuests";
 import { useParentDashboardData } from "@/hooks/useParentDashboardData";
 import { buildLocalizedHref } from "@/lib/locale-path";
 import { type ParentQuest } from "@/state/appState";
-import {
-  CalendarIcon,
-  CompassIcon,
-  HomeIcon,
-  TargetIcon,
-} from "@/components/design-system/HearthPrimitives";
-import { HearthActionButton } from "@/components/design-system/HearthPrimitives";
+import { Card, CardBody, Chip, Skeleton } from "@heroui/react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { ParentStateCard } from "./ParentStateCard";
-import { saveApprovedQuestToStorage } from "@/lib/child-quests";
-import { useAppState } from "@/state/appState";
 
 type ParentDashboardScreenProps = {
   initialTab?: string;
