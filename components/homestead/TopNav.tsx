@@ -8,10 +8,12 @@
 // ============================================================
 
 import React, { useState, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { useChildDashboardData } from '@/hooks/useChildDashboardData'; 
 import { useParentOfChildrenDashboardData } from '@/hooks/useParentDashboardData';
 import { setChildSession } from '@/hooks/useChildSession'; 
 import { setParentSession, clearParentSession } from '@/hooks/useParentSession';
+import { buildLocalizedHref } from '@/lib/locale-path';
 
 interface ChildInfo {
     id: string;
@@ -38,8 +40,11 @@ export function TopNav({
   rightIcons,
   onModeChange,
 }: TopNavProps) {
+  const params = useParams<{ locale: string }>();
+  const router = useRouter();
   const [isParentMode, setIsParentMode] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // Child data
   const childData = useChildDashboardData();
@@ -60,6 +65,7 @@ export function TopNav({
   // Handle mode switch - just toggle view mode, BottomNav handles routing
   const handleModeSwitch = useCallback((newMode: 'parent' | 'child') => {
     const shouldBeParent = newMode === 'parent';
+    setIsProfileDropdownOpen(false);
     
     if (shouldBeParent) {
       // Switching to parent mode
@@ -82,6 +88,8 @@ export function TopNav({
 
   // Handle child selection
   const handleSelectChild = useCallback((childId: string) => {
+    setIsProfileDropdownOpen(false);
+
     if (isParentMode) {
       // In parent mode, clicking a child switches to child view mode with that child
       const child = children.find((c) => c.id === childId);
@@ -113,6 +121,7 @@ export function TopNav({
     clearParentSession();
     setIsParentMode(false);
     setIsDropdownOpen(false);
+    setIsProfileDropdownOpen(false);
     onModeChange?.('child');
   }, [onModeChange]);
 
@@ -126,9 +135,27 @@ export function TopNav({
         familyName: parentData.family.name,
       });
       setIsParentMode(true);
+      setIsProfileDropdownOpen(false);
       onModeChange?.('parent');
     }
   }, [parentData, onModeChange]);
+
+  const handleOpenParentDashboard = useCallback(() => {
+    if (parentData.familyId) {
+      setParentSession({
+        parentId: 'demo-parent',
+        familyId: parentData.familyId,
+        parentName: parentData.parentName ?? 'Demo Parent',
+        familyName: parentData.familyName ?? 'Family Board',
+      });
+    }
+
+    setIsParentMode(true);
+    setIsDropdownOpen(false);
+    setIsProfileDropdownOpen(false);
+    onModeChange?.('parent');
+    router.push(buildLocalizedHref(params.locale, '/parent'));
+  }, [onModeChange, params.locale, parentData.familyId, parentData.familyName, parentData.parentName, router]);
 
   return (
     <header
@@ -210,7 +237,10 @@ export function TopNav({
               <>
                 <div
                   className="fixed inset-0 z-40"
-                  onClick={() => setIsDropdownOpen(false)}
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    setIsProfileDropdownOpen(false);
+                  }}
                 />
                 <div className="
                   absolute right-0 top-full mt-1 sm:mt-2
@@ -317,7 +347,10 @@ export function TopNav({
               <>
                 <div
                   className="fixed inset-0 z-40"
-                  onClick={() => setIsDropdownOpen(false)}
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    setIsProfileDropdownOpen(false);
+                  }}
                 />
                 <div className="
                   absolute right-0 top-full mt-1 sm:mt-2
@@ -391,9 +424,47 @@ export function TopNav({
             <button className="p-0.5 sm:p-1 md:p-2 rounded-lg sm:rounded-lg md:rounded-xl text-[#1C1917] hover:bg-[#BAE6FD] transition-all flex-shrink-0">
               <MaterialIcon icon="notifications" className="!text-base sm:!text-lg md:!text-2xl" />
             </button>
-            <button className="p-0.5 sm:p-1 md:p-2 rounded-lg sm:rounded-lg md:rounded-xl text-[#1C1917] hover:bg-[#BAE6FD] transition-all flex-shrink-0">
-              <MaterialIcon icon="account_circle" filled className="!text-base sm:!text-lg md:!text-2xl" />
-            </button>
+            <div className="relative flex-shrink-0">
+              <button
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  setIsProfileDropdownOpen((current) => !current);
+                }}
+                className="p-0.5 sm:p-1 md:p-2 rounded-lg sm:rounded-lg md:rounded-xl text-[#1C1917] hover:bg-[#BAE6FD] transition-all flex-shrink-0"
+              >
+                <MaterialIcon icon="account_circle" filled className="!text-base sm:!text-lg md:!text-2xl" />
+              </button>
+
+              {isProfileDropdownOpen ? (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsProfileDropdownOpen(false)}
+                  />
+                  <div className="
+                    absolute right-0 top-full mt-1 sm:mt-2
+                    min-w-[140px] z-50 overflow-hidden
+                    rounded-xl sm:rounded-2xl border-2 sm:border-4 border-[#1C1917] bg-white
+                    shadow-[2px_2px_0px_#1C1917] sm:shadow-[4px_4px_0px_#1C1917]
+                  ">
+                    <div className="p-2">
+                      <button
+                        onClick={handleOpenParentDashboard}
+                        className="
+                          flex w-full items-center gap-3 rounded-xl px-3 py-2.5
+                          text-left transition-all hover:bg-[#BAE6FD]
+                        "
+                      >
+                        <MaterialIcon icon="family_home" className="!text-base text-[#0284C8]" />
+                        <span className="font-black text-sm text-[#1C1917]">
+                          Parent
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </div>
           </>
         )}
       </div>
