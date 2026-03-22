@@ -21,6 +21,7 @@ import {
 import { HearthActionButton } from "@/components/design-system/HearthPrimitives";
 import { ParentStateCard } from "./ParentStateCard";
 import { saveApprovedQuestToStorage } from "@/lib/child-quests";
+import { useAppState } from "@/state/appState";
 
 type ParentDashboardScreenProps = {
   initialTab?: string;
@@ -97,6 +98,8 @@ export function ParentDashboardScreen({
     suggestedQuests,
     todayQuestsError,
   } = useParentDashboardData({ demoState });
+
+  const { approveQuest, rejectQuest } = useAppState();
 
   const generateQuests = useGenerateQuests(
     activeChild
@@ -435,7 +438,7 @@ export function ParentDashboardScreen({
       isSwitching={isSwitching}
       navItems={navItems}
       onSelectChild={handleChildSelect}
-      selectedChildId={selectedChildId}
+      selectedChildId={selectedChildId ?? ''}
       title={
         tab === "home"
           ? "Parent Dashboard"

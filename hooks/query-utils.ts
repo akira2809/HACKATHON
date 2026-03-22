@@ -2,6 +2,7 @@
 
 export type QueryOptions = {
     enabled?: boolean;
+    sessionVersion?: number;
 };
 
 export type QueryState<T> = {

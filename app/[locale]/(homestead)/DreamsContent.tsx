@@ -2,54 +2,47 @@
 
 // ============================================================
 // DreamsContent — Dream Tracker
-// Dynamic data from dream.store + quest.store
+// Dynamic data from useChildDashboardData (API)
 // ============================================================
 
 import {
   ComicCard,
-  BentoGrid,
   MascotSection,
   DreamGoalCard,
-  SeedHistoryItem,
   MaterialIcon,
 } from '@/components/homestead';
-import { useQuestStore, useDreamStore } from '@/stores';
+import { useChildDashboardData } from '@/hooks/useChildDashboardData';
 
 export function DreamsContent() {
-  // Get seeds from quest store
-  const seeds = useQuestStore((state) => state.seeds);
-
-  // Get dream data from dream store
-  const activeDream = useDreamStore((state) => state.activeDream);
-  const seedHistory = useDreamStore((state) => state.seedHistory);
-
-  // Calculate progress based on actual seeds from quest store
-  const progressPct = activeDream
-    ? Math.round((seeds / activeDream.goal) * 100)
-    : 0;
+  const {
+    seeds,
+    currentGoal,
+    goalProgress,
+    isGoalsLoading,
+  } = useChildDashboardData();
 
   // Lena's mascot message based on progress
   const getMascotMessage = () => {
-    if (!activeDream) {
+    if (!currentGoal) {
       return "Your dream shelf is waiting. Let's set a goal together!";
     }
-    if (progressPct >= 100) {
+    if (goalProgress >= 100) {
       return "Amazing! Your dream has come true! What a wonderful journey.";
     }
-    if (progressPct >= 75) {
+    if (goalProgress >= 75) {
       return "Almost there! Your dream is within reach. Keep going, dear.";
     }
-    if (progressPct >= 50) {
+    if (goalProgress >= 50) {
       return "Halfway to your dream! Every seed counts, you're doing wonderfully.";
     }
-    if (progressPct >= 25) {
+    if (goalProgress >= 25) {
       return "Great start! Your dream is growing beautifully.";
     }
-    return `You're ${progressPct}% to your dream. Every small step matters!`;
+    return `You're ${goalProgress}% to your dream. Every small step matters!`;
   };
 
-  // If no active dream, show placeholder state
-  if (!activeDream) {
+  // If no active goal, show placeholder state
+  if (!currentGoal) {
     return (
       <main className="max-w-md mx-auto px-4 pt-20 space-y-8 pb-32">
         {/* Mascot */}
@@ -72,27 +65,21 @@ export function DreamsContent() {
             </span>
             <div className="flex items-center gap-2">
               <MaterialIcon icon="eco" filled className="!text-4xl text-[#FACC15]" />
-              <span className="text-4xl font-black text-[#1C1917]">{seeds}</span>
+              <span className="text-4xl font-black text-[#1C1917]">
+                {isGoalsLoading ? '—' : seeds}
+              </span>
             </div>
           </div>
         </ComicCard>
 
-        {/* Seed History */}
+        {/* Seed History placeholder */}
         <section className="space-y-4">
           <h3 className="text-lg font-black text-[#1C1917] uppercase tracking-tighter px-1">
             Seed History
           </h3>
-          {seedHistory.length > 0 ? (
-            <div className="space-y-3">
-              {seedHistory.map((item) => (
-                <SeedHistoryItem key={item.id} {...item} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-[#7C8E76] px-1">
-              No seeds collected yet. Complete quests to earn seeds!
-            </p>
-          )}
+          <p className="text-sm text-[#7C8E76] px-1">
+            No seeds collected yet. Complete quests to earn seeds!
+          </p>
         </section>
       </main>
     );
@@ -105,13 +92,11 @@ export function DreamsContent() {
 
       {/* Dream Goal Card */}
       <DreamGoalCard
-        title={activeDream.title}
-        subtitle={activeDream.subtitle}
+        title={currentGoal.title}
+        subtitle="Keep going!"
         current={seeds}
-        goal={activeDream.goal}
-        badge={activeDream.badge}
-        badgeColor={activeDream.badgeColor}
-        message={`${progressPct}% complete - Keep going!`}
+        goal={currentGoal.target_coins}
+        message={`${goalProgress}% complete - Keep going!`}
       />
 
       {/* Current Seeds */}
@@ -122,32 +107,26 @@ export function DreamsContent() {
           </span>
           <div className="flex items-center gap-2">
             <MaterialIcon icon="eco" filled className="!text-4xl text-[#FACC15]" />
-            <span className="text-4xl font-black text-[#1C1917]">{seeds}</span>
+            <span className="text-4xl font-black text-[#1C1917]">
+              {isGoalsLoading ? '—' : seeds}
+            </span>
           </div>
         </div>
       </ComicCard>
 
-      {/* Seed History */}
+      {/* Seed History placeholder */}
       <section className="space-y-4">
         <div className="flex justify-between items-center px-1">
           <h3 className="text-lg font-black text-[#1C1917] uppercase tracking-tighter">
             Seed History
           </h3>
           <span className="text-xs font-medium text-[#7C8E76]">
-            {seedHistory.length} {seedHistory.length === 1 ? 'entry' : 'entries'}
+            Coming soon
           </span>
         </div>
-        {seedHistory.length > 0 ? (
-          <div className="space-y-3">
-            {seedHistory.map((item) => (
-              <SeedHistoryItem key={item.id} {...item} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-[#7C8E76] px-1">
-            No seeds collected yet. Complete quests to earn seeds!
-          </p>
-        )}
+        <p className="text-sm text-[#7C8E76] px-1">
+          No seeds collected yet. Complete quests to earn seeds!
+        </p>
       </section>
     </main>
   );

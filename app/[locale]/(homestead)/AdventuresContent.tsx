@@ -3,12 +3,11 @@
 // ============================================================
 // AdventuresContent — Quest Board
 // Gamified quest cards with cozy hearth aesthetic
-// Uses: quest store
+// Uses: useChildDashboardData (API + Zustand hooks)
 // ============================================================
 
-import { useEffect } from "react";
 import { MascotSection, ComicButton, MaterialIcon } from "@/components/homestead";
-import { useQuestStore } from "@/stores";
+import { useChildDashboardData } from "@/hooks/useChildDashboardData";
 
 // Category icons (Material Symbols)
 const CATEGORY_ICONS: Record<string, string> = {
@@ -26,47 +25,27 @@ const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string
   nature: { bg: "bg-[#A7F3D0]", border: "border-[#059669]", text: "text-[#047857]", light: "bg-emerald-100 text-emerald-700" },
 };
 
+// Map quest status to category for display
+const getCategoryFromStatus = (status: string): string => {
+  // Default category when no specific category is set
+  return "learning";
+};
+
 export function AdventuresContent() {
   const {
-    todayQuests,
-    checkExpiredQuests,
-    startQuest,
-    completeQuest,
-    failQuest,
-    uncompleteQuest,
-  } = useQuestStore();
-
-  // Auto-fail expired quests
-  useEffect(() => {
-    checkExpiredQuests();
-    const interval = setInterval(checkExpiredQuests, 60_000);
-    return () => clearInterval(interval);
-  }, [checkExpiredQuests]);
-
-  // Handle quest start
-  const handleStartQuest = (questId: string) => {
-    startQuest(questId);
-  };
-
-  // Handle quest completion
-  const handleCompleteQuest = (questId: string) => {
-    completeQuest(questId);
-  };
-
-  // Handle quest fail
-  const handleFailQuest = (questId: string) => {
-    failQuest(questId);
-  };
-
-  // Handle redo
-  const handleRedoQuest = (questId: string) => {
-    uncompleteQuest(questId);
-  };
+    quests,
+    completedQuests,
+    ongoingQuests,
+    pendingQuests,
+    isQuestsLoading,
+    questActions,
+  } = useChildDashboardData();
 
   // Calculate stats
-  const completedCount = todayQuests.filter((q) => q.status === "completed").length;
-  const ongoingCount = todayQuests.filter((q) => q.status === "ongoing").length;
-  const totalCount = todayQuests.length;
+  const completedCount = completedQuests.length;
+  const ongoingCount = ongoingQuests.length;
+  const pendingCount = pendingQuests.length;
+  const totalCount = quests.length;
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   // Mascot message
@@ -75,7 +54,7 @@ export function AdventuresContent() {
       ? "You've conquered all quests today! What a champion!"
       : ongoingCount > 0
       ? "You're on a roll! Keep going, champion!"
-      : `${totalCount - completedCount > 0 ? `${totalCount - completedCount} more adventures await! Let's do this!` : "Welcome to your Quest Board! Ready for an adventure?"}`;
+      : `${pendingCount > 0 ? `${pendingCount} more adventures await! Let's do this!` : "Welcome to your Quest Board! Ready for an adventure?"}`;
 
   return (
     <>
@@ -148,7 +127,7 @@ export function AdventuresContent() {
                 </div>
                 <div className="flex items-center gap-1.5 bg-white border-2 border-[#D8E3D1] rounded-full px-3 py-1.5 shadow-sm">
                   <MaterialIcon icon="pending" className="!text-sm text-[#CA8A04]" />
-                  <span className="text-sm font-semibold text-[#2F342C]">{totalCount - completedCount} Left</span>
+                  <span className="text-sm font-semibold text-[#2F342C]">{pendingCount} Left</span>
                 </div>
                 {ongoingCount > 0 && (
                   <div className="flex items-center gap-1.5 bg-white border-2 border-[#D8E3D1] rounded-full px-3 py-1.5 shadow-sm">
@@ -162,7 +141,14 @@ export function AdventuresContent() {
 
           {/* Quest Cards */}
           <div className="space-y-3">
-            {todayQuests.length === 0 ? (
+            {isQuestsLoading ? (
+              /* Loading state */
+              <div className="bg-[#FBF8F1] border-4 border-[#D8E3D1] rounded-3xl p-10 text-center shadow-md">
+                <p className="text-[#7C8E76] text-sm leading-relaxed">
+                  Loading quests...
+                </p>
+              </div>
+            ) : totalCount === 0 ? (
               /* Empty state */
               <div className="bg-[#FBF8F1] border-4 border-[#D8E3D1] rounded-3xl p-10 text-center shadow-md">
                 <MaterialIcon icon="explore" className="!text-5xl text-[#7C8E76] mx-auto mb-4" />
@@ -172,13 +158,14 @@ export function AdventuresContent() {
                 </p>
               </div>
             ) : (
-              todayQuests.map((quest) => {
-                const colors = CATEGORY_COLORS[quest.category] || CATEGORY_COLORS.learning;
-                const iconName = CATEGORY_ICONS[quest.category] || "star";
+              quests.map((quest) => {
+                // Map status to display category (default to learning)
+                const displayCategory = getCategoryFromStatus(quest.status);
+                const colors = CATEGORY_COLORS[displayCategory] || CATEGORY_COLORS.learning;
+                const iconName = CATEGORY_ICONS[displayCategory] || "star";
                 const isCompleted = quest.status === "completed";
                 const isOngoing = quest.status === "ongoing";
                 const isPending = quest.status === "pending";
-                const isExpired = quest.status === "failed";
 
                 return (
                   <article
@@ -188,7 +175,6 @@ export function AdventuresContent() {
                       shadow-sm transition-all duration-200
                       ${isCompleted ? "opacity-70" : ""}
                       ${isOngoing ? "border-[#0284C7] border-3 ring-2 ring-[#BAE6FD]" : ""}
-                      ${isExpired ? "opacity-40" : ""}
                       hover:shadow-md hover:border-[#B8C6B1]
                     `}
                   >
@@ -200,7 +186,7 @@ export function AdventuresContent() {
                         </div>
                         <div>
                           <span className="text-[10px] font-semibold uppercase tracking-wider opacity-70">
-                            {quest.category}
+                            {displayCategory}
                           </span>
                           <h3 className="font-bold text-base leading-tight capitalize" style={{ fontFamily: "inherit" }}>
                             {quest.title}
@@ -215,13 +201,11 @@ export function AdventuresContent() {
                           ${isCompleted ? "bg-white/50" : ""}
                           ${isOngoing ? "bg-white/50" : ""}
                           ${isPending ? "bg-white/50" : ""}
-                          ${isExpired ? "bg-white/50" : ""}
                         `}
                       >
                         {isCompleted && "Done"}
                         {isOngoing && "Active"}
                         {isPending && "Ready"}
-                        {isExpired && "Expired"}
                       </div>
                     </div>
 
@@ -229,7 +213,7 @@ export function AdventuresContent() {
                     <div className="p-4">
                       {/* Description */}
                       <p className="text-sm text-[#5B6550] leading-relaxed mb-4" style={{ lineHeight: "1.6" }}>
-                        {quest.description || `Complete this ${quest.category} quest to earn seeds!`}
+                        {quest.description || `Complete this quest to earn seeds!`}
                       </p>
 
                       {/* Reward + Timer */}
@@ -250,7 +234,7 @@ export function AdventuresContent() {
                             size="md"
                             fullWidth
                             icon="play_arrow"
-                            onClick={() => handleStartQuest(quest.id)}
+                            onClick={() => questActions.startQuest(quest.id)}
                           >
                             Start Quest
                           </ComicButton>
@@ -262,7 +246,7 @@ export function AdventuresContent() {
                               variant="success"
                               size="md"
                               icon="check"
-                              onClick={() => handleCompleteQuest(quest.id)}
+                              onClick={() => questActions.completeQuest(quest.id)}
                               className="flex-1"
                             >
                               Done!
@@ -271,7 +255,7 @@ export function AdventuresContent() {
                               variant="danger"
                               size="md"
                               icon="close"
-                              onClick={() => handleFailQuest(quest.id)}
+                              onClick={() => questActions.removeQuest(quest.id)}
                             >
                               Fail
                             </ComicButton>
@@ -279,21 +263,9 @@ export function AdventuresContent() {
                         )}
 
                         {isCompleted && (
-                          <ComicButton
-                            variant="gold"
-                            size="md"
-                            fullWidth
-                            icon="refresh"
-                            onClick={() => handleRedoQuest(quest.id)}
-                          >
-                            Do Again
-                          </ComicButton>
-                        )}
-
-                        {isExpired && (
-                          <div className="flex-1 text-center py-2">
-                            <span className="text-xs font-medium text-[#7C8E76] uppercase tracking-wide">
-                              Quest Expired
+                          <div className="flex-1 text-center py-2 bg-[#A7F3D0] rounded-lg">
+                            <span className="text-xs font-semibold text-[#047857]">
+                              ✓ Completed
                             </span>
                           </div>
                         )}

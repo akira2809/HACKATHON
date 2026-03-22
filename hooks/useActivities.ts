@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { homesteadApi, type ActivityRecord, type CreateActivityInput, type UpdateActivityInput } from '@/lib/homestead-api';
 import { createMissingParameterError, createQueryState, type QueryOptions, toErrorMessage } from './query-utils';
@@ -9,7 +9,7 @@ type ActivitiesQueryState = ReturnType<typeof createQueryState<ActivityRecord[]>
 type ActivitiesStore = {
     completeActivity: (familyId: string, activityId: string, input: UpdateActivityInput) => Promise<ActivityRecord | null>;
     createActivity: (input: CreateActivityInput) => Promise<ActivityRecord | null>;
-    fetchActivities: (familyId: string) => Promise<ActivityRecord[]>;
+    fetchActivities: (familyId: string, sessionVersion?: number) => Promise<ActivityRecord[]>;
     queries: Record<string, ActivitiesQueryState>;
 };
 
@@ -24,21 +24,20 @@ const useActivitiesStore = create<ActivitiesStore>((set) => ({
         }
 
         set((state) => {
-            const query = state.queries[familyId];
-
-            if (!query) {
-                return state;
-            }
-
-            return {
-                queries: {
-                    ...state.queries,
-                    [familyId]: {
+            // Update in ALL query versions for this familyId
+            const nextQueries: Record<string, ActivitiesQueryState> = {};
+            Object.entries(state.queries).forEach(([key, query]) => {
+                if (key.startsWith(familyId)) {
+                    nextQueries[key] = {
                         ...query,
                         data: query.data.map((item) => (item.id === activityId ? activity : item)),
-                    },
-                },
-            };
+                    };
+                } else {
+                    nextQueries[key] = query;
+                }
+            });
+
+            return { queries: nextQueries };
         });
 
         return activity;
@@ -51,33 +50,34 @@ const useActivitiesStore = create<ActivitiesStore>((set) => ({
         }
 
         set((state) => {
-            const query = state.queries[input.familyId];
-
-            if (!query) {
-                return state;
-            }
-
-            return {
-                queries: {
-                    ...state.queries,
-                    [input.familyId]: {
+            // Update in ALL query versions for this familyId
+            const nextQueries: Record<string, ActivitiesQueryState> = {};
+            Object.entries(state.queries).forEach(([key, query]) => {
+                if (key.startsWith(input.familyId)) {
+                    nextQueries[key] = {
                         ...query,
                         data: [...query.data, activity],
                         error: null,
                         isLoaded: true,
-                    },
-                },
-            };
+                    };
+                } else {
+                    nextQueries[key] = query;
+                }
+            });
+
+            return { queries: nextQueries };
         });
 
         return activity;
     },
-    fetchActivities: async (familyId) => {
+    fetchActivities: async (familyId, sessionVersion = 0) => {
+        const queryKey = `${familyId}:${sessionVersion}`;
+
         set((state) => ({
             queries: {
                 ...state.queries,
-                [familyId]: {
-                    ...(state.queries[familyId] ?? createQueryState(emptyActivities)),
+                [queryKey]: {
+                    ...(state.queries[queryKey] ?? createQueryState(emptyActivities)),
                     error: null,
                     isLoading: true,
                 },
@@ -90,7 +90,7 @@ const useActivitiesStore = create<ActivitiesStore>((set) => ({
             set((state) => ({
                 queries: {
                     ...state.queries,
-                    [familyId]: {
+                    [queryKey]: {
                         data: activities,
                         error: null,
                         isLoaded: true,
@@ -106,8 +106,8 @@ const useActivitiesStore = create<ActivitiesStore>((set) => ({
             set((state) => ({
                 queries: {
                     ...state.queries,
-                    [familyId]: {
-                        ...(state.queries[familyId] ?? createQueryState(emptyActivities)),
+                    [queryKey]: {
+                        ...(state.queries[queryKey] ?? createQueryState(emptyActivities)),
                         error: message,
                         isLoaded: true,
                         isLoading: false,
@@ -122,20 +122,33 @@ const useActivitiesStore = create<ActivitiesStore>((set) => ({
 }));
 
 export function useActivities(familyId?: string, options: QueryOptions = {}) {
+    const { sessionVersion = 0 } = options as QueryOptions & { sessionVersion?: number };
     const enabled = options.enabled ?? true;
-    const query = useActivitiesStore((state) => (familyId ? state.queries[familyId] : undefined));
+    const queryKey = familyId ? `${familyId}:${sessionVersion}` : '';
+    const query = useActivitiesStore((state) => (queryKey ? state.queries[queryKey] : undefined));
     const fetchActivities = useActivitiesStore((state) => state.fetchActivities);
     const createActivity = useActivitiesStore((state) => state.createActivity);
     const completeActivity = useActivitiesStore((state) => state.completeActivity);
     const resolvedQuery = query ?? createQueryState(emptyActivities);
 
+    // Track previous session version to detect changes
+    const prevSessionVersionRef = useRef(sessionVersion);
+
     useEffect(() => {
-        if (!enabled || !familyId || resolvedQuery.isLoaded || resolvedQuery.isLoading) {
+        if (!enabled || !familyId) {
             return;
         }
 
-        void fetchActivities(familyId);
-    }, [enabled, familyId, fetchActivities, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
+        // Re-fetch when session version changes
+        const sessionChanged = prevSessionVersionRef.current !== sessionVersion;
+        prevSessionVersionRef.current = sessionVersion;
+
+        if (sessionChanged || !resolvedQuery.isLoaded) {
+            if (!resolvedQuery.isLoading) {
+                void fetchActivities(familyId, sessionVersion);
+            }
+        }
+    }, [enabled, familyId, sessionVersion, fetchActivities, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
 
     return {
         activities: resolvedQuery.data,
@@ -155,7 +168,7 @@ export function useActivities(familyId?: string, options: QueryOptions = {}) {
                 return Promise.reject(createMissingParameterError('familyId'));
             }
 
-            return fetchActivities(familyId);
+            return fetchActivities(familyId, sessionVersion);
         },
     };
 }

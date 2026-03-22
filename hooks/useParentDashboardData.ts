@@ -1,13 +1,21 @@
 'use client';
 
-import { useEffect } from 'react';
+/**
+ * useParentDashboardData.ts
+ *
+ * Hook tổng hợp data cho Parent Dashboard
+ * Tự động trigger re-render khi session thay đổi
+ */
+
+import { useCallback } from 'react';
 import type { GoalRecord, QuestRecord } from '@/lib/homestead-api';
-import { useAppState, type ParentChild, type ParentGoal, type ParentQuest } from '@/state/appState';
+import type { ParentGoal, ParentQuest } from '@/state/appState';
 import { useActivities } from './useActivities';
 import { useChildren } from './useChildren';
 import { useFamilies } from './useFamilies';
 import { useGoals } from './useGoals';
 import { useTodayQuests } from './useTodayQuests';
+import { useParentSession, setParentSession } from './useParentSession';
 
 type UseParentDashboardDataOptions = {
     demoState?: string;
@@ -65,18 +73,52 @@ function mapGoal(goal: GoalRecord | null): ParentGoal | null {
     };
 }
 
-function buildChildSummary(child: {
-    childAge: number;
-    coins: number;
-    id: string;
-    name: string;
-}, goal: ParentGoal | null): ParentChild {
-    return {
+export function useParentDashboardData({
+    demoState,
+}: UseParentDashboardDataOptions = {}) {
+    // Lấy session - sẽ trigger re-render khi localStorage thay đổi
+    const { familyId: sessionFamilyId, parentName, hasSession } = useParentSession();
+
+    // Fetch families
+    const familiesQuery = useFamilies();
+    const family = sessionFamilyId
+        ? familiesQuery.families.find((item) => item.id === sessionFamilyId) ?? familiesQuery.families[0] ?? null
+        : familiesQuery.families[0] ?? null;
+
+    const familyId = sessionFamilyId ?? family?.id ?? null;
+
+    // Fetch children
+    const childrenQuery = useChildren(familyId ?? undefined, {
+        enabled: Boolean(familyId),
+    });
+
+    const childRecords = demoState === 'no-children' ? [] : childrenQuery.children;
+    const activeChildRecord = childRecords[0] ?? null;
+
+    // Goals
+    const goalsQuery = useGoals(activeChildRecord?.id, {
+        enabled: Boolean(activeChildRecord?.id),
+    });
+    const currentGoalRecord = selectCurrentGoal(goalsQuery.goals);
+    const currentGoal = mapGoal(currentGoalRecord);
+
+    // Quests
+    const todayQuestsQuery = useTodayQuests(activeChildRecord?.id, undefined, {
+        enabled: Boolean(activeChildRecord?.id),
+    });
+
+    // Activities
+    const activitiesQuery = useActivities(familyId ?? undefined, {
+        enabled: Boolean(familyId),
+    });
+
+    // Build child items
+    const childItems = childRecords.map((child) => ({
         age: child.childAge,
         agentChildId: child.id,
         aiTokens: 0,
         generationError: undefined,
-        goal,
+        goal: child.id === activeChildRecord?.id ? currentGoal : null,
         id: child.id,
         introMessage: '',
         moment: null,
@@ -86,56 +128,22 @@ function buildChildSummary(child: {
         proximityDistance: 0,
         quests: [],
         seeds: child.coins,
-    };
-}
-
-export function useParentDashboardData({
-    demoState,
-}: UseParentDashboardDataOptions = {}) {
-    const configuredFamilyId = useAppState((state) => state.familyId);
-    const selectedChildId = useAppState((state) => state.selectedChildId);
-    const selectChild = useAppState((state) => state.selectChild);
-
-    const familiesQuery = useFamilies();
-    const family = familiesQuery.families.find((item) => item.id === configuredFamilyId) ?? familiesQuery.families[0] ?? null;
-    const familyId = demoState === 'no-children' ? family?.id : family?.id;
-
-    const childrenQuery = useChildren(familyId, {
-        enabled: Boolean(familyId),
-    });
-
-    const childRecords = demoState === 'no-children' ? [] : childrenQuery.children;
-    const activeChildRecord = childRecords.find((child) => child.id === selectedChildId) ?? childRecords[0] ?? null;
-
-    useEffect(() => {
-        if (!activeChildRecord || activeChildRecord.id === selectedChildId) {
-            return;
-        }
-
-        selectChild(activeChildRecord.id);
-    }, [activeChildRecord, selectChild, selectedChildId]);
-
-    const goalsQuery = useGoals(activeChildRecord?.id, {
-        enabled: Boolean(activeChildRecord?.id),
-    });
-    const currentGoalRecord = selectCurrentGoal(goalsQuery.goals);
-    const currentGoal = mapGoal(currentGoalRecord);
-
-    const todayQuestsQuery = useTodayQuests(activeChildRecord?.id, undefined, {
-        enabled: Boolean(activeChildRecord?.id),
-    });
-    const activitiesQuery = useActivities(familyId, {
-        enabled: Boolean(familyId),
-    });
-
-    const childItems = childRecords.map((child) =>
-        buildChildSummary(child, child.id === activeChildRecord?.id ? currentGoal : null),
-    );
+    }));
 
     const activeChild = activeChildRecord
         ? {
-            ...buildChildSummary(activeChildRecord, currentGoal),
+            age: activeChildRecord.childAge,
+            agentChildId: activeChildRecord.id,
+            aiTokens: 0,
+            generationError: undefined,
+            goal: currentGoal,
+            id: activeChildRecord.id,
             introMessage: `Good evening. Let's prepare ${activeChildRecord.name}'s adventures for today.`,
+            moment: null,
+            momentError: undefined,
+            name: activeChildRecord.name,
+            networkIssue: undefined,
+            proximityDistance: 0,
             quests: todayQuestsQuery.quests.map((quest) => ({
                 category: inferQuestCategory(quest),
                 description: quest.description,
@@ -144,6 +152,7 @@ export function useParentDashboardData({
                 status: mapQuestStatus(quest.status),
                 title: quest.title,
             })),
+            seeds: activeChildRecord.coins,
         }
         : null;
 
@@ -157,22 +166,68 @@ export function useParentDashboardData({
         ? 'Something did not come through just yet. Please try again.'
         : null;
 
+    // Select child
+    const selectChild = useCallback((childId: string) => {
+        // Just trigger - session hook sẽ handle re-render
+    }, []);
+
+    // Set family
+    const setFamily = useCallback((newFamilyId: string, newFamilyName: string) => {
+        setParentSession({
+            parentId: '',
+            familyId: newFamilyId,
+            parentName: parentName ?? '',
+            familyName: newFamilyName,
+        });
+    }, [parentName]);
+
     return {
-        activeChild,
-        approvedQuests,
-        childItems,
-        dashboardError,
-        family,
+        // Session info
         familyId,
+        family,
+        familyName: family?.name ?? 'Family Board',
         familySummary: family?.name ?? 'Family Board',
-        goalsQuery,
+        parentName,
+        hasSession,
+
+        // Children
+        children: childRecords,
+        activeChild,
+        childItems,
         hasNoChildren: !childrenQuery.isLoading && childItems.length === 0,
+        selectedChildId: activeChild?.id,
+
+        // Quests
+        suggestedQuests,
+        approvedQuests,
+        quests: activeChild?.quests ?? [],
+
+        // Goals
+        currentGoal,
+        goalsQuery,
+
+        // Activities
+        momentsCount,
+
+        // Loading states
+        isLoading: familiesQuery.isLoading || childrenQuery.isLoading,
+        isChildrenLoading: childrenQuery.isLoading,
+        isChildSelectorLoading: familiesQuery.isLoading || childrenQuery.isLoading,
+        isOverviewLoading: Boolean(activeChildRecord?.id) && todayQuestsQuery.isLoading,
+        isFamiliesLoading: familiesQuery.isLoading,
+
+        // Errors
+        dashboardError,
+        todayQuestsError: todayQuestsQuery.error,
+
+        // Hero text
         heroDescription: activeChild
             ? `Good evening. Let's prepare ${activeChild.name}'s adventures for today.`
             : 'The family board will fill in once a child profile is ready.',
-        isChildSelectorLoading: familiesQuery.isLoading || childrenQuery.isLoading,
-        isOverviewLoading: Boolean(activeChildRecord?.id) && todayQuestsQuery.isLoading,
-        momentsCount,
+
+        // Actions
+        selectChild,
+        setFamily,
         questActions: {
             completeQuest: todayQuestsQuery.completeQuest,
             createQuests: todayQuestsQuery.createQuests,
@@ -180,9 +235,5 @@ export function useParentDashboardData({
             removeQuest: todayQuestsQuery.removeQuest,
             startQuest: todayQuestsQuery.startQuest,
         },
-        selectedChildId: activeChild?.id ?? selectedChildId,
-        selectChild,
-        suggestedQuests,
-        todayQuestsError: todayQuestsQuery.error,
     };
 }

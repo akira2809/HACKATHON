@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { homesteadApi, type CreateQuestInput, type QuestRecord } from '@/lib/homestead-api';
 import { createMissingParameterError, createQueryState, getTodayDateString, type QueryOptions, toErrorMessage } from './query-utils';
@@ -9,7 +9,7 @@ type TodayQuestsQueryState = ReturnType<typeof createQueryState<QuestRecord[]>>;
 type TodayQuestsStore = {
     completeQuest: (questId: string) => Promise<QuestRecord | null>;
     createQuests: (input: CreateQuestInput[]) => Promise<QuestRecord[]>;
-    fetchTodayQuests: (childId: string, assignedDate?: string) => Promise<QuestRecord[]>;
+    fetchTodayQuests: (childId: string, assignedDate?: string, sessionVersion?: number) => Promise<QuestRecord[]>;
     queries: Record<string, TodayQuestsQueryState>;
     removeQuest: (questId: string) => Promise<void>;
     startQuest: (questId: string) => Promise<QuestRecord | null>;
@@ -17,8 +17,8 @@ type TodayQuestsStore = {
 
 const emptyQuests: QuestRecord[] = [];
 
-function getQueryKey(childId: string, assignedDate: string) {
-    return `${childId}:${assignedDate}`;
+function getQueryKey(childId: string, assignedDate: string, sessionVersion: number) {
+    return `${childId}:${assignedDate}:${sessionVersion}`;
 }
 
 function updateQuestAcrossQueries(
@@ -65,19 +65,17 @@ const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
             const nextQueries = { ...state.queries };
 
             quests.forEach((quest) => {
-                const queryKey = getQueryKey(quest.childId, quest.assignedDate);
-                const query = nextQueries[queryKey];
-
-                if (!query) {
-                    return;
-                }
-
-                nextQueries[queryKey] = {
-                    ...query,
-                    data: [...query.data, quest],
-                    error: null,
-                    isLoaded: true,
-                };
+                // Update ALL query versions for this childId
+                Object.keys(nextQueries).forEach((key) => {
+                    if (key.startsWith(quest.childId)) {
+                        nextQueries[key] = {
+                            ...nextQueries[key],
+                            data: [...nextQueries[key].data, quest],
+                            error: null,
+                            isLoaded: true,
+                        };
+                    }
+                });
             });
 
             return { queries: nextQueries };
@@ -85,8 +83,8 @@ const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
 
         return quests;
     },
-    fetchTodayQuests: async (childId, assignedDate = getTodayDateString()) => {
-        const queryKey = getQueryKey(childId, assignedDate);
+    fetchTodayQuests: async (childId, assignedDate = getTodayDateString(), sessionVersion = 0) => {
+        const queryKey = getQueryKey(childId, assignedDate, sessionVersion);
 
         set((state) => ({
             queries: {
@@ -157,8 +155,9 @@ const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
 }));
 
 export function useTodayQuests(childId?: string, assignedDate = getTodayDateString(), options: QueryOptions = {}) {
+    const { sessionVersion = 0 } = options as QueryOptions & { sessionVersion?: number };
     const enabled = options.enabled ?? true;
-    const queryKey = childId ? getQueryKey(childId, assignedDate) : '';
+    const queryKey = childId ? getQueryKey(childId, assignedDate, sessionVersion) : '';
     const query = useTodayQuestsStore((state) => state.queries[queryKey]);
     const fetchTodayQuests = useTodayQuestsStore((state) => state.fetchTodayQuests);
     const createQuests = useTodayQuestsStore((state) => state.createQuests);
@@ -167,13 +166,24 @@ export function useTodayQuests(childId?: string, assignedDate = getTodayDateStri
     const removeQuest = useTodayQuestsStore((state) => state.removeQuest);
     const resolvedQuery = query ?? createQueryState(emptyQuests);
 
+    // Track previous session version
+    const prevSessionVersionRef = useRef(sessionVersion);
+
     useEffect(() => {
-        if (!enabled || !childId || resolvedQuery.isLoaded || resolvedQuery.isLoading) {
+        if (!enabled || !childId) {
             return;
         }
 
-        void fetchTodayQuests(childId, assignedDate);
-    }, [assignedDate, childId, enabled, fetchTodayQuests, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
+        // Re-fetch when session version changes
+        const sessionChanged = prevSessionVersionRef.current !== sessionVersion;
+        prevSessionVersionRef.current = sessionVersion;
+
+        if (sessionChanged || !resolvedQuery.isLoaded) {
+            if (!resolvedQuery.isLoading) {
+                void fetchTodayQuests(childId, assignedDate, sessionVersion);
+            }
+        }
+    }, [assignedDate, childId, enabled, fetchTodayQuests, sessionVersion, resolvedQuery.isLoaded, resolvedQuery.isLoading]);
 
     return {
         completeQuest,
@@ -187,7 +197,7 @@ export function useTodayQuests(childId?: string, assignedDate = getTodayDateStri
                 return Promise.reject(createMissingParameterError('childId'));
             }
 
-            return fetchTodayQuests(childId, assignedDate);
+            return fetchTodayQuests(childId, assignedDate, sessionVersion);
         },
         removeQuest,
         startQuest,

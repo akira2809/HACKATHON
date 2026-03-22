@@ -3,11 +3,13 @@
 // ============================================================
 // BottomNav — Fixed bottom navigation bar
 // Auto-detects active tab from current pathname (next-intl)
+// Shows current child avatar when logged in
 // ============================================================
 
 import Link from "next/link";
 import { usePathname } from "@/i18n/routing";
 import { MaterialIcon } from "./TopNav";
+import { useChildDashboardData } from "@/hooks/useChildDashboardData";
 
 type NavTab = {
   label: string;
@@ -85,6 +87,7 @@ function getActiveTabLabel(pathname: string, tabs: NavTab[]): string {
 
 export function BottomNav({ variant }: BottomNavProps) {
   const pathname = usePathname();
+  const { childName, isChildrenLoading } = useChildDashboardData();
 
   const activeRole = variant ?? "child";
   const tabs = activeRole === "parent" ? PARENT_TABS : CHILD_TABS;
@@ -120,12 +123,25 @@ export function BottomNav({ variant }: BottomNavProps) {
               }
             `}
           >
-            <MaterialIcon
-              icon={tab.icon}
-              filled={isActive}
-              className="!text-2xl"
-            />
-            <span className="text-[10px] font-bold uppercase tracking-wider">
+            {/* Show child avatar on active home tab */}
+            {isActive && tab.href === "/" && childName && !isChildrenLoading ? (
+              <div className="relative">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
+                  <span className="text-[#0284C8] text-sm font-black">
+                    {childName[0].toUpperCase()}
+                  </span>
+                </div>
+                {/* Online indicator */}
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
+              </div>
+            ) : (
+              <MaterialIcon
+                icon={tab.icon}
+                filled={isActive}
+                className="!text-2xl"
+              />
+            )}
+            <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5">
               {tab.label}
             </span>
           </Link>
