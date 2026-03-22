@@ -23,6 +23,22 @@ const useActivitiesStore = create<ActivitiesStore>((set) => ({
             return null;
         }
 
+        // If the activity has a reward and childId, update the child's coins
+        const { childId } = activity;
+        const reward = (input as any).reward || 0;
+        if (childId && reward) {
+            try {
+                const child = await homesteadApi.children.getById(childId);
+                if (child && typeof child.coins === 'number') {
+                    const newCoins = child.coins + reward;
+                    await homesteadApi.children.update(childId, { coins: newCoins });
+                }
+            } catch (error) {
+                // Log but don't fail if coin update fails
+                console.error('Failed to update child coins:', error);
+            }
+        }
+
         set((state) => {
             // Update in ALL query versions for this familyId
             const nextQueries: Record<string, ActivitiesQueryState> = {};

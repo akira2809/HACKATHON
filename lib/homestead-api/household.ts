@@ -37,6 +37,7 @@ export const parentsApi = {
 
 export const childrenApi = {
     create: (input: CreateChildInput) => supabaseInsertOne<ChildRecord>('children', input),
+    getById: (childId: string) => supabaseSingleStrict<ChildRecord>('children', { id: eq(childId) }),
     listByFamily: (familyId: string) => supabaseList<ChildRecord>('children', { familyId: eq(familyId) }),
     remove: (childId: string) => supabaseRemove('children', { id: eq(childId) }),
     update: (childId: string, input: UpdateChildInput) =>

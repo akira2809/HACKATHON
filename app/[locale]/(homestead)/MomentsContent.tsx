@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
 // ============================================================
 // MomentsContent — Family Moments
 // Uses: useChildDashboardData (API) + AI Moments Generation
 // ============================================================
 
-import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { ComicCard, ComicButton, MascotSection } from '@/components/homestead';
-import { CreateMomentModal, type CreateMomentData } from '@/components/homestead/CreateMomentModal';
-import { useChildDashboardData } from '@/hooks/useChildDashboardData';
-import { generateMomentsWithAgent, type GeneratedActivityItem } from '@/lib/agent';
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { ComicCard, ComicButton, MascotSection } from "@/components/homestead";
+import {
+  CreateMomentModal,
+  type CreateMomentData,
+} from "@/components/homestead/CreateMomentModal";
+import { useChildDashboardData } from "@/hooks/useChildDashboardData";
+import {
+  generateMomentsWithAgent,
+  type GeneratedActivityItem,
+} from "@/lib/agent";
 
 export function MomentsContent() {
   const router = useRouter();
@@ -38,7 +44,7 @@ export function MomentsContent() {
   // Generate AI moments
   const generateAiMoments = useCallback(async () => {
     if (!familyId || !childId) {
-      setAiError('Missing family or child information');
+      setAiError("Missing family or child information");
       return;
     }
 
@@ -58,33 +64,40 @@ export function MomentsContent() {
       setAiMoments(moments);
       setShowAiMoments(true);
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : 'Failed to generate moments');
+      setAiError(
+        err instanceof Error ? err.message : "Failed to generate moments",
+      );
     } finally {
       setIsGeneratingAi(false);
     }
   }, [familyId, childId]);
 
   // Select AI moment to create
-  const selectAiMoment = useCallback(async (moment: GeneratedActivityItem) => {
-    if (!familyId || !childId) return;
+  const selectAiMoment = useCallback(
+    async (moment: GeneratedActivityItem) => {
+      if (!familyId || !childId) return;
 
-    try {
-      await activityActions.createActivity({
-        activity: moment.title,
-        locationName: moment.location || 'Home',
-        mapsLink: '',
-        familyId,
-        childId,
-      });
+      try {
+        await activityActions.createActivity({
+          activity: moment.title,
+          locationName: moment.location || "Home",
+          mapsLink: "",
+          familyId,
+          childId,
+        });
 
-      await refetchActivities();
-      setAiMoments([]);
-      setShowAiMoments(false);
-      setIsModalOpen(false);
-    } catch (err) {
-      setAiError(err instanceof Error ? err.message : 'Failed to create moment');
-    }
-  }, [familyId, childId, activityActions, refetchActivities]);
+        await refetchActivities();
+        setAiMoments([]);
+        setShowAiMoments(false);
+        setIsModalOpen(false);
+      } catch (err) {
+        setAiError(
+          err instanceof Error ? err.message : "Failed to create moment",
+        );
+      }
+    },
+    [familyId, childId, activityActions, refetchActivities],
+  );
 
   // Close AI moments panel
   const closeAiMoments = useCallback(() => {
@@ -137,13 +150,13 @@ export function MomentsContent() {
           {/* Hero Banner */}
           <div
             className="bg-[#38BDF8] border-4 border-[#1C1917] p-8 shadow-[8px_8px_0px_#1C1917] relative overflow-hidden mb-8"
-            style={{ transform: 'skewX(-2deg)' }}
+            style={{ transform: "skewX(-2deg)" }}
           >
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)',
-                backgroundSize: '8px 8px',
+                backgroundImage: "radial-gradient(#fff 1px, transparent 1px)",
+                backgroundSize: "8px 8px",
                 opacity: 0.2,
               }}
             />
@@ -170,7 +183,7 @@ export function MomentsContent() {
                   onClick={generateAiMoments}
                   disabled={isGeneratingAi}
                 >
-                  {isGeneratingAi ? 'GENERATING...' : 'AI SUGGEST! ✨'}
+                  {isGeneratingAi ? "GENERATING..." : "AI SUGGEST! ✨"}
                 </ComicButton>
               </div>
             </div>
@@ -196,10 +209,8 @@ export function MomentsContent() {
   return (
     <>
       <main className="max-w-4xl mx-auto px-6 pt-24 pb-28">
-
         {/* ── Hero Section ─────────────────────────────── */}
         <div className="relative mb-12">
-
           {/* Mascot peeking top-right */}
           <div className="absolute -top-8 -right-4 z-20 w-32 h-32 hover:scale-110 transition-transform cursor-pointer">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -212,7 +223,7 @@ export function MomentsContent() {
             />
             <div
               className="absolute -left-36 top-0 bg-white border-4 border-[#1C1917] p-3 shadow-[4px_4px_0px_#1C1917] rounded-xl w-40 text-sm font-black leading-tight"
-              style={{ transform: 'skewX(-2deg)' }}
+              style={{ transform: "skewX(-2deg)" }}
             >
               Homestead connection — SOLID! 💪
             </div>
@@ -221,13 +232,13 @@ export function MomentsContent() {
           {/* Hero Banner */}
           <div
             className="bg-[#38BDF8] border-4 border-[#1C1917] p-8 shadow-[8px_8px_0px_#1C1917] relative overflow-hidden"
-            style={{ transform: 'skewX(-2deg)' }}
+            style={{ transform: "skewX(-2deg)" }}
           >
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)',
-                backgroundSize: '8px 8px',
+                backgroundImage: "radial-gradient(#fff 1px, transparent 1px)",
+                backgroundSize: "8px 8px",
                 opacity: 0.2,
               }}
             />
@@ -254,7 +265,7 @@ export function MomentsContent() {
                   onClick={generateAiMoments}
                   disabled={isGeneratingAi}
                 >
-                  {isGeneratingAi ? 'GENERATING...' : 'AI SUGGEST! ✨'}
+                  {isGeneratingAi ? "GENERATING..." : "AI SUGGEST! ✨"}
                 </ComicButton>
               </div>
             </div>
@@ -276,20 +287,23 @@ export function MomentsContent() {
 
         {/* ── Bento Layout ─────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
-
           {/* Active Moment Card (8 cols) */}
           <div
             className="md:col-span-8 bg-white border-4 border-[#1C1917] p-8 shadow-[8px_8px_0px_#1C1917]"
-            style={{ transform: 'skewX(-2deg)' }}
+            style={{ transform: "skewX(-2deg)" }}
           >
             <div>
               {/* Header */}
               <div className="flex justify-between items-start mb-6">
-                <span className={`font-black text-xs uppercase px-4 py-1 border-2 border-[#1C1917] ${latestActivity.completed ? 'bg-green-400' : 'bg-[#FACC15]'}`}>
-                  {latestActivity.locationName || 'Family Activity'}
+                <span
+                  className={`font-black text-xs uppercase px-4 py-1 border-2 border-[#1C1917] ${latestActivity.completed ? "bg-green-400" : "bg-[#FACC15]"}`}
+                >
+                  {latestActivity.locationName || "Family Activity"}
                 </span>
-                <span className={`font-black text-2xl px-3 py-1 ${latestActivity.completed ? 'bg-[#34D399]' : 'bg-[#1C1917]'}`}>
-                  {latestActivity.completed ? '✓' : '⏳'}
+                <span
+                  className={`font-black text-2xl px-3 py-1 ${latestActivity.completed ? "bg-[#34D399]" : "bg-[#1C1917]"}`}
+                >
+                  {latestActivity.completed ? "✓" : "⏳"}
                 </span>
               </div>
 
@@ -299,11 +313,16 @@ export function MomentsContent() {
               </h2>
               <p className="font-medium text-lg text-stone-600 mb-6 leading-relaxed">
                 {latestActivity.mapsLink ? (
-                  <a href={latestActivity.mapsLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  <a
+                    href={latestActivity.mapsLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
                     View location: {latestActivity.locationName}
                   </a>
                 ) : (
-                  'No location set yet.'
+                  "No location set yet."
                 )}
               </p>
 
@@ -312,12 +331,13 @@ export function MomentsContent() {
                 <div className="flex -space-x-3">
                   <div className="w-12 h-12 rounded-full border-2 border-[#1C1917] bg-[#38BDF8] overflow-hidden shadow-[2px_2px_0px_#1C1917]">
                     <div className="w-full h-full bg-gradient-to-br from-blue-200 to-blue-300 flex items-center justify-center text-white text-xs font-black">
-                      {childName?.[0]?.toUpperCase() || 'C'}
+                      {childName?.[0]?.toUpperCase() || "C"}
                     </div>
                   </div>
                 </div>
                 <span className="font-black text-xs uppercase tracking-widest text-[#1C1917]">
-                  {childName || 'Child'} · Activity {latestActivity.completed ? 'Completed' : 'In Progress'}
+                  {childName || "Child"} · Activity{" "}
+                  {latestActivity.completed ? "Completed" : "In Progress"}
                 </span>
               </div>
 
@@ -325,7 +345,9 @@ export function MomentsContent() {
               <div className="flex gap-3 mt-4">
                 {latestActivity.completed ? (
                   <div className="flex-1 bg-green-100 border-4 border-green-400 rounded-xl p-4 text-center">
-                    <span className="font-black text-green-600">✓ Completed!</span>
+                    <span className="font-black text-green-600">
+                      ✓ Completed!
+                    </span>
                   </div>
                 ) : (
                   <>
@@ -342,7 +364,7 @@ export function MomentsContent() {
                       variant="danger"
                       size="lg"
                       icon="play_arrow"
-                      onClick={() => router.push('/moments/proximity')}
+                      onClick={() => router.push("/moments/proximity")}
                     >
                       CHECK IN!
                     </ComicButton>
@@ -354,28 +376,46 @@ export function MomentsContent() {
 
           {/* Stats Sidebar (4 cols) */}
           <div className="md:col-span-4 space-y-6">
-
             {/* Activity Stats */}
-            <ComicCard shadow="none" padding="md" style={{ transform: 'skewX(-2deg)' }}>
-              <h3 className="font-black uppercase mb-4 text-[#1C1917] text-base">Activity Stats</h3>
+            <ComicCard
+              shadow="none"
+              padding="md"
+              style={{ transform: "skewX(-2deg)" }}
+            >
+              <h3 className="font-black uppercase mb-4 text-[#1C1917] text-base">
+                Activity Stats
+              </h3>
               <div className="h-8 bg-stone-100 border-4 border-[#1C1917] relative overflow-hidden rounded-full">
                 <div
                   className="h-full bg-[#38BDF8] transition-all duration-500"
-                  style={{ width: `${totalActivities > 0 ? (completedActivities / totalActivities) * 100 : 0}%` }}
+                  style={{
+                    width: `${totalActivities > 0 ? (completedActivities / totalActivities) * 100 : 0}%`,
+                  }}
                 />
               </div>
               <div className="mt-2 flex justify-between font-black text-sm text-[#1C1917]">
                 <span>Activities</span>
-                <span>{completedActivities}/{totalActivities}</span>
+                <span>
+                  {completedActivities}/{totalActivities}
+                </span>
               </div>
             </ComicCard>
 
             {/* Seeds Card */}
-            <ComicCard bg="yellow" shadow="gold" padding="md" style={{ transform: 'skewX(-2deg)' }}>
-              <h3 className="font-black uppercase mb-4 text-[#1C1917] text-base">Seeds</h3>
+            <ComicCard
+              bg="yellow"
+              shadow="gold"
+              padding="md"
+              style={{ transform: "skewX(-2deg)" }}
+            >
+              <h3 className="font-black uppercase mb-4 text-[#1C1917] text-base">
+                Seeds
+              </h3>
               <div className="flex items-center gap-2">
                 <span className="text-3xl">🌱</span>
-                <span className="text-4xl font-black text-[#1C1917]">{seeds}</span>
+                <span className="text-4xl font-black text-[#1C1917]">
+                  {seeds}
+                </span>
               </div>
             </ComicCard>
           </div>
@@ -392,12 +432,18 @@ export function MomentsContent() {
                 <div
                   key={activity.id}
                   className="border-4 border-[#1C1917] p-4 bg-white shadow-[4px_4px_0px_#1C1917]"
-                  style={{ transform: 'skewX(-2deg)' }}
+                  style={{ transform: "skewX(-2deg)" }}
                 >
-                  <span className="font-black text-sm uppercase">{activity.locationName || 'Activity'}</span>
-                  <p className="text-xs text-stone-500 mt-1">{activity.activity}</p>
-                  <span className={`inline-block mt-2 text-xs font-bold px-2 py-1 rounded ${activity.completed ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                    {activity.completed ? '✓ Done' : '⏳ Pending'}
+                  <span className="font-black text-sm uppercase">
+                    {activity.locationName || "Activity"}
+                  </span>
+                  <p className="text-xs text-stone-500 mt-1">
+                    {activity.activity}
+                  </p>
+                  <span
+                    className={`inline-block mt-2 text-xs font-bold px-2 py-1 rounded ${activity.completed ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
+                  >
+                    {activity.completed ? "✓ Done" : "⏳ Pending"}
                   </span>
                 </div>
               ))}
@@ -409,7 +455,10 @@ export function MomentsContent() {
       {/* ── AI Moments Suggestions Panel ─────────────────── */}
       {showAiMoments && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={closeAiMoments} />
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={closeAiMoments}
+          />
 
           <div className="relative bg-white border-4 border-[#1C1917] rounded-3xl shadow-[8px_8px_0px_#1C1917] w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
             {/* Header */}
@@ -453,10 +502,12 @@ export function MomentsContent() {
                           {moment.title}
                         </span>
                         <span className="bg-[#FACC15] border-2 border-[#1C1917] px-2 py-1 rounded-lg text-xs font-black">
-                          {moment.duration || '15 min'}
+                          {moment.duration || "15 min"}
                         </span>
                       </div>
-                      <p className="text-sm text-stone-600 mb-3">{moment.description}</p>
+                      <p className="text-sm text-stone-600 mb-3">
+                        {moment.description}
+                      </p>
                       <div className="flex flex-wrap gap-2 items-center">
                         {moment.location && (
                           <span className="bg-blue-100 border-2 border-blue-300 px-2 py-1 rounded-lg text-xs font-bold">
@@ -465,7 +516,7 @@ export function MomentsContent() {
                         )}
                         {moment.supplies && moment.supplies.length > 0 && (
                           <span className="bg-green-100 border-2 border-green-300 px-2 py-1 rounded-lg text-xs font-bold">
-                            🎒 {moment.supplies.slice(0, 2).join(', ')}
+                            🎒 {moment.supplies.slice(0, 2).join(", ")}
                           </span>
                         )}
                         <span className="bg-yellow-100 border-2 border-yellow-300 px-2 py-1 rounded-lg text-xs font-bold ml-auto">
@@ -477,7 +528,9 @@ export function MomentsContent() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-stone-500 font-medium">No moments generated yet.</p>
+                  <p className="text-stone-500 font-medium">
+                    No moments generated yet.
+                  </p>
                 </div>
               )}
             </div>

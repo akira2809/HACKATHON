@@ -46,10 +46,24 @@ function updateQuestAcrossQueries(
 
 const useTodayQuestsStore = create<TodayQuestsStore>((set) => ({
     completeQuest: async (questId) => {
+        // Complete the quest
         const quest = await homesteadApi.quests.complete(questId);
-
         if (!quest) {
             return null;
+        }
+
+        // Update the child's coins
+        const { childId, reward } = quest;
+        try {
+            // Fetch the child record by ID
+            const child = await homesteadApi.children.getById(childId);
+            if (child && typeof child.coins === 'number') {
+                const newCoins = child.coins + (reward || 0);
+                await homesteadApi.children.update(childId, { coins: newCoins });
+            }
+        } catch (error) {
+            // Log but don't fail if coin update fails
+            console.error('Failed to update child coins:', error);
         }
 
         set((state) => ({
