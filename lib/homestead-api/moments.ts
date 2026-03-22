@@ -24,7 +24,10 @@ export const activitiesApi = {
         supabaseUpdateOne<ActivityRecord>('activities', input, { id: eq(activityId) }),
     create: (input: CreateActivityInput) => supabaseInsertOne<ActivityRecord>('activities', input),
     listByFamily: (familyId: string) =>
-        supabaseList<ActivityRecord>('activities', { familyId: eq(familyId) }),
+        supabaseList<ActivityRecord>('activities', {
+            familyId: eq(familyId),
+            order: 'id.desc',
+        }),
 };
 
 export const advisorMessagesApi = {
