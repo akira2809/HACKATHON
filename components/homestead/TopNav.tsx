@@ -7,11 +7,12 @@
 // Child: Shows current child + seeds
 // ============================================================
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useChildDashboardData } from '@/hooks/useChildDashboardData';
 import { useParentDashboardData } from '@/hooks/useParentDashboardData';
 import { setChildSession } from '@/hooks/useChildSession';
-import { setParentSession } from '@/hooks/useParentSession';
+import { setParentSession, clearParentSession } from '@/hooks/useParentSession';
 
 interface ChildInfo {
     id: string;
@@ -38,6 +39,7 @@ export function TopNav({
   rightIcons,
   onModeChange,
 }: TopNavProps) {
+  const router = useRouter();
   const [isParentMode, setIsParentMode] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -57,15 +59,37 @@ export function TopNav({
   const familyName = parentData.familyName;
   const isLoading = (isParentMode ? parentData.isChildrenLoading : childData.isChildrenLoading) || parentData.isFamiliesLoading;
 
-  // Handle mode switch
-  const handleModeSwitch = (newMode: 'parent' | 'child') => {
+  // Handle mode switch with routing and refetch
+  const handleModeSwitch = useCallback(async (newMode: 'parent' | 'child') => {
     const shouldBeParent = newMode === 'parent';
+    
+    if (shouldBeParent) {
+      // Switching to parent mode
+      if (parentData.family) {
+        setParentSession({
+          parentId: 'demo-parent',
+          familyId: parentData.family.id,
+          parentName: 'Demo Parent',
+          familyName: parentData.family.name,
+        });
+        // Refetch parent data
+        await parentData.refetchDashboardData?.();
+      }
+    } else {
+      // Switching to child mode - clear parent session and refetch child data
+      clearParentSession();
+      await childData.refetchDashboardData?.();
+    }
+    
     setIsParentMode(shouldBeParent);
     onModeChange?.(newMode);
-  };
+    
+    // Navigate to appropriate route
+    router.push(shouldBeParent ? '/parent' : '/');
+  }, [parentData, childData, router, onModeChange]);
 
-  // Handle child selection
-  const handleSelectChild = (childId: string) => {
+  // Handle child selection with routing and refetch
+  const handleSelectChild = useCallback(async (childId: string) => {
     if (isParentMode) {
       // In parent mode, switch to child mode with that child
       const child = children.find((c) => c.id === childId);
@@ -76,18 +100,34 @@ export function TopNav({
           childName: child.name,
           childAge: child.childAge,
         });
+        clearParentSession();
+        
+        // Refetch child data and navigate
+        await childData.refetchDashboardData?.();
         setIsParentMode(false);
         onModeChange?.('child');
+        router.push('/');
       }
     } else {
-      // In child mode, switch child
+      // In child mode, switch child and refetch
       childData.selectChild(childId);
+      await childData.refetchDashboardData?.();
     }
     setIsDropdownOpen(false);
-  };
+  }, [isParentMode, children, parentData, childData, router, onModeChange]);
 
-  // Handle parent login demo
-  const handleParentLogin = () => {
+  // Handle switch back to child from parent mode with refetch and routing
+  const handleBackToChild = useCallback(async () => {
+    clearParentSession();
+    await childData.refetchDashboardData?.();
+    setIsParentMode(false);
+    setIsDropdownOpen(false);
+    onModeChange?.('child');
+    router.push('/');
+  }, [childData, router, onModeChange]);
+
+  // Handle parent login demo with routing and refetch
+  const handleParentLogin = useCallback(async () => {
     if (parentData.family) {
       setParentSession({
         parentId: 'demo-parent',
@@ -95,10 +135,14 @@ export function TopNav({
         parentName: 'Demo Parent',
         familyName: parentData.family.name,
       });
+      
+      // Refetch parent data and navigate
+      await parentData.refetchDashboardData?.();
       setIsParentMode(true);
       onModeChange?.('parent');
+      router.push('/parent');
     }
-  };
+  }, [parentData, router, onModeChange]);
 
   return (
     <header
@@ -240,11 +284,7 @@ export function TopNav({
 
                     <div className="mt-2 pt-2 border-t-2 border-[#E5E7EB]">
                       <button
-                        onClick={() => {
-                          setIsParentMode(false);
-                          setIsDropdownOpen(false);
-                          onModeChange?.('child');
-                        }}
+                        onClick={handleBackToChild}
                         className="
                           w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
                           text-left transition-all hover:bg-[#BAE6FD]

@@ -181,6 +181,17 @@ export function useParentDashboardData({
         });
     }, [parentName]);
 
+    // Refetch all parent dashboard data
+    const refetchDashboardData = useCallback(async () => {
+        await Promise.all([
+            familiesQuery.refetch?.(),
+            childrenQuery.refetch?.(),
+            goalsQuery.refetch?.(),
+            activitiesQuery.refetch?.(),
+            todayQuestsQuery.refetch?.(),
+        ]);
+    }, [familiesQuery, childrenQuery, goalsQuery, activitiesQuery, todayQuestsQuery]);
+
     return {
         // Session info
         familyId,
@@ -228,6 +239,7 @@ export function useParentDashboardData({
         // Actions
         selectChild,
         setFamily,
+        refetchDashboardData,
         questActions: {
             completeQuest: todayQuestsQuery.completeQuest,
             createQuests: todayQuestsQuery.createQuests,

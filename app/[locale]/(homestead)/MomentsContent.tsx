@@ -16,6 +16,7 @@ export function MomentsContent() {
     activities,
     childName,
     isActivitiesLoading,
+    refetchDashboardData,
   } = useChildDashboardData();
 
   // Get latest activity
@@ -24,6 +25,19 @@ export function MomentsContent() {
   // Calculate some stats (placeholder for now)
   const totalActivities = activities.length;
   const completedActivities = activities.filter((a) => a.completed).length;
+
+  // Navigation handlers with refetch
+  const handleStartAdventure = () => {
+    refetchDashboardData?.().then(() => {
+      router.push('/adventures');
+    });
+  };
+
+  const handleCreateMoment = () => {
+    refetchDashboardData?.().then(() => {
+      router.push('/moments/proximity');
+    });
+  };
 
   if (!latestActivity) {
     return (
@@ -48,13 +62,28 @@ export function MomentsContent() {
             <p className="text-white text-lg font-extrabold max-w-md drop-shadow-[1px_1px_0px_#1C1917]">
               Crafting heroic legacies, one small growth at a time.
             </p>
+            <div className="mt-6">
+              <ComicButton
+                variant="gold"
+                size="md"
+                icon="add_circle"
+                onClick={handleCreateMoment}
+              >
+                CREATE MOMENT! 🌿
+              </ComicButton>
+            </div>
           </div>
         </div>
 
         {/* Empty State */}
         <div className="text-center py-20">
           <MascotSection message="No moments yet! Start a quest to create your first family moment." />
-          <ComicButton variant="gold" size="lg" className="mt-6">
+          <ComicButton
+            variant="gold"
+            size="lg"
+            className="mt-6"
+            onClick={handleStartAdventure}
+          >
             START AN ADVENTURE! 🌿
           </ComicButton>
         </div>
@@ -107,7 +136,12 @@ export function MomentsContent() {
               Crafting heroic legacies, one small growth at a time.
             </p>
             <div className="mt-6">
-              <ComicButton variant="gold" size="md" icon="add_circle">
+              <ComicButton
+                variant="gold"
+                size="md"
+                icon="add_circle"
+                onClick={handleCreateMoment}
+              >
                 CREATE MOMENT! 🌿
               </ComicButton>
             </div>

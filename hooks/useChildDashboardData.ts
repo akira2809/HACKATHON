@@ -77,6 +77,16 @@ export function useChildDashboardData() {
         }
     }, [childrenQuery.children, familyId]);
 
+    // Refetch all dashboard data
+    const refetchDashboardData = useCallback(async () => {
+        await Promise.all([
+            childrenQuery.refetch?.(),
+            questsQuery.refetch?.(),
+            goalsQuery.refetch?.(),
+            activitiesQuery.refetch?.(),
+        ]);
+    }, [childrenQuery, questsQuery, goalsQuery, activitiesQuery]);
+
     return {
         // Session info
         childId,
@@ -123,6 +133,7 @@ export function useChildDashboardData() {
 
         // Actions
         selectChild,
+        refetchDashboardData,
         questActions: {
             startQuest: questsQuery.startQuest,
             completeQuest: questsQuery.completeQuest,
